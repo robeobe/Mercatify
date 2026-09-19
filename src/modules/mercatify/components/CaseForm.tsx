@@ -19,6 +19,7 @@ import { duplicateCapabilityCounts, SAAS_CATALOG } from '../data/saas-catalog'
 
 const ENTITY_ID = 'mercatify:interview_case'
 const LIST_HREF = '/backend/cases'
+const REQUESTS_HREF = '/backend/requests'
 const FORM_ID = 'mercatify-intake-form'
 const CURRENCIES = ['EUR', 'USD', 'PLN', 'GBP'] as const
 
@@ -407,6 +408,7 @@ export function CaseForm({
   listHref = LIST_HREF,
   formTitle,
   showLockAlert = true,
+  showCorrectedListAction = true,
 }: {
   mode: FormMode
   caseId?: string
@@ -415,6 +417,9 @@ export function CaseForm({
   listHref?: string
   formTitle?: string
   showLockAlert?: boolean
+  /** Off on the admin case detail: "Send a corrected list" is the client's
+   *  move, and it would take an admin to the client intake. */
+  showCorrectedListAction?: boolean
 }) {
   const t = useT()
   const router = useRouter()
@@ -467,9 +472,11 @@ export function CaseForm({
   ], [readOnly, t])
 
   const extraActions = readOnly ? (
-    <Button asChild>
-      <Link href="/backend/cases/create">{t('mercatify.cases.form.actions.correctedList')}</Link>
-    </Button>
+    showCorrectedListAction ? (
+      <Button asChild>
+        <Link href="/backend/cases/create">{t('mercatify.cases.form.actions.correctedList')}</Link>
+      </Button>
+    ) : null
   ) : (
     <Button type="submit" form={FORM_ID} name="intent" value="send">
       {t('mercatify.cases.form.actions.send')}
@@ -506,12 +513,17 @@ export function CaseForm({
         if (mode === 'create') {
           const created = await createCrud<{ id: string }>('mercatify/cases', payload)
           const id = created.result?.id
-          if (id) router.push(`/backend/cases/${id}`)
-          else router.push(LIST_HREF)
+          if (!id) {
+            router.push(send ? REQUESTS_HREF : LIST_HREF)
+            return
+          }
+          // A sent intake belongs to the client's own request thread; a saved
+          // draft stays on the staff-side record it was created from.
+          router.push(send ? `${REQUESTS_HREF}/${id}` : `/backend/cases/${id}`)
           return
         }
         await updateCrud('mercatify/cases', payload)
-        if (send && caseId) router.push(`/backend/cases/${caseId}`)
+        if (send && caseId) router.push(`${REQUESTS_HREF}/${caseId}`)
         else router.refresh()
       }}
     />

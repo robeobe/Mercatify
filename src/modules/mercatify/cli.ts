@@ -1,7 +1,25 @@
 import type { ModuleCli } from '@open-mercato/shared/modules/registry'
 import { createRequestContainer, type AppContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
+import { User } from '@open-mercato/core/modules/auth/data/entities'
 import { InterviewCase } from './data/entities'
+
+/**
+ * HARDCODED: the demo's client persona. The sample case has to belong to
+ * *somebody* for `?mine=true` and the client-answer guard to work, and the seed
+ * has no other way to know who the client is. Unresolvable email → the case is
+ * seeded ownerless, exactly as before.
+ */
+const DEMO_CLIENT_EMAIL = 'employee@acme.com'
+
+async function findDemoClientUserId(em: EntityManager, tenantId: string): Promise<string | null> {
+  try {
+    const user = await em.findOne(User, { email: DEMO_CLIENT_EMAIL, tenantId } as any)
+    return user ? String(user.id) : null
+  } catch {
+    return null
+  }
+}
 
 type CaseSeedScope = {
   organizationId: string
@@ -41,17 +59,23 @@ export async function seedMercatifyCases(
 
   // Deliberately generic: the PRD forbids a hardcoded example company.
   const now = new Date()
+  const createdByUserId = await findDemoClientUserId(em, tenantId)
   em.persist(em.create(InterviewCase, {
     title: 'Sample interview case',
     status: 'draft',
     organizationId,
     tenantId,
+    createdByUserId,
     createdAt: now,
     updatedAt: now,
   }))
   await em.flush()
 
-  logger(`Seeded 1 interview case for org=${organizationId}, tenant=${tenantId}`)
+  logger(
+    createdByUserId
+      ? `Seeded 1 interview case for org=${organizationId}, tenant=${tenantId}, owner=${DEMO_CLIENT_EMAIL}`
+      : `Seeded 1 ownerless interview case for org=${organizationId}, tenant=${tenantId} (${DEMO_CLIENT_EMAIL} not found)`,
+  )
   return true
 }
 
