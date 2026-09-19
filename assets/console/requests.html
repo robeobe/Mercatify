@@ -156,9 +156,11 @@
         /* One action per row, chosen by where the request actually is. A new
            request cannot be reported on, and a sent one is not re-mapped from
            the queue — that is a deliberate step taken inside it. */
+        /* Row actions stay quiet — the platform's RowActions uses ghost, and a
+           filled button on every row would make the whole table shout. */
         node('td', { class: 'nowrap' }, requestActions(r).map(function (a, i) {
           return node('a', {
-            class: 'btn btn--sm' + (a.primary ? '' : ' btn--outline'),
+            class: 'btn btn--sm ' + (a.primary ? 'btn--outline' : 'btn--muted'),
             style: i ? 'margin-left:6px' : '',
             href: a.href, text: a.label
           });
