@@ -60,6 +60,8 @@ export async function GET(req: Request) {
       derivation,
       inputs,
       status: interviewCase.status,
+      // The compose card's head prints "received {date}" without a second fetch.
+      submittedAt: interviewCase.submittedAt?.toISOString() ?? null,
       mappingConfirmedAt: interviewCase.mappingConfirmedAt?.toISOString() ?? null,
       costsEntered: interviewCase.omOperatingCost != null && interviewCase.implementationCost != null,
       caseUpdatedAt: interviewCase.updatedAt.toISOString(),

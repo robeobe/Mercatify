@@ -37,8 +37,10 @@ export default function LabHandoffOutcome({ status, document, at }: LabHandoffOu
             {t('mercatify.labHandoff.at')} {handedOverAt}
           </p>
         ) : null}
+        {/* Open on every outcome: the document IS the result, including the
+            one the demo runs on. Nothing here is worth a second click. */}
         {document ? (
-          <details className="mt-3" open={status !== 'delivered'}>
+          <details className="mt-3" open>
             <summary className="cursor-pointer text-sm font-medium">
               {t('mercatify.labHandoff.contentLabel')}
             </summary>

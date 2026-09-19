@@ -173,6 +173,21 @@ describe('buildReportModel — verdict, tools and duplicates', () => {
     expect(result.toolGroups[1]).toMatchObject({ toolName: 'PandaDoc', switchedOff: false })
   })
 
+  it('groups a row under its tool even when the analysis echoed the name back in a different case', () => {
+    const result = model({
+      stack: [{ name: 'HubSpot', monthlyCost: 2000, seats: null }],
+      rows: [row({ id: 'r1', source: '  hubspot ', decision: 'native' })],
+    })
+
+    expect(result.toolGroups.find((group) => group.toolName === null)).toBeUndefined()
+    expect(result.toolGroups[0]).toMatchObject({ toolName: 'HubSpot', switchedOff: true })
+    expect(result.toolGroups[0].rows.map((r) => r.id)).toEqual(['r1'])
+    // The saving follows the grouping: a casing difference must not quietly
+    // value a switched-off subscription at zero.
+    expect(result.savings.removedSaaS).toEqual(['HubSpot'])
+    expect(result.savings.lines[0].amount).toBe(24000)
+  })
+
   it('lists a row whose source names no tool in the stack rather than dropping it', () => {
     const result = model({
       stack: [{ name: 'HubSpot', monthlyCost: 2000, seats: null }],

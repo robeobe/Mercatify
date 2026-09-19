@@ -8,21 +8,12 @@ import { formatCurrency } from '@open-mercato/ui/utils/format'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import CashCurveChart from './CashCurveChart'
 import { REPORT_DECISION_ORDER, type ReportModel } from '../lib/report'
-import type { MercatifyConfidence, MercatifyDecision } from './MappingTable'
-
-const decisionTagMap: TagMap<MercatifyDecision> = {
-  native: 'success',
-  configure: 'info',
-  build: 'brand',
-  integrate: 'warning',
-  keep: 'neutral',
-}
-
-const confidenceVariants: StatusMap<MercatifyConfidence> = {
-  high: 'success',
-  medium: 'warning',
-  low: 'neutral',
-}
+import {
+  confidenceVariants,
+  decisionTagMap,
+  type MercatifyConfidence,
+  type MercatifyDecision,
+} from './MappingTable'
 
 /** Verdict-bar fills, in the same reading order as `REPORT_DECISION_ORDER`. */
 const verdictFills: Record<string, string> = {
@@ -212,15 +203,16 @@ export default function ReportPreview({ report }: { report: ReportModel }) {
                   <div className="text-xs text-muted-foreground">{row.justification}</div>
                 </TableCell>
                 <TableCell>
+                  {/* A flag is a note for the reader, not an error in their
+                      document — same treatment as the mapping table. */}
+                  <div>{row.targetLabel ?? '—'}</div>
                   {row.flagged ? (
-                    <Tag variant="error" dot>
+                    <div className="text-xs text-muted-foreground">
                       {row.flagReason === 'module_not_enabled'
                         ? t('mercatify.mapping.table.flag.moduleNotEnabled', { module: row.targetModuleId ?? '' })
                         : t('mercatify.mapping.table.flag.unmapped')}
-                    </Tag>
-                  ) : (
-                    row.targetLabel ?? '—'
-                  )}
+                    </div>
+                  ) : null}
                 </TableCell>
                 <TableCell>
                   <Tag variant={decisionTagMap[row.decision as MercatifyDecision]}>

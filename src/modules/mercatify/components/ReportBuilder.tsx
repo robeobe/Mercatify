@@ -15,6 +15,7 @@ import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import ReportPreview from './ReportPreview'
+import { CaseRefBadge, ConsolePageHead, StaffStatusBadge } from './console/ConsoleParts'
 import {
   buildReportModel,
   type ReportCostsInput,
@@ -44,11 +45,18 @@ type ReportResponseDto = {
   }
   inputs: ReportInputsDto
   status: string
+  submittedAt: string | null
   mappingConfirmedAt: string | null
   costsEntered: boolean
   caseUpdatedAt: string
   reportUpdatedAt: string | null
   sentAt: string | null
+}
+
+/** The two customer-provided figures the cash curve needs, edited in place. */
+type CostState = {
+  omOperatingCost: string
+  implementationCost: string
 }
 
 type ComposeState = {
@@ -114,6 +122,7 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
   const [compose, setCompose] = React.useState<ComposeState | null>(null)
+  const [costs, setCosts] = React.useState<CostState | null>(null)
   // `useGuardedMutation` exposes no pending flag, so the bar tracks its own —
   // without it a double-click could send twice.
   const [busy, setBusy] = React.useState(false)
@@ -121,6 +130,7 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
   const queryKey = React.useMemo(() => ['mercatify-report', caseId] as const, [caseId])
   const saveMutation = useGuardedMutation({ contextId: 'mercatify-report-save' })
   const sendMutation = useGuardedMutation({ contextId: 'mercatify-report-send' })
+  const costsMutation = useGuardedMutation({ contextId: 'mercatify-report-costs' })
 
   const query = useQuery({
     queryKey,
@@ -141,9 +151,55 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
     setCompose(toComposeState(data.inputs))
   }, [data])
 
+  // The costs live on the case, not the report row, so they seed off the
+  // case's own version — a report save must not clobber a cost edit.
+  const seededCostsRef = React.useRef<string | null>(null)
+  React.useEffect(() => {
+    if (!data) return
+    if (seededCostsRef.current === data.caseUpdatedAt) return
+    seededCostsRef.current = data.caseUpdatedAt
+    setCosts({
+      omOperatingCost: data.derivation.costs.omOperatingCost != null ? String(data.derivation.costs.omOperatingCost) : '',
+      implementationCost: data.derivation.costs.implementationCost != null ? String(data.derivation.costs.implementationCost) : '',
+    })
+  }, [data])
+
   const update = React.useCallback(<K extends keyof ComposeState>(key: K, value: ComposeState[K]) => {
     setCompose((previous) => (previous ? { ...previous, [key]: value } : previous))
   }, [])
+
+  /**
+   * S-04's two cost inputs, saved from this screen so the admin never leaves it
+   * to make the cash curve appear. Posts on blur to the same dedicated route
+   * `EditCaseCostsDialog` uses, with the case's current version as the lock.
+   */
+  const saveCosts = React.useCallback(async () => {
+    if (!costs || !data) return
+    const omOperatingCost = toNumberOrNull(costs.omOperatingCost)
+    const implementationCost = toNumberOrNull(costs.implementationCost)
+    if (
+      omOperatingCost === data.derivation.costs.omOperatingCost
+      && implementationCost === data.derivation.costs.implementationCost
+    ) return
+    try {
+      await withScopedApiRequestHeaders(
+        buildOptimisticLockHeader(data.caseUpdatedAt),
+        () => costsMutation.runMutation({
+          context: { caseId },
+          operation: () => apiCallOrThrow('/api/mercatify/cases/costs', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ id: caseId, omOperatingCost, implementationCost }),
+          }),
+        }),
+      )
+      seededCostsRef.current = null
+      await queryClient.invalidateQueries({ queryKey })
+    } catch (error) {
+      const status = (error as { status?: number })?.status
+      flash(status === 409 ? t('mercatify.report.error.conflict') : t('mercatify.savings.error.generic'), 'error')
+    }
+  }, [caseId, costs, costsMutation, data, queryClient, queryKey, t])
 
   // The preview is derived from the saved model plus whatever is on screen,
   // re-run through the same pure builder the server uses.
@@ -221,7 +277,14 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
       })
       seededVersionRef.current = null
       await queryClient.invalidateQueries({ queryKey })
-      flash(t('mercatify.report.flash.sent'), 'success')
+      flash(
+        t(
+          'mercatify.console.report.flash.sent',
+          'Sent. It is now in {company}’s portal, where they can accept it or ask for a call.',
+          { company: data.derivation.profile.companyName ?? '' },
+        ),
+        'success',
+      )
     } catch {
       flash(t('mercatify.report.error.sendFailed'), 'error')
     } finally {
@@ -241,7 +304,7 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
     )
   }
 
-  if (query.isLoading || !data || !compose || !previewModel) {
+  if (query.isLoading || !data || !compose || !costs || !previewModel) {
     return <p className="text-sm text-muted-foreground">{t('mercatify.report.loading')}</p>
   }
 
@@ -259,20 +322,51 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
     )
   }
 
+  const profile = data.derivation.profile
+  const headMeta = [
+    profile.industry,
+    t('mercatify.console.report.head.tools', '{count} tools', { count: data.derivation.stack.length }),
+    data.submittedAt
+      ? t('mercatify.console.report.head.received', 'received {date}', {
+        date: new Date(data.submittedAt).toLocaleDateString(),
+      })
+      : null,
+  ].filter((entry): entry is string => Boolean(entry))
+
   return (
     <>
+      <ConsolePageHead
+        title={t('mercatify.console.report.title', 'Report')}
+        lead={t(
+          'mercatify.console.report.lead',
+          'Built from the confirmed mapping, your corrections included. Write the two human bits, read the preview, then send it. Nothing reaches the client until you press send.',
+        )}
+        actions={(
+          <Button asChild variant="outline">
+            <Link href={`/backend/cases/${caseId}/mapping`}>
+              {t('mercatify.console.report.actions.backToMapping', '← Back to mapping')}
+            </Link>
+          </Button>
+        )}
+      />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 lg:items-start">
-        <section className="space-y-4 lg:col-span-2" aria-label={t('mercatify.report.compose.label')}>
-          <h2 className="text-sm font-medium">{t('mercatify.report.compose.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('mercatify.report.compose.description')}</p>
+        <section className="lg:col-span-2" aria-label={t('mercatify.report.compose.label')}>
+          <div className="space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex flex-wrap items-baseline gap-2.5">
+              <h2 className="text-base font-semibold">{profile.companyName ?? t('mercatify.report.compose.title')}</h2>
+              <CaseRefBadge caseId={caseId} />
+              <StaffStatusBadge status={data.status} />
+              {headMeta.length > 0 ? (
+                <p className="ml-auto text-sm text-muted-foreground">{headMeta.join(' · ')}</p>
+              ) : null}
+            </div>
+            <p className="text-sm text-muted-foreground">{t('mercatify.report.compose.description')}</p>
 
           {!data.costsEntered ? (
             <Alert status="information">
               <AlertDescription>
-                {t('mercatify.report.costsMissing')}{' '}
-                <Link className="underline" href={`/backend/cases/${caseId}/mapping`}>
-                  {t('mercatify.report.costsMissing.action')}
-                </Link>
+                {t('mercatify.report.costsMissing')}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -333,6 +427,37 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
                 onChange={(event) => update('implementationMonths', event.target.value)}
               />
             </div>
+            {/* S-04's two customer-provided figures live here, next to the
+                estimate inputs, so the cash curve can be made to appear
+                without leaving this screen. They save on blur. */}
+            <div className="space-y-2">
+              <Label htmlFor="mercatify-report-om-operating">
+                {t('mercatify.console.report.fields.omOperatingCost.label', 'OM operating cost, yearly')}
+              </Label>
+              <Input
+                id="mercatify-report-om-operating"
+                type="number"
+                min={0}
+                step={1}
+                value={costs.omOperatingCost}
+                onChange={(event) => setCosts({ ...costs, omOperatingCost: event.target.value })}
+                onBlur={() => void saveCosts()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mercatify-report-implementation-cost">
+                {t('mercatify.console.report.fields.implementationCost.label', 'Implementation cost, one-off')}
+              </Label>
+              <Input
+                id="mercatify-report-implementation-cost"
+                type="number"
+                min={0}
+                step={1}
+                value={costs.implementationCost}
+                onChange={(event) => setCosts({ ...costs, implementationCost: event.target.value })}
+                onBlur={() => void saveCosts()}
+              />
+            </div>
           </div>
           <p className="text-xs text-muted-foreground">{t('mercatify.report.fields.hourlyRate.hint')}</p>
 
@@ -371,12 +496,18 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
               ))}
             </fieldset>
           ) : null}
+          </div>
         </section>
 
         <section className="lg:col-span-3" aria-label={t('mercatify.report.preview.label')}>
           <div className="rounded-lg border border-border">
-            <div className="border-b border-border bg-muted px-4 py-2 text-xs text-muted-foreground">
-              {t('mercatify.report.preview.chrome')}
+            {/* The preview is framed so nobody mistakes it for the console's
+                own page — what is inside is literally what the client opens. */}
+            <div className="flex items-center gap-2.5 border-b border-border bg-muted px-4 py-2 text-xs text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-border" aria-hidden="true" />
+              <span className="h-2 w-2 rounded-full bg-border" aria-hidden="true" />
+              <span className="h-2 w-2 rounded-full bg-border" aria-hidden="true" />
+              <span>{t('mercatify.console.report.preview.chrome', 'client portal · your consolidation report')}</span>
             </div>
             <div className="p-4">
               <ReportPreview report={previewModel} />
@@ -394,8 +525,11 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
         </Alert>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-border p-4">
-        <p className="mr-auto text-sm text-muted-foreground" data-testid="mercatify-report-send-state">
+      <div
+        className="sticky bottom-0 z-[5] mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur"
+        data-testid="mercatify-report-send-bar"
+      >
+        <p className="min-w-0 flex-1 text-sm text-muted-foreground" data-testid="mercatify-report-send-state">
           {data.sentAt
             ? t('mercatify.report.sendState.sent', { date: new Date(data.sentAt).toLocaleDateString() })
             : t('mercatify.report.sendState.notSent')}

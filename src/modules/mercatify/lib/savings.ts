@@ -12,6 +12,11 @@
  * you don't half-cancel a SaaS contract.
  */
 
+/** Kept here rather than imported from `./report`, which imports this module. */
+function normalizeToolName(name: string): string {
+  return name.trim().toLowerCase()
+}
+
 export type SavingsMappingInput = {
   source: string
   decision: string
@@ -43,18 +48,22 @@ export function computeSavingsScenario(
   stack: SavingsStackInput[],
   costs: SavingsCostsInput,
 ): SavingsScenario {
+  // Same normalization as `lib/report.ts`'s tool grouping: the analysis echoes
+  // the tool name back as free text, so a casing difference must not read as a
+  // different subscription — that would silently value the saving at zero.
   const mappingsBySource = new Map<string, SavingsMappingInput[]>()
   for (const mapping of mappings) {
-    const list = mappingsBySource.get(mapping.source) ?? []
+    const key = normalizeToolName(mapping.source)
+    const list = mappingsBySource.get(key) ?? []
     list.push(mapping)
-    mappingsBySource.set(mapping.source, list)
+    mappingsBySource.set(key, list)
   }
 
   const removedSaaS: string[] = []
   const retainedSaaS: string[] = []
 
   for (const product of stack) {
-    const productMappings = mappingsBySource.get(product.name) ?? []
+    const productMappings = mappingsBySource.get(normalizeToolName(product.name)) ?? []
     const mustRetain = productMappings.some(
       (mapping) => mapping.decision === 'integrate' || mapping.decision === 'keep',
     )
