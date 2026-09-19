@@ -16,6 +16,9 @@ type Query = typeof handoffDocumentListSchema._output
 
 type BaseFields = {
   id: string
+  title: string
+  status: string
+  company_name: string | null
   handoff_document: string | null
   mapping_confirmed_at: Date | string | null
   updated_at: Date | string | null
@@ -33,6 +36,9 @@ type BaseFields = {
 // a session that only holds `mercatify.cases.view`.
 const baseListFields = [
   'id',
+  'title',
+  'status',
+  'company_name',
   'handoff_document',
   'mapping_confirmed_at',
   'updated_at',
@@ -81,6 +87,11 @@ export const { metadata, GET, PUT } = makeCrudRoute({
     },
     transformItem: (item: BaseFields) => ({
       id: String(item.id),
+      title: String(item.title),
+      // The console's "Integrate with Mercatify Lab" card is enabled only on an
+      // accepted case, so the status rides along rather than costing a second fetch.
+      status: String(item.status),
+      companyName: item.company_name ?? null,
       handoffDocument: item.handoff_document ?? null,
       mappingConfirmedAt: toIsoTimestamp(item.mapping_confirmed_at),
       updatedAt: toIsoTimestamp(item.updated_at),
