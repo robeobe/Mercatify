@@ -110,6 +110,13 @@ Everything below is **new** except FR-014, which is **preserved** (a defensive r
 - [new] FR-012: Client can click "Run in Mercatify Lab"; the input document handed to Lab is the current content of the `.md` file. Priority: must-have
 - [new] FR-013: Client can see, when Mercatify Lab is not installed, what would have been handed over — not an error. Priority: must-have
 
+### Request tracking and report delivery
+> **Added 2026-09-19** (gap found while planning `mercatify-intake-start`'s follow-up slices, cross-checked against `assets/console/requests.html`, `assets/console/report.html`, `assets/client/requests.html`, `assets/client/request.html`, `assets/client/offer.html`): FR-001…FR-013 describe a single request end to end but never say how either side finds it among several, how the report itself gets built and sent (distinct from the `.md` handoff document in FR-010/011), or how the client comes back to answer it. These four requirements close that gap; they do not change FR-001…FR-013.
+- [new] FR-016: Admin can see a queue of every submitted request, filterable by status, with the one next action per request (map / continue mapping / build report / report) surfaced directly on the row. Priority: must-have
+- [new] FR-017: Client can see a list of their own submitted requests, each showing whose turn it is — with Mercatify or with them — and can reopen any one of them to see what was sent and its current status. Priority: must-have
+- [new] FR-018: Admin can build a report from a confirmed mapping (FR-005/006/008) — the net saving lines (FR-007) alongside a tool-by-tool table with confidence bands, duplicates and the implementation backlog — and send it to the client. Priority: must-have
+- [new] FR-019: Client can see the sent report and either accept it or ask for a consultation call; their answer is visible back to the admin. Priority: must-have
+
 ### Preserved / module conformance
 - [preserved] FR-014: Existing OM users can use every existing module, page and API unchanged after Mercatify is installed. Priority: must-have
 - [new] FR-015: OM operator can install Mercatify as a standard module (auto-discovered pages, APIs, entities, features) with no change to the core or enterprise packages. Priority: must-have

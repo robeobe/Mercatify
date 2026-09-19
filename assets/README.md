@@ -32,8 +32,8 @@ a different request.
 |---|---|
 | `login.html` | Staff sign-in, separate session from the client's. |
 | `requests.html` | Every request that came in — one row per company, through to the client's answer. |
-| `modules.html` | The mapping. The agent's pass is a starting point: under **By capability** every row's module, verdict and note is editable, edits are marked, and any row resets to what the agent proposed. |
-| `report.html` | The report built from that mapping, with a preview of the client's page and the send button. |
+| `modules.html` | The mapping. The agent's pass is a starting point: under **Edit the mapping** every row's module, verdict and note is editable, edits are marked, and any row resets to what the agent proposed. Confirming closes it. |
+| `report.html` | The report built from the confirmed mapping, with a preview of the client's page and the send button. |
 
 Shell: the full staff sidebar and breadcrumbs.
 
@@ -43,21 +43,64 @@ Shell: the full staff sidebar and breadcrumbs.
 request store, both shells). Shared because both apps are Open Mercato surfaces
 and the capability vocabulary has to agree across them.
 
+### Mapping and reporting are not both available at once
+
+The two verbs follow one state machine, read by the queue row, the mapping
+screen and the report screen alike, so they cannot disagree about what is
+possible next:
+
+| Status | Queue row offers | Mapping | Report |
+|---|---|---|---|
+| `new` | Map | opens on arrival, which is what starts it | locked |
+| `mapping` | Continue mapping | editable, autosaved | locked |
+| `mapped` | Build report · Mapping | closed; reopens on request | available |
+| `sent` | Report | closed; reopening is deliberate | resend replaces |
+| `accepted` / `consult` | Report | closed | read-only history |
+
+`mapped` is the gate. A report can only be built from a mapping somebody
+confirmed — which is also what gives the consultant something to confirm, and
+what makes `in mapping` last longer than a moment. Reopening a sent mapping does
+not un-send it: the client keeps the version they were given until a new report
+is sent on purpose.
+
 ## The loop
 
 1. The client fills `client/intake.html` and sends → the request lands in the console queue as **new**.
-2. A consultant opens `console/modules.html`, corrects whatever the agent got wrong, and moves on to the report.
-3. `console/report.html` writes the opening line and the closing note; everything else is derived from the mapping, so an edit in step 2 shows up here without a regenerate step. The preview calls the same renderer the client's page does, so what you see is the document itself.
+2. A consultant opens `console/modules.html` — which moves the request to **in mapping** — and corrects whatever the agent got wrong. Changes save as they are made and the bar says so. **Confirm mapping** closes it and unlocks the report.
+3. `console/report.html` writes the opening line and the closing note; everything else is derived from the mapping, so an edit in step 2 shows up here without a regenerate step. Reached before the mapping is confirmed, it sends you back instead. The preview calls the same renderer the client's page does, so what you see is the document itself.
 4. **Send** → status **report sent**, and only now can the client see anything.
 5. She sees it on her tile and on the request's track, reads it in `client/offer.html`, and either **accepts** or **asks for a call with Sales** → status **accepted** or **consult asked**, visible back in the queue.
 
-### The money in the report
+### The report
 
-A tool counts as a candidate to retire only when *every* job it carries lands
-natively or by configuration. Anything with a build, integrate or keep row still
-has a reason to exist, so counting its licence as saved would be a lie. On the
-seeded Voltix case that comes out as €1,510/mo from three fully-covered tools,
-with HubSpot staying because its marketing side is not ours to take.
+Modelled on `stack-tool/report.html`, which is where the shape of this document
+came from. It carries a computed headline, a summary paragraph, four KPIs, a
+verdict bar over every job in the stack, a tool-by-tool table with confidence
+bands, the duplicates, the build backlog with hours and cost, the arithmetic
+line by line with a basis for each, the client's own words, what we are not sure
+about, and the first piece worth cutting.
+
+**The cash curve** is the one picture: cumulative position against doing nothing,
+month by month. Money goes out while the work happens, the curve turns when the
+licences drop off, and it crosses zero the month the move has paid for itself.
+Three shapes, three different stories, and the caption says which one it is:
+nothing to pay back, pays back in month N, or does not pay back inside two years.
+Implementation length is a consultant's assumption on the report screen, not
+something the mock invents.
+
+**The money.** A tool counts as a candidate to retire only when *every* job it
+carries lands natively or by configuration. Anything with a build, integrate or
+keep row still has a reason to exist, so counting its licence as saved would be
+a lie; a tool that stays keeps costing what it costs, which is what *licences
+after* is made of. Hours are never guessed — a build row with no estimate prints
+as "to estimate" and the total says it is a floor, not a quote.
+
+## Writing
+
+The client is a role, not a person: UI copy says *the client* or *they*, never
+*she*. Labels name the consequence rather than the mechanic — a capability paid
+for in two tools is **paid twice**, not "done twice", because what matters is
+the second licence.
 
 ## Entry points
 

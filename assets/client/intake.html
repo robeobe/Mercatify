@@ -169,9 +169,9 @@
         <div class="stat__s">per month, as entered</div>
       </div>
       <div class="stat">
-        <div class="stat__k">Jobs done twice</div>
+        <div class="stat__k">Paid for twice</div>
         <div class="stat__v" id="s-dups">0</div>
-        <div class="stat__s" id="s-dups-list">no duplicates yet</div>
+        <div class="stat__s" id="s-dups-list">nothing overlapping yet</div>
       </div>
     </aside>
   </div>
@@ -279,7 +279,7 @@
   }
 
   function toggleTool(id) {
-    /* Nothing is pre-ticked. A module counts as used only when she says so — a
+    /* Nothing is pre-ticked. A module counts as used only when the client says so — a
        default here would put numbers in the mapping nobody confirmed. */
     if (state.sel[id]) delete state.sel[id];
     else state.sel[id] = { mods: {}, seats: '', monthly: '' };
@@ -377,7 +377,7 @@
     document.getElementById('s-dups').textContent = ov.length;
     document.getElementById('s-dups-list').textContent = ov.length
       ? ov.slice(0, 3).map(function (o) { return o.label.toLowerCase(); }).join(', ') + (ov.length > 3 ? '…' : '')
-      : 'no duplicates yet';
+      : 'nothing overlapping yet';
 
     saveCase({ v: 1, kind: 'mercatify-case', brief: b });
   }
@@ -410,8 +410,8 @@
     };
     saveRequest(req);
     addClientRef(req.ref);
-    /* Straight to the request itself: the form has done its job, and what she
-       wants next is confirmation that it landed and where it now sits. */
+    /* Straight to the request itself: the form has done its job, and what the
+       client wants next is confirmation that it landed and where it now sits. */
     window.location.href = 'request.html?ref=' + encodeURIComponent(req.ref);
   }
 

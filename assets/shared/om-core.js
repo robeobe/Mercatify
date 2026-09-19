@@ -1,7 +1,7 @@
 /* Mercatify — mocked Open Mercato surfaces: shared data, helpers and shells.
    Classic script, loaded by both apps in assets/:
 
-     client/   what Ola sees — her own request form, and nothing else
+     client/   what a client sees — their own requests, and nothing else
      console/  what Mercatify sees — every request that came in, and the mapping
 
    They are separate products sharing one design system and one capability
@@ -46,7 +46,7 @@ function currentUser(app) {
 }
 
 /* ─────────────── the client's own requests ───────────────
-   She can send more than one over time, so the portal keeps a list of her refs
+   A client can send more than one over time, so the portal keeps a list of refs
    and never reads the queue. Everything the client app shows is filtered
    through this list — that is what keeps one tenant out of another's data. */
 var CLIENT_REFS_KEY = 'mercatify.client.refs.v1';
@@ -72,20 +72,20 @@ function addClientRef(ref) {
   try { localStorage.removeItem(CLIENT_REF_KEY); } catch (e) {}
   return refs;
 }
-/* Her requests, newest first, with the ones that no longer resolve dropped. */
+/* The client's requests, newest first, dropping any that no longer resolve. */
 function clientRequests() {
   return readClientRefs()
     .map(function (ref) { return findRequest(ref); })
     .filter(Boolean)
     .sort(function (a, b) { return String(b.ref).localeCompare(String(a.ref)); });
 }
-/* Strict: a ref she does not own returns null, whatever the URL says. */
+/* Strict: a ref this client does not own returns null, whatever the URL says. */
 function clientRequest(ref) {
   if (!ref) return null;
   return readClientRefs().indexOf(ref) === -1 ? null : findRequest(ref);
 }
 
-/* The steps she sees, in order, with the one she is on marked. Derived from the
+/* The steps the client sees, in order, with the current one marked. Derived from the
    request rather than stored, so it cannot fall out of step with the status. */
 function clientProgress(req) {
   var steps = [
@@ -95,7 +95,7 @@ function clientProgress(req) {
       done: !!req.sentAt, current: !req.sentAt,
       when: null,
       body: 'Someone goes through every tool by hand. Usually two working days.' },
-    { key: 'map', title: 'Your map comes back',
+    { key: 'map', title: 'Your report comes back',
       done: !!req.sentAt, current: !!req.sentAt && !req.clientResponse,
       when: req.sentAt,
       body: req.sentAt ? 'Ready to read.' : 'What moves, what stays, and what it saves.' },
@@ -355,15 +355,27 @@ function requestSeats(req) {
 /* Where one capability lands. The automatic map is a first pass; a consultant
    overriding a row wins, and the row is flagged so the screen can show which
    verdicts a human stands behind and which are still the machine's. */
+/* Confidence the agent claims for its own verdict. A native match is a lookup;
+   something it wants built is a guess, and the report says so rather than
+   presenting every row with the same certainty. */
+var DEFAULT_CONFIDENCE = {
+  native: 'high', configure: 'medium', build: 'low', integrate: 'medium', keep: 'high'
+};
+var CONFIDENCE_BANDS = ['high', 'medium', 'low'];
+
 function capTarget(req, cap) {
   var ov = (req.overrides || {})[cap];
   var auto = CAP_MAP[cap] || { module: '__build', status: 'build' };
-  if (!ov) return { module: auto.module, status: auto.status, edited: false, note: '' };
+  var status = (ov && ov.status) || auto.status;
   return {
-    module: ov.module || auto.module,
-    status: ov.status || auto.status,
-    edited: true,
-    note: ov.note || ''
+    module: (ov && ov.module) || auto.module,
+    status: status,
+    edited: !!ov,
+    note: (ov && ov.note) || '',
+    conf: (ov && ov.conf) || DEFAULT_CONFIDENCE[status] || 'medium',
+    /* Hours are never guessed. Blank means nobody has estimated it yet, and
+       the report prints that instead of a zero that reads like "free". */
+    hours: ov && ov.hours !== undefined && ov.hours !== '' ? Number(ov.hours) : null
   };
 }
 function setCapOverride(req, cap, patch) {
@@ -372,7 +384,8 @@ function setCapOverride(req, cap, patch) {
   if (patch === null) delete overrides[cap];
   else {
     var cur = overrides[cap] || {};
-    var next = { module: cur.module, status: cur.status, note: cur.note };
+    var next = { module: cur.module, status: cur.status, note: cur.note,
+                 conf: cur.conf, hours: cur.hours };
     Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
     overrides[cap] = next;
   }
@@ -401,7 +414,9 @@ function requestCaps(req) {
       module: target.module,
       status: target.status,
       edited: target.edited,
-      note: target.note
+      note: target.note,
+      conf: target.conf,
+      hours: target.hours
     };
   }).sort(function (a, b) { return a.label.localeCompare(b.label); });
 }
@@ -439,8 +454,12 @@ function statusCounts(caps) {
    so a figure does not change shape between the intake rail and the queue. */
 function fmtMoney(n, currency) {
   var sym = { EUR: '€', USD: '$', GBP: '£', PLN: 'zł' }[currency || 'EUR'] || '';
-  var v = Math.round(Number(n) || 0).toLocaleString('en-US');
-  return currency === 'PLN' ? v + ' ' + sym : sym + v;
+  var raw = Math.round(Number(n) || 0);
+  /* The sign belongs in front of the whole amount, not between the symbol and
+     the digits — the cash curve is full of negative numbers. */
+  var sign = raw < 0 ? '−' : '';
+  var v = Math.abs(raw).toLocaleString('en-US');
+  return currency === 'PLN' ? sign + v + ' ' + sym : sign + sym + v;
 }
 
 /* ─────────────── request lifecycle ───────────────
@@ -450,7 +469,7 @@ var REQUEST_STATUS = {
   new:      { label: 'new',            client: 'received',        badge: 'badge--info' },
   mapping:  { label: 'in mapping',     client: 'in review',       badge: 'badge--warning' },
   mapped:   { label: 'mapped',         client: 'in review',       badge: 'badge--success' },
-  sent:     { label: 'report sent',    client: 'your map is ready', badge: 'badge--info' },
+  sent:     { label: 'report sent',    client: 'your report is ready', badge: 'badge--info' },
   accepted: { label: 'accepted',       client: 'accepted',        badge: 'badge--success' },
   consult:  { label: 'consult asked',  client: 'consultation asked', badge: 'badge--warning' }
 };
@@ -465,6 +484,75 @@ function statusBadge(req) {
 }
 function today() { return new Date().toISOString().slice(0, 10); }
 
+/* ─────────────── what you can do to a request ───────────────
+   The two verbs, mapping and reporting, are not available at the same time and
+   never were — showing both on every row invited sending a report on a mapping
+   nobody had confirmed. One rule, read by the queue, the mapping screen and the
+   report screen alike:
+
+     new       mapping has not started      -> map, no report
+     mapping   open, being corrected        -> keep mapping; report is locked
+     mapped    closed by a consultant       -> report; mapping reopens on request
+     sent      the client has it            -> report; remapping is deliberate
+     accepted  the client answered          -> report is read-only history
+     consult   the client wants a call      -> same
+
+   `mapped` is the gate: a report can only be built from a mapping somebody
+   confirmed, which is also what gives the consultant something to confirm. */
+function mappingOpen(req) {
+  return req.status === 'new' || req.status === 'mapping';
+}
+function mappingStarted(req) {
+  return req.status !== 'new';
+}
+function canReport(req) {
+  return req.status === 'mapped' || req.status === 'sent' ||
+         req.status === 'accepted' || req.status === 'consult';
+}
+function isSent(req) { return !!req.sentAt; }
+
+function startMapping(req) {
+  if (req.status !== 'new') return req;
+  req.status = 'mapping';
+  patchRequest(req.ref, { status: 'mapping' });
+  return req;
+}
+function confirmMapping(req) {
+  if (!mappingOpen(req)) return req;
+  req.status = 'mapped';
+  req.mappedAt = today();
+  patchRequest(req.ref, { status: 'mapped', mappedAt: req.mappedAt });
+  return req;
+}
+/* Reopening a sent report does not un-send it: the client keeps the version
+   they were given until a new one is sent on purpose. */
+function reopenMapping(req) {
+  req.status = 'mapping';
+  patchRequest(req.ref, { status: 'mapping' });
+  return req;
+}
+
+/* The one action a queue row should offer, plus anything secondary. Keeping
+   this here means the row, the mapping screen and the report screen cannot
+   disagree about what is possible next. */
+function requestActions(req) {
+  var mapHref = 'modules.html?ref=' + encodeURIComponent(req.ref);
+  var reportHref = 'report.html?ref=' + encodeURIComponent(req.ref);
+  switch (req.status) {
+    case 'new':
+      return [{ label: 'Map', href: mapHref, primary: true }];
+    case 'mapping':
+      return [{ label: 'Continue mapping', href: mapHref, primary: true }];
+    case 'mapped':
+      return [
+        { label: 'Build report', href: reportHref, primary: true },
+        { label: 'Mapping', href: mapHref }
+      ];
+    default:
+      return [{ label: 'Report', href: reportHref, primary: true }];
+  }
+}
+
 /* ─────────────── the offer ───────────────
    Derived from the mapping as it stands, overrides included, so a consultant's
    edit shows up in the report without a separate "regenerate" step.
@@ -472,12 +560,14 @@ function today() { return new Date().toISOString().slice(0, 10); }
    The money model is deliberately narrow: a tool is a candidate to retire only
    when EVERY job it carries lands natively or by configuration. Anything with
    a build/integrate/keep row still has a reason to exist, so counting its
-   licence as saved would be a lie. */
+   licence as saved would be a lie — and a tool that stays keeps costing what
+   it costs, which is what "licences after" is made of. */
 function buildOffer(req) {
   var caps = requestCaps(req);
   var counts = statusCounts(caps);
   var byCap = {};
   caps.forEach(function (c) { byCap[c.cap] = c; });
+  var a = (req.report && req.report.assumptions) || {};
 
   var retire = [], stays = [];
   (req.tools || []).forEach(function (t) {
@@ -486,7 +576,8 @@ function buildOffer(req) {
       return r.status === 'native' || r.status === 'configure';
     });
     var entry = {
-      name: t.name, monthly: Number(t.monthly) || 0, seats: t.seats,
+      name: t.name, monthly: Number(t.monthly) || 0, seats: Number(t.seats) || 0,
+      rows: rows,
       reasons: rows.filter(function (r) { return r.status !== 'native' && r.status !== 'configure'; })
     };
     (covered ? retire : stays).push(entry);
@@ -494,129 +585,470 @@ function buildOffer(req) {
 
   var monthlyNow = requestMonthly(req);
   var monthlyRetire = retire.reduce(function (s, t) { return s + t.monthly; }, 0);
+  var retained = stays.reduce(function (s, t) { return s + t.monthly; }, 0);
+  var hosting = Number(a.hosting) || 0;
+  var monthlyAfter = retained + hosting;
+  var monthlySaving = monthlyNow - monthlyAfter;
+
+  var buildRows = caps.filter(function (c) { return c.status === 'build'; });
+  var estimated = buildRows.filter(function (c) { return c.hours !== null; });
+  var hours = estimated.reduce(function (s, c) { return s + c.hours; }, 0);
+  var rate = Number(a.rate) || 0;
+  var oneOff = hours * rate;
+  var breakEven = monthlySaving > 0 && oneOff > 0 ? Math.ceil(oneOff / monthlySaving) : null;
+
   var modules = requestModules(req).filter(function (m) { return m.module.id.indexOf('__') !== 0; });
+  var covers = counts.native + counts.configure;
 
   return {
-    ref: req.ref,
-    company: req.company,
+    ref: req.ref, company: req.company, industry: req.industry, people: req.people,
     currency: req.currency,
     generatedAt: (req.report && req.report.generatedAt) || today(),
     headline: (req.report && req.report.headline) || '',
     notes: (req.report && req.report.notes) || '',
+    analyst: a.analyst || '',
+    openQuestions: a.notes || '',
+    months: Number(a.months) || 3,
+    pains: req.pains, mustKeep: req.mustKeep,
     caps: caps, counts: counts, modules: modules,
     retire: retire, stays: stays,
-    monthlyNow: monthlyNow,
-    monthlySaving: monthlyRetire,
-    annualSaving: monthlyRetire * 12,
-    duplicates: caps.filter(function (c) { return c.duplicate; }).length,
-    covered: counts.native + counts.configure,
-    build: caps.filter(function (c) { return c.status === 'build'; }),
-    integrate: caps.filter(function (c) { return c.status === 'integrate'; }),
-    keep: caps.filter(function (c) { return c.status === 'keep'; })
+    seats: requestSeats(req),
+    monthlyNow: monthlyNow, retained: retained, hosting: hosting,
+    monthlyAfter: monthlyAfter, monthlySaving: monthlySaving,
+    annualSaving: monthlySaving * 12,
+    monthlyRetire: monthlyRetire,
+    hours: hours, rate: rate, oneOff: oneOff, breakEven: breakEven,
+    buildRows: buildRows, unestimated: buildRows.length - estimated.length,
+    duplicates: caps.filter(function (c) { return c.duplicate; }),
+    covered: covers,
+    lowConfidence: caps.filter(function (c) { return c.conf === 'low'; })
   };
 }
 
-/* Renders the offer body. The console preview and the client's page both call
-   this, so "what I am about to send" and "what she gets" cannot drift. */
-function renderOffer(offer) {
-  var wrap = node('div', { class: 'offer' });
+/* ─────────────── the cash curve ───────────────
+   Cumulative position against doing nothing, month by month. The shape is the
+   argument: money goes out while the work happens, the curve turns when the
+   licences start dropping off, and it crosses zero on the month the whole thing
+   has paid for itself.
 
-  if (offer.headline) wrap.appendChild(node('p', { class: 'offer__lede', text: offer.headline }));
+   The model is four lines of arithmetic and every input is on the page above it:
+     · during the implementation months the one-off is paid pro rata and nothing
+       is saved yet — the old licences are all still running;
+     · from the month after, the monthly saving accrues.
+   Implementation length is the consultant's assumption, not ours to invent. */
+var CASH_HORIZON = 24;
 
-  var kpis = node('div', { class: 'grid grid--4', style: 'margin:16px 0' }, [
-    node('div', { class: 'stat' }, [
-      node('div', { class: 'stat__k', text: 'On licences today' }),
-      node('div', { class: 'stat__v', text: fmtMoney(offer.monthlyNow, offer.currency) }),
-      node('div', { class: 'stat__s', text: 'per month, as you declared it' })
+function buildCashCurve(offer) {
+  var ramp = Math.max(1, Number(offer.months) || 3);
+  var perMonth = offer.oneOff / ramp;
+  var points = [{ m: 0, v: 0 }];
+  var v = 0;
+  for (var m = 1; m <= CASH_HORIZON; m++) {
+    if (m <= ramp) v -= perMonth;
+    else v += offer.monthlySaving;
+    points.push({ m: m, v: v });
+  }
+  var lows = points.map(function (p) { return p.v; });
+  var trough = Math.min.apply(null, lows);
+  var breakEven = null;
+  for (var i = 1; i < points.length; i++) {
+    if (points[i].v >= 0 && points[i - 1].v < 0) { breakEven = points[i].m; break; }
+  }
+  /* Three different shapes, and they are not the same story:
+       'none'  nothing was spent, so there is nothing to pay back;
+       month   the curve dipped and climbed back through zero;
+       null    it never gets back inside two years — a finding, not a drawing
+               problem, so the axis is not stretched until the line crosses. */
+  var payback = offer.oneOff > 0 ? (breakEven || null) : 'none';
+  return {
+    points: points, ramp: ramp, trough: trough,
+    troughMonth: points[lows.indexOf(trough)].m,
+    breakEven: breakEven,
+    payback: payback,
+    end: points[points.length - 1].v
+  };
+}
+
+function renderCashChart(offer) {
+  if (!offer.oneOff && offer.monthlySaving <= 0) return null;
+  var curve = buildCashCurve(offer);
+  var cur = offer.currency;
+
+  var W = 720, H = 290, L = 56, R = 700, T = 24, B = 250;
+  var vals = curve.points.map(function (p) { return p.v; });
+  var hi = Math.max(0, Math.max.apply(null, vals));
+  var lo = Math.min(0, Math.min.apply(null, vals));
+
+  /* Snap the axis to round money. Ticks land on multiples of 1/2/5 × 10^n, so
+     zero is always one of them and the labels are numbers a reader can hold. */
+  var raw = (hi - lo) / 5 || 1;
+  var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+  var step = [1, 2, 5, 10].filter(function (m) { return m * mag >= raw; })[0] * mag;
+  lo = Math.floor(lo / step) * step;
+  hi = Math.ceil(hi / step) * step;
+
+  function x(m) { return L + (R - L) * (m / CASH_HORIZON); }
+  function y(v) { return B - (B - T) * ((v - lo) / (hi - lo)); }
+
+  var svgNS = 'http://www.w3.org/2000/svg';
+  function sn(tag, attrs, children) {
+    var n = document.createElementNS(svgNS, tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'text') n.textContent = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    (children || []).forEach(function (c) { n.appendChild(c); });
+    return n;
+  }
+
+  var svg = sn('svg', {
+    viewBox: '0 0 ' + W + ' ' + H, role: 'img',
+    'aria-label': 'Cumulative net cash position over ' + CASH_HORIZON + ' months. ' +
+      'Falls to ' + fmtMoney(curve.trough, cur) + ' at month ' + curve.troughMonth + '. ' +
+      (curve.payback === 'none' ? 'Never goes negative — nothing was spent up front. '
+        : curve.payback ? 'Crosses zero in month ' + curve.payback + '. '
+        : 'Does not cross zero within ' + CASH_HORIZON + ' months. ') +
+      'Ends at ' + fmtMoney(curve.end, cur) + '.'
+  });
+
+  /* the months the money is going out */
+  svg.appendChild(sn('rect', {
+    class: 'g-shade', x: L, y: T, width: x(curve.ramp) - L, height: B - T
+  }));
+  svg.appendChild(sn('text', {
+    class: 'g-shade-label', x: L + 8, y: T + 14, text: 'building'
+  }));
+
+  /* grid + axis */
+  var grid = sn('g', { class: 'g-grid' });
+  var axis = sn('g', { class: 'g-axis' });
+  for (var gv = lo; gv <= hi + step / 2; gv += step) {
+    grid.appendChild(sn('line', { x1: L, y1: y(gv), x2: R, y2: y(gv) }));
+    axis.appendChild(sn('text', {
+      x: L - 8, y: y(gv) + 4, 'text-anchor': 'end', text: fmtMoney(gv, cur)
+    }));
+  }
+  svg.appendChild(grid);
+  svg.appendChild(sn('line', { class: 'g-zero', x1: L, y1: y(0), x2: R, y2: y(0) }));
+
+  [0, 6, 12, 18, 24].forEach(function (m) {
+    axis.appendChild(sn('text', { x: x(m), y: B + 18, 'text-anchor': 'middle', text: 'M' + m }));
+  });
+  svg.appendChild(axis);
+
+  /* the curve, with a soft fill back to the zero line */
+  var d = curve.points.map(function (p, i) {
+    return (i ? 'L' : 'M') + x(p.m).toFixed(2) + ',' + y(p.v).toFixed(2);
+  }).join(' ');
+  svg.appendChild(sn('path', {
+    class: 'g-area',
+    d: d + ' L' + x(CASH_HORIZON).toFixed(2) + ',' + y(0).toFixed(2) +
+       ' L' + x(0).toFixed(2) + ',' + y(0).toFixed(2) + ' Z'
+  }));
+  svg.appendChild(sn('path', { class: 'g-line', d: d }));
+
+  /* the three moments worth naming */
+  function mark(m, v, label, anchor, dy) {
+    svg.appendChild(sn('circle', { class: 'g-dot', cx: x(m), cy: y(v), r: 4.5 }));
+    svg.appendChild(sn('text', {
+      class: 'g-note', x: x(m) + (anchor === 'end' ? -8 : 8), y: y(v) + dy,
+      'text-anchor': anchor, text: label
+    }));
+  }
+  if (curve.trough < 0) {
+    /* Above the vertex, not below it: the V is open upwards and the space
+       under the trough belongs to the month axis. */
+    mark(curve.troughMonth, curve.trough,
+         fmtMoney(curve.trough, cur) + ' — most you are ever out',
+         curve.troughMonth > CASH_HORIZON * 0.6 ? 'end' : 'start', -12);
+  }
+  if (curve.payback && curve.payback !== 'none') {
+    mark(curve.payback, 0, 'paid for itself · M' + curve.payback, 'end', -10);
+  }
+  mark(CASH_HORIZON, curve.end, fmtMoney(curve.end, cur), 'end', -10);
+
+  /* hover readout, no script needed */
+  var hits = sn('g', {});
+  curve.points.forEach(function (p) {
+    var cell = sn('rect', {
+      x: x(p.m) - (R - L) / CASH_HORIZON / 2, y: T,
+      width: (R - L) / CASH_HORIZON, height: B - T,
+      fill: 'transparent'
+    });
+    cell.appendChild(sn('title', {
+      text: 'Month ' + p.m + ': ' + fmtMoney(p.v, cur) +
+            (p.m <= curve.ramp ? ' — still building' : '')
+    }));
+    hits.appendChild(cell);
+  });
+  svg.appendChild(hits);
+
+  var caption;
+  if (curve.payback === 'none') {
+    caption = offer.monthlySaving > 0
+      ? 'There is nothing to pay back — no build was costed. The saving starts in month ' +
+        (curve.ramp + 1) + ' and runs at ' + fmtMoney(offer.monthlySaving, cur) + ' a month.'
+      : 'Nothing to pay back, and nothing saved yet either on these numbers.';
+  } else if (curve.payback) {
+    caption = 'The whole move pays for itself in month ' + curve.payback + '. After that it is ' +
+      fmtMoney(offer.monthlySaving, cur) + ' a month you keep.';
+  } else {
+    caption = 'On these numbers it does not pay for itself inside ' + CASH_HORIZON +
+      ' months. Worth saying out loud before anything moves.';
+  }
+
+  return node('figure', { class: 'figure' }, [
+    node('figcaption', {}, [
+      node('div', { class: 'figure__title', text: 'What it looks like in cash, month by month' }),
+      node('div', { class: 'figure__sub', text: caption })
     ]),
-    node('div', { class: 'stat' }, [
-      node('div', { class: 'stat__k', text: 'Could stop paying' }),
-      node('div', { class: 'stat__v', text: fmtMoney(offer.monthlySaving, offer.currency) }),
-      node('div', { class: 'stat__s', text: offer.retire.length + ' tools fully covered' })
-    ]),
-    node('div', { class: 'stat' }, [
-      node('div', { class: 'stat__k', text: 'Over a year' }),
-      node('div', { class: 'stat__v', text: fmtMoney(offer.annualSaving, offer.currency) }),
-      node('div', { class: 'stat__s', text: 'before the build cost below' })
-    ]),
-    node('div', { class: 'stat' }, [
-      node('div', { class: 'stat__k', text: 'Jobs done twice' }),
-      node('div', { class: 'stat__v', text: String(offer.duplicates) }),
-      node('div', { class: 'stat__s', text: 'paid for in more than one tool' })
-    ])
+    svg
   ]);
-  wrap.appendChild(kpis);
+}
+
+/* Renders the report body. The console preview and the client's page both call
+   this, so "what I am about to send" and "what they get" cannot drift. */
+function renderOffer(offer) {
+  var cur = offer.currency;
+  var wrap = node('div', { class: 'offer' });
 
   function section(title, lead) {
     var s = node('div', { class: 'section' }, [node('h2', { text: title })]);
     if (lead) s.appendChild(node('p', { text: lead }));
     wrap.appendChild(s);
-    return s;
+  }
+  function table(headers, rows, cls) {
+    var thead = node('thead', {}, [node('tr', {}, headers.map(function (h) {
+      return node('th', { scope: 'col', class: h.num ? 'num' : '', text: h.label || h });
+    }))]);
+    var t = node('table', { class: cls || '' }, [thead, node('tbody', {}, rows)]);
+    return node('div', { class: 'tablewrap' }, [node('div', { class: 'tablescroll' }, [t])]);
   }
 
-  section('What you could stop paying for',
-    'Every job these tools carry is already covered by the platform, natively or by setting it up.');
-  if (offer.retire.length) {
-    var list = node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
-      offer.retire.map(function (t) {
-        return node('li', {}, [
-          node('span', { class: 'offer__name', text: t.name }),
-          node('span', { class: 'muted small', text: t.monthly ? fmtMoney(t.monthly, offer.currency) + '/mo' : 'cost not given' })
-        ]);
-      })
-    )]);
-    wrap.appendChild(list);
-  } else {
-    wrap.appendChild(node('div', { class: 'empty', text: 'Nothing here yet — every tool still carries at least one job we would not take over.' }));
+  /* ── the finding, in a sentence ── */
+  var headline = offer.headline || (offer.retire.length
+    ? offer.retire.length + ' of your ' + (offer.retire.length + offer.stays.length) +
+      ' tools can be switched off.'
+    : 'Every tool in your stack earns its place — for now.');
+  wrap.appendChild(node('h2', { class: 'offer__headline', text: headline }));
+
+  var summary = 'You pay ' + fmtMoney(offer.monthlyNow, cur) + ' a month across ' +
+    (offer.retire.length + offer.stays.length) + ' tools. Of the ' + offer.caps.length +
+    ' things you actually do in them, ' + offer.covered +
+    (offer.covered === 1 ? ' is' : ' are') + ' covered by Open Mercato' +
+    (offer.retire.length ? ' — ' + offer.retire.length +
+      (offer.retire.length === 1 ? ' tool is' : ' tools are') + ' covered end to end' : '') + '. ' +
+    (offer.buildRows.length ? offer.buildRows.length +
+      (offer.buildRows.length === 1 ? ' thing genuinely needs' : ' things genuinely need') + ' building. ' : '') +
+    (offer.stays.length ? offer.stays.length +
+      (offer.stays.length === 1 ? ' tool stays' : ' tools stay') + ' where it is, on purpose.' : '');
+  wrap.appendChild(node('p', { class: 'offer__lede', text: summary }));
+
+  var meta = node('div', { class: 'offer__meta' });
+  [offer.generatedAt, offer.industry, offer.people ? offer.people + ' people' : '',
+   offer.seats ? offer.seats + ' seats' : '',
+   offer.analyst ? 'reviewed by ' + offer.analyst : 'not yet reviewed']
+    .filter(Boolean).forEach(function (x) { meta.appendChild(node('span', { text: x })); });
+  wrap.appendChild(meta);
+
+  /* ── the four numbers ── */
+  function kpi(k, v, s, cls) {
+    return node('div', { class: 'stat ' + (cls || '') }, [
+      node('div', { class: 'stat__k', text: k }),
+      node('div', { class: 'stat__v', text: v }),
+      node('div', { class: 'stat__s', text: s })
+    ]);
+  }
+  wrap.appendChild(node('div', { class: 'grid grid--4', style: 'margin:20px 0 8px' }, [
+    kpi('Licences today', fmtMoney(offer.monthlyNow, cur),
+        'per month · ' + (offer.retire.length + offer.stays.length) + ' tools'),
+    kpi('Licences after', fmtMoney(offer.monthlyAfter, cur),
+        offer.hosting ? 'per month · incl. ' + fmtMoney(offer.hosting, cur) + ' hosting'
+                      : 'per month · hosting not costed'),
+    kpi('Net saving', fmtMoney(offer.annualSaving, cur),
+        'per year · ' + offer.retire.length + (offer.retire.length === 1 ? ' tool' : ' tools') + ' switched off',
+        'stat--accent'),
+    kpi(offer.oneOff ? 'One-off build' : 'Build effort',
+        offer.oneOff ? fmtMoney(offer.oneOff, cur) : (offer.hours ? offer.hours + ' h' : 'not estimated'),
+        offer.breakEven ? offer.hours + ' h · break-even month ' + offer.breakEven
+          : (offer.hours ? offer.hours + ' h · rate not entered'
+             : (offer.buildRows.length ? offer.buildRows.length + ' items still to estimate' : 'nothing to build')))
+  ]));
+
+  /* ── the picture: every job, by verdict ── */
+  var decided = offer.caps.length;
+  if (decided) {
+    var bar = node('div', { class: 'vbar' });
+    var legend = node('div', { class: 'vlegend' });
+    ['native', 'configure', 'integrate', 'keep', 'build'].forEach(function (k) {
+      var n = offer.counts[k] || 0;
+      if (!n) return;
+      bar.appendChild(node('span', {
+        class: 'vbar__seg vbar__seg--' + k,
+        style: 'width:' + (n / decided * 100) + '%',
+        title: n + ' ' + STATUS_META[k].label
+      }));
+      legend.appendChild(node('span', { class: 'vlegend__item' }, [
+        node('i', { class: 'vbar__seg--' + k }),
+        node('span', { text: n + ' ' + STATUS_META[k].label + ' — ' + STATUS_META[k].hint })
+      ]));
+    });
+    wrap.appendChild(node('div', { style: 'margin:18px 0 4px' }, [bar, legend]));
   }
 
-  section('What stays where it is',
-    'These keep earning their licence: something they do is out of scope, stays external, or has to be built first.');
-  var staysCard = node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
-    offer.stays.map(function (t) {
-      var why = t.reasons.slice(0, 3).map(function (r) { return r.label; }).join(', ');
-      return node('li', {}, [
-        node('span', {}, [
-          node('span', { class: 'offer__name', text: t.name }),
-          node('span', { class: 'sub', text: why ? 'because of: ' + why : 'partly covered' })
+  /* ── tool by tool ── */
+  section('Tool by tool',
+    'One verdict per job, with the confidence behind it. A tool appears more than once when it does more than one job.');
+  var rows = [];
+  offer.retire.concat(offer.stays).forEach(function (t) {
+    var going = offer.retire.indexOf(t) !== -1;
+    t.rows.forEach(function (r, i) {
+      var mod = moduleById(r.module);
+      var meta2 = STATUS_META[r.status];
+      rows.push(node('tr', {}, [
+        node('td', {}, [
+          node('div', { text: i === 0 ? t.name : '' }),
+          node('div', { class: 'sub', text: r.label })
         ]),
-        node('span', { class: 'muted small', text: t.monthly ? fmtMoney(t.monthly, offer.currency) + '/mo' : '' })
-      ]);
-    })
-  )]);
-  wrap.appendChild(offer.stays.length ? staysCard : node('div', { class: 'empty', text: 'Nothing stays — the whole stack maps in.' }));
-
-  section('Where each job lands',
-    'One row per module of the platform, and the jobs it takes over from you.');
-  var modWrap = node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
-    offer.modules.map(function (m) {
-      var meta = STATUS_META[m.status];
-      return node('li', {}, [
-        node('span', {}, [
-          node('span', { class: 'offer__name', text: m.module.label }),
-          node('span', { class: 'sub', text: m.caps.map(function (c) { return c.label; }).join(', ') })
+        node('td', {}, [
+          node('div', { text: r.tools.join(', ') }),
+          r.note ? node('div', { class: 'sub', text: r.note }) : document.createTextNode('')
         ]),
-        node('span', { class: 'badge ' + meta.badge, text: meta.label })
-      ]);
-    })
-  )]);
-  wrap.appendChild(modWrap);
+        node('td', { text: mod.label }),
+        node('td', {}, [node('span', { class: 'badge ' + meta2.badge, text: meta2.label })]),
+        node('td', {}, [node('span', { class: 'sub', style: 'margin:0', text: r.conf })]),
+        node('td', { class: 'num' }, [
+          node('div', { text: i === 0 ? (t.monthly ? fmtMoney(t.monthly, cur) + '/mo' : '—') : '' }),
+          i === 0 && going ? node('div', { class: 'sub', text: 'switched off' }) : document.createTextNode('')
+        ])
+      ]));
+    });
+  });
+  wrap.appendChild(table(
+    ['Tool · job', 'Paid for in', 'Open Mercato', 'Verdict', { label: 'Confidence' }, { label: 'Monthly', num: true }],
+    rows));
 
-  if (offer.build.length) {
-    section('What we would have to build',
-      'Nothing in the platform covers these today. They are the honest cost of the move.');
-    wrap.appendChild(node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
-      offer.build.map(function (c) {
-        return node('li', {}, [
-          node('span', {}, [
-            node('span', { class: 'offer__name', text: c.label }),
-            node('span', { class: 'sub', text: 'you have it in: ' + c.tools.join(', ') })
-          ]),
-          node('span', { class: 'badge badge--warning', text: 'build' })
+  /* ── the duplicates ── */
+  if (offer.duplicates.length) {
+    section('You pay twice for these',
+      'Same job, more than one invoice. This is where consolidation pays before a line of code is written.');
+    wrap.appendChild(table(
+      ['Job', 'Covered by', { label: 'Tools', num: true }],
+      offer.duplicates.map(function (c) {
+        return node('tr', {}, [
+          node('td', {}, [node('strong', { text: c.label })]),
+          node('td', { text: c.tools.join(', ') }),
+          node('td', { class: 'num', text: String(c.tools.length) })
         ]);
-      })
-    )]));
+      })));
   }
+
+  /* ── the honest cost ── */
+  section('What genuinely has to be built', offer.buildRows.length
+    ? 'Everything else is configuration. These are the hours in the quote.'
+    : 'Nothing here needs new code. Everything you use is configuration.');
+  if (offer.buildRows.length) {
+    var brows = offer.buildRows.map(function (c) {
+      return node('tr', {}, [
+        node('td', {}, [
+          node('div', { text: c.label }),
+          c.note ? node('div', { class: 'sub', text: c.note }) : document.createTextNode('')
+        ]),
+        node('td', { text: c.tools.join(', ') }),
+        node('td', { text: c.conf }),
+        node('td', { class: 'num', text: c.hours === null ? 'to estimate' : c.hours + ' h' }),
+        node('td', { class: 'num', text: c.hours !== null && offer.rate ? fmtMoney(c.hours * offer.rate, cur) : '—' })
+      ]);
+    });
+    brows.push(node('tr', { class: 'tot' }, [
+      node('td', { text: 'Total' }), node('td', {}), node('td', {}),
+      node('td', { class: 'num', text: offer.hours + ' h' }),
+      node('td', { class: 'num', text: offer.rate ? fmtMoney(offer.oneOff, cur) : '—' })
+    ]));
+    wrap.appendChild(table(
+      ['What', 'Replaces', 'Confidence', { label: 'Hours', num: true }, { label: 'Cost', num: true }],
+      brows, 'lines'));
+    if (offer.unestimated) {
+      wrap.appendChild(node('p', { class: 'small muted', style: 'margin-top:8px',
+        text: offer.unestimated + (offer.unestimated === 1 ? ' item has' : ' items have') +
+              ' no estimate yet, so the total above is a floor, not a quote.' }));
+    }
+  }
+
+  /* ── the arithmetic, line by line ── */
+  section('What it costs, what it returns',
+    'Computed from the numbers you gave us. Every line can be recomputed by hand in the room.');
+  var lines = [];
+  function line(k, basis, val, cls) {
+    lines.push(node('tr', { class: cls || '' }, [
+      node('td', { text: k }),
+      node('td', {}, [node('span', { class: 'sub', style: 'margin:0', text: basis })]),
+      node('td', { class: 'num', text: val })
+    ]));
+  }
+  line('Licences today', (offer.retire.length + offer.stays.length) + ' tools as invoiced',
+       fmtMoney(offer.monthlyNow, cur) + '/mo');
+  line('Switched off', offer.retire.map(function (t) { return t.name; }).join(', ') || 'none',
+       fmtMoney(-offer.monthlyRetire, cur) + '/mo');
+  line('Licences retained', offer.stays.map(function (t) { return t.name; }).join(', ') || 'none',
+       fmtMoney(offer.retained, cur) + '/mo');
+  line('Hosting & ops', offer.hosting ? 'estimate from us' : 'not entered',
+       fmtMoney(offer.hosting, cur) + '/mo');
+  line('Monthly after', 'retained + hosting', fmtMoney(offer.monthlyAfter, cur) + '/mo');
+  line('Monthly saving', 'today − after', fmtMoney(offer.monthlySaving, cur) + '/mo');
+  line('Annual saving', 'monthly saving × 12', fmtMoney(offer.annualSaving, cur) + '/yr', 'tot');
+  if (offer.rate) {
+    line('One-off build', offer.hours + ' h × ' + fmtMoney(offer.rate, cur) + '/h', fmtMoney(offer.oneOff, cur));
+    line('Break-even', offer.breakEven ? 'one-off ÷ monthly saving' : 'no saving to pay it back',
+         offer.breakEven ? 'month ' + offer.breakEven : '—', 'tot');
+  }
+  wrap.appendChild(table(['Line', 'Basis', { label: 'Amount', num: true }], lines, 'lines'));
+
+  var chart = renderCashChart(offer);
+  if (chart) wrap.appendChild(chart);
+
+  /* ── what they told us ── */
+  if (offer.pains || offer.mustKeep) {
+    section('In your own words');
+    var c = node('div', { class: 'card' });
+    if (offer.pains) {
+      c.appendChild(node('h3', { text: 'What hurts today' }));
+      c.appendChild(node('p', { class: 'offer__quote', text: offer.pains }));
+    }
+    if (offer.mustKeep) {
+      c.appendChild(node('h3', { text: 'What must not be touched', style: 'margin-top:12px' }));
+      c.appendChild(node('p', { class: 'offer__quote', text: offer.mustKeep }));
+    }
+    wrap.appendChild(c);
+  }
+
+  /* ── where we are unsure ── */
+  section('What we are not sure about',
+    'Confidence is a band, not a decimal. Anything marked low is a conversation, not a commitment.');
+  var ul = node('ul', { class: 'offer__unsure' });
+  (offer.openQuestions || '').split('\n').filter(Boolean).forEach(function (n) {
+    ul.appendChild(node('li', { text: n }));
+  });
+  offer.lowConfidence.forEach(function (c) {
+    ul.appendChild(node('li', { text: c.label + ' — low confidence' + (c.note ? ': ' + c.note : '') }));
+  });
+  if (offer.unestimated) {
+    ul.appendChild(node('li', { text: offer.unestimated + ' of the items to build have no hour estimate yet.' }));
+  }
+  if (!ul.childNodes.length) ul.appendChild(node('li', { text: 'No open questions recorded.' }));
+  wrap.appendChild(node('div', { class: 'card' }, [ul]));
+
+  /* ── the one thing to do next ── */
+  var first = offer.retire.slice().sort(function (a, b) { return b.monthly - a.monthly; })[0];
+  section('The first piece worth cutting');
+  wrap.appendChild(node('div', { class: 'card' }, [
+    node('p', { class: 'offer__quote', text: first
+      ? first.name + ' — ' + (first.monthly
+          ? fmtMoney(first.monthly, cur) + ' a month, ' + fmtMoney(first.monthly * 12, cur) + ' a year'
+          : 'no cost on file') +
+        '. Everything it does is already covered. We never propose replacing a stack; we name one piece, then the next.'
+      : 'Nothing is cancellable on the current verdicts — worth talking through before anything moves.' })
+  ]));
 
   if (offer.notes) {
     section('From the consultant who read this');
@@ -734,8 +1166,8 @@ function mountConsoleShell(opts) {
 function mountPortalShell(opts) {
   opts = opts || {};
   var user = currentUser('client');
-  /* One link, and only once she has something to come back to. An empty
-     "My requests" would be a dead end on her very first visit. */
+  /* One link, and only once there is something to come back to. An empty
+     "My requests" would be a dead end on a first visit. */
   var nav = readClientRefs().length
     ? '<a class="portal__link' + (opts.active === 'requests' ? ' is-on' : '') +
       '" href="requests.html">My requests</a>'
