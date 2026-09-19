@@ -1,30 +1,59 @@
-/* Mercatify — mocked Open Mercato app: shared shell, mock data and helpers.
-   Classic script, loaded by login.html, intake.html, requests.html and
-   modules.html. Nothing is sent anywhere; the "server" is localStorage. */
+/* Mercatify — mocked Open Mercato surfaces: shared data, helpers and shells.
+   Classic script, loaded by both apps in assets/:
 
-/* ─────────────── fake session ─────────────── */
-var SESSION_KEY = 'mercatify.session.v1';
+     client/   what Ola sees — her own request form, and nothing else
+     console/  what Mercatify sees — every request that came in, and the mapping
+
+   They are separate products sharing one design system and one capability
+   vocabulary, exactly as the portal and the backend do in Open Mercato.
+   Nothing is sent anywhere; the "server" is localStorage. */
+
+/* ─────────────── fake sessions ───────────────
+   One key per app. A client signing in must never look like staff to the
+   console, so the two sessions cannot share storage. */
+var SESSION_KEYS = {
+  client: 'mercatify.session.client.v1',
+  console: 'mercatify.session.console.v1'
+};
 var REQUESTS_KEY = 'mercatify.requests.v1';
+/* The one request this browser's client sent. The client app reads only this
+   ref — it can never list the queue, which is what keeps the two apps apart. */
+var CLIENT_REF_KEY = 'mercatify.client.ref.v1';
 
 var DEMO_TENANT = { id: 'voltix', name: 'Voltix Energy' };
-var DEMO_ORG = 'Voltix Energy — HQ';
+var CONSOLE_ORG = 'Mercatify — consulting';
 
-function readSession() {
-  try { var raw = localStorage.getItem(SESSION_KEY); return raw ? JSON.parse(raw) : null; }
+function readSession(app) {
+  try { var raw = localStorage.getItem(SESSION_KEYS[app]); return raw ? JSON.parse(raw) : null; }
   catch (e) { return null; }
 }
-function writeSession(s) {
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+function writeSession(app, s) {
+  try { localStorage.setItem(SESSION_KEYS[app], JSON.stringify(s)); } catch (e) {}
 }
-function clearSession() {
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+function clearSession(app) {
+  try { localStorage.removeItem(SESSION_KEYS[app]); } catch (e) {}
 }
-/* Pages behind the login read the session, but a missing one never blocks the
-   demo — a reviewer opening modules.html straight from disk still sees a full
-   screen rather than a redirect loop. */
-function currentUser() {
-  var s = readSession();
-  return s && s.email ? s : { email: 'ops@mercatify.io', name: 'Mercatify ops', role: 'Consultant' };
+var FALLBACK_USER = {
+  client: { email: 'ola@voltix.example', name: 'Ola', role: 'Client' },
+  console: { email: 'ops@mercatify.io', name: 'Mercatify ops', role: 'Consultant' }
+};
+/* Pages behind a login read the session, but a missing one never blocks the
+   demo — a reviewer opening a page straight from disk still sees a full screen
+   rather than a redirect loop. */
+function currentUser(app) {
+  var s = readSession(app);
+  return s && s.email ? s : FALLBACK_USER[app];
+}
+
+/* ─────────────── the client's own request ─────────────── */
+function readClientRef() {
+  try { return localStorage.getItem(CLIENT_REF_KEY); } catch (e) { return null; }
+}
+function writeClientRef(ref) {
+  try { localStorage.setItem(CLIENT_REF_KEY, ref); } catch (e) {}
+}
+function clearClientRef() {
+  try { localStorage.removeItem(CLIENT_REF_KEY); } catch (e) {}
 }
 function initials(name) {
   return (name || '?').split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
@@ -213,10 +242,16 @@ function saveRequest(req) {
   try { localStorage.setItem(REQUESTS_KEY, JSON.stringify(stored)); } catch (e) {}
   return req;
 }
-function requestByRef(ref) {
+/* Strict lookup: null when the ref is unknown. The client app must use this
+   one — a fallback there would show it somebody else's request. */
+function findRequest(ref) {
   var all = loadRequests();
   for (var i = 0; i < all.length; i++) if (all[i].ref === ref) return all[i];
-  return all[0] || null;
+  return null;
+}
+/* Console convenience: an unknown ref in the URL falls back to the newest. */
+function requestByRef(ref) {
+  return findRequest(ref) || loadRequests()[0] || null;
 }
 function nextRef() {
   var all = loadRequests();
@@ -295,15 +330,15 @@ function fmtMoney(n, currency) {
   return currency === 'PLN' ? v + ' ' + sym : sym + v;
 }
 
-/* ─────────────── shell ─────────────── */
-var NAV = [
+/* ─────────────── shells ───────────────
+   Two shells, because they are two products. The console gets the full staff
+   sidebar; the client gets a portal bar and no navigation into anyone else's
+   data. Nothing in the client shell can reach the queue. */
+var CONSOLE_NAV = [
   { group: 'Workspace', items: [
     { id: 'dashboard', label: 'Dashboard', href: '#', icon: 'grid' },
     { id: 'requests', label: 'Stack requests', href: 'requests.html', icon: 'inbox', badgeFrom: 'new' },
     { id: 'modules', label: 'Module coverage', href: 'modules.html', icon: 'layers' }
-  ]},
-  { group: 'Client', items: [
-    { id: 'intake', label: 'Stack intake', href: 'intake.html', icon: 'form' }
   ]},
   { group: 'Sales', items: [
     { id: 'customers', label: 'Customers', href: '#', icon: 'users' },
@@ -336,15 +371,16 @@ function icon(name) {
     (ICONS[name] || '') + '</svg>';
 }
 
-/* Renders sidebar + topbar into <div id="shell"> and returns the content node.
-   Pages keep their own markup inside <main class="content">. */
-function mountShell(opts) {
+/* ── Mercatify console: staff sidebar + breadcrumbs ──
+   Renders into <div id="shell"> and returns the content node. Pages keep their
+   own markup inside <main class="content">. */
+function mountConsoleShell(opts) {
   var active = opts.active;
   var crumbs = opts.crumbs || [];
-  var user = currentUser();
+  var user = currentUser('console');
   var newCount = loadRequests().filter(function (r) { return r.status === 'new'; }).length;
 
-  var nav = NAV.map(function (g) {
+  var nav = CONSOLE_NAV.map(function (g) {
     var items = g.items.map(function (it) {
       var badge = it.badgeFrom === 'new' && newCount
         ? '<span class="navitem__badge">' + newCount + '</span>' : '';
@@ -370,7 +406,7 @@ function mountShell(opts) {
       '<div class="sidebar__head">' +
         '<span class="om-mark" aria-hidden="true">M</span>' +
         '<span><span class="sidebar__name">Mercatify</span>' +
-        '<span class="sidebar__tenant">' + DEMO_TENANT.name + '</span></span>' +
+        '<span class="sidebar__tenant">Consulting console</span></span>' +
       '</div>' +
       '<nav class="sidebar__nav" aria-label="Main">' + nav + '</nav>' +
       '<div class="sidebar__foot"><div class="userchip">' +
@@ -384,32 +420,43 @@ function mountShell(opts) {
     '<div class="main">' +
       '<header class="topbar"><nav class="crumbs" aria-label="Breadcrumb">' + trail + '</nav>' +
         '<div class="topbar__right">' +
-          '<span class="badge badge--outline">' + DEMO_ORG + '</span>' +
+          '<span class="badge badge--outline">' + CONSOLE_ORG + '</span>' +
           '<button class="btn btn--ghost btn--sm" type="button" id="om-theme">Theme</button>' +
         '</div>' +
       '</header>' +
       '<main class="content" id="content"></main>' +
     '</div>';
 
-  document.getElementById('om-signout').addEventListener('click', function () { clearSession(); });
+  document.getElementById('om-signout').addEventListener('click', function () { clearSession('console'); });
   initOmTheme('om-theme');
   return document.getElementById('content');
 }
 
-/* The sidebar count is rendered once at mount; a send during the same visit
-   has to push the new number in, or the demo contradicts itself. */
-function refreshRequestBadge() {
-  var link = document.querySelector('.navitem[href="requests.html"]');
-  if (!link) return;
-  var count = loadRequests().filter(function (r) { return r.status === 'new'; }).length;
-  var badge = link.querySelector('.navitem__badge');
-  if (!count) { if (badge) badge.remove(); return; }
-  if (!badge) {
-    badge = document.createElement('span');
-    badge.className = 'navitem__badge';
-    link.appendChild(badge);
-  }
-  badge.textContent = count;
+/* ── Client portal: one bar, no navigation, no queue ──
+   Deliberately not a sidebar. Ola has exactly one thing to do here, and the
+   shell should not imply there is a workspace behind it. */
+function mountPortalShell(opts) {
+  var user = currentUser('client');
+  var shell = document.getElementById('shell');
+  shell.className = 'portal';
+  shell.innerHTML =
+    '<header class="portal__bar">' +
+      '<div class="portal__inner">' +
+        '<span class="om-mark" aria-hidden="true">M</span>' +
+        '<span><span class="sidebar__name">Mercatify</span>' +
+        '<span class="sidebar__tenant">' + DEMO_TENANT.name + '</span></span>' +
+        '<div class="portal__right">' +
+          '<span class="small muted">Signed in as ' + user.name + '</span>' +
+          '<button class="btn btn--ghost btn--sm" type="button" id="om-theme">Theme</button>' +
+          '<a class="btn btn--outline btn--sm" href="login.html" id="om-signout">Sign out</a>' +
+        '</div>' +
+      '</div>' +
+    '</header>' +
+    '<main class="portal__content" id="content"></main>';
+
+  document.getElementById('om-signout').addEventListener('click', function () { clearSession('client'); });
+  initOmTheme('om-theme');
+  return document.getElementById('content');
 }
 
 function initOmTheme(btnId) {

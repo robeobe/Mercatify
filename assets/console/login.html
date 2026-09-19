@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in — Mercatify on Open Mercato</title>
+<title>Console sign in — Mercatify</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
-<link rel="stylesheet" href="om.css">
+<link rel="stylesheet" href="../shared/om.css">
 </head>
 <body>
 
@@ -14,22 +14,15 @@
   <div class="auth__card">
     <div class="auth__head">
       <span class="om-mark om-mark--lg" aria-hidden="true">M</span>
-      <h1>Mercatify</h1>
-      <p class="auth__sub">Access your workspace</p>
+      <h1>Mercatify console</h1>
+      <p class="auth__sub">Staff access — consulting workspace</p>
     </div>
     <div class="auth__body">
       <form id="login" novalidate>
-        <div class="alert alert--success" id="tenant-banner">
-          <div>
-            <strong>You're logging in to Voltix Energy.</strong>
-            <span class="small">Tenant resolved from your invite link.</span>
-          </div>
-        </div>
-
         <div>
           <label for="email">Email</label>
           <input type="email" id="email" name="email" autocomplete="username"
-                 value="ola@voltix.example" required>
+                 value="ops@mercatify.io" required>
         </div>
 
         <div>
@@ -44,23 +37,21 @@
         </label>
 
         <div class="alert" id="error" role="alert" hidden>
-          <div id="error-text">Wrong email or password.</div>
+          <div>Enter an email and a password.</div>
         </div>
 
         <button class="btn btn--tall" type="submit" id="submit">Sign in</button>
-
-        <p class="auth__foot"><a href="#">Forgot password?</a></p>
       </form>
 
       <p class="auth__demo">
-        Demo workspace — no account is created and nothing leaves this browser.
-        Any email and password get you in.
+        Separate from the client workspace — a client signing in over there never
+        reaches this console. Demo only: any email and password get you in.
       </p>
     </div>
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="../shared/om-core.js"></script>
 <script>
 (function () {
   initOmTheme();
@@ -74,13 +65,8 @@
     var email = document.getElementById('email').value.trim();
     var pass = document.getElementById('password').value;
 
-    /* The only rejection a mock can honestly make: an empty field. Anything
-       else would fake a credential check the demo cannot perform. */
-    if (!email || !pass) {
-      document.getElementById('error-text').textContent = 'Enter an email and a password.';
-      err.hidden = false;
-      return;
-    }
+    /* The only rejection a mock can honestly make: an empty field. */
+    if (!email || !pass) { err.hidden = false; return; }
     err.hidden = true;
     btn.disabled = true;
     btn.textContent = 'Loading...';
@@ -88,11 +74,8 @@
     var name = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, function (c) {
       return c.toUpperCase();
     });
-    writeSession({ email: email, name: name, role: 'Client' });
-
-    /* A beat of latency so the button state is visible — the real login also
-       takes a moment and the demo should not look like a hyperlink. */
-    setTimeout(function () { window.location.href = 'intake.html'; }, 450);
+    writeSession('console', { email: email, name: name, role: 'Consultant' });
+    setTimeout(function () { window.location.href = 'requests.html'; }, 450);
   });
 })();
 </script>

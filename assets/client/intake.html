@@ -3,18 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stack intake — Mercatify</title>
+<title>Your stack — Mercatify</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
-<link rel="stylesheet" href="om.css">
+<link rel="stylesheet" href="../shared/om.css">
 <style>
-  /* Intake-only pieces. The shell lives in om.css; these are the tool picker
-     widgets that exist on this one screen. */
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 288px; gap: 20px; align-items: start; }
-  .rail { position: sticky; top: 72px; display: grid; gap: 10px; }
-  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } .rail { position: static; } }
+  /* The tool picker exists on this one screen only; the shell is in om.css. */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
+  .rail { position: sticky; top: 76px; display: grid; gap: 10px; }
+  @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } .rail { position: static; } }
 
-  .tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .tool { border: 1px solid var(--border); border-radius: calc(var(--radius) + 2px); background: var(--card); overflow: hidden; }
   .tool.is-on { border-color: var(--foreground); }
   .tool__head {
@@ -33,7 +32,6 @@
   .tool__kind { font-size: 0.75rem; color: var(--muted-foreground); }
   .tool__count { margin-left: auto; font-size: 0.75rem; color: var(--muted-foreground); white-space: nowrap; }
   .tool__body { padding: 0 14px 14px; border-top: 1px solid var(--border); }
-  .tool__body[hidden] { display: none; }
 
   .mods { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 1px; }
   .mods label {
@@ -46,30 +44,28 @@
   .m-desc { display: block; color: var(--muted-foreground); font-size: 0.75rem; }
   .m-dup { margin-left: 6px; vertical-align: 1px; }
   .tool__cost { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+
+  /* submitted view */
+  .sent__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+  .sent__list li { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .sent__list li:last-child { border-bottom: 0; }
+  .sent__tool { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .sent__tool b { font-size: 0.875rem; }
+  .sent__caps { color: var(--muted-foreground); font-size: 0.8125rem; margin-top: 2px; }
 </style>
 </head>
 <body>
 
 <div id="shell"></div>
 
-<template id="tpl">
+<!-- ── the form ───────────────────────────────────────────────── -->
+<template id="tpl-form">
   <div class="pagehead">
     <div class="pagehead__text">
-      <h1>Stack intake</h1>
-      <p>Tick the tools you pay for, then the modules you genuinely use — not the ones that
-         came with the plan. Seats and monthly cost are optional, but without them we can only
-         tell you what moves, not what it saves.</p>
-    </div>
-    <div class="pagehead__actions">
-      <button class="btn btn--outline" type="button" id="save-draft">Save draft</button>
-      <button class="btn" type="button" id="send">Send to Mercatify</button>
-    </div>
-  </div>
-
-  <div class="alert alert--success" id="sent" hidden style="margin-bottom:16px">
-    <div>
-      <strong id="sent-title">Sent.</strong>
-      <span id="sent-body"></span>
+      <h1>Which tools do you pay for?</h1>
+      <p>Tick the tools you have, then the modules you genuinely use — not the ones that came
+         with the plan. Seats and monthly cost are optional, but without them we can only tell
+         you what moves, not what it saves. It takes about four minutes.</p>
     </div>
   </div>
 
@@ -144,13 +140,13 @@
 
       <div class="card" style="margin-top:16px">
         <div class="card__head">
-          <h2>Send it</h2>
-          <p>Nothing is sent anywhere until you press the button — the brief only exists in this browser.</p>
+          <h2>Send it to Mercatify</h2>
+          <p>Nothing is sent until you press the button — until then the answers only exist
+             in this browser.</p>
         </div>
         <div class="row">
-          <button class="btn" type="button" id="send-2">Send to Mercatify</button>
-          <button class="btn btn--outline" type="button" id="copy-json">Copy brief as JSON</button>
-          <a class="btn btn--ghost" href="requests.html" id="to-queue">See it land in the queue →</a>
+          <button class="btn" type="button" id="send">Send my stack</button>
+          <button class="btn btn--outline" type="button" id="save-draft">Save draft</button>
         </div>
       </div>
     </div>
@@ -164,7 +160,7 @@
       <div class="stat">
         <div class="stat__k">Modules in use</div>
         <div class="stat__v" id="s-mods">0</div>
-        <div class="stat__s">one row each in the mapping</div>
+        <div class="stat__s">what we will look at</div>
       </div>
       <div class="stat">
         <div class="stat__k">Licences today</div>
@@ -180,15 +176,106 @@
   </div>
 </template>
 
+<!-- ── what she sees after sending ─────────────────────────────── -->
+<template id="tpl-sent">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Your request is with us</h1>
+      <p>This is what you sent. A consultant reads it and comes back with the map and a
+         savings figure — you keep both whether or not you go ahead with us.</p>
+    </div>
+  </div>
+
+  <div class="alert alert--success" style="margin-bottom:16px">
+    <div>
+      <strong>Received as <span id="r-ref" class="mono"></span>.</strong>
+      <span id="r-when"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <h2 id="r-company">—</h2>
+      <span class="badge badge--info">in review</span>
+      <p id="r-meta" style="margin-left:auto"></p>
+    </div>
+    <ul class="sent__list" id="r-tools"></ul>
+  </div>
+
+  <div class="card">
+    <div class="grid grid--2">
+      <div>
+        <div class="small muted" style="margin-bottom:4px">What hurts today</div>
+        <p id="r-pains" class="small">—</p>
+      </div>
+      <div>
+        <div class="small muted" style="margin-bottom:4px">Must not be touched</div>
+        <p id="r-keep" class="small">—</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <h2>Something to change?</h2>
+      <p>Send a corrected list and we will use the newer one.</p>
+    </div>
+    <button class="btn btn--outline" type="button" id="again">Start a new request</button>
+  </div>
+</template>
+
 <script src="../stack-tool/catalog.js"></script>
-<script src="app.js"></script>
+<script src="../shared/om-core.js"></script>
 <script>
 (function () {
-  var content = mountShell({
-    active: 'intake',
-    crumbs: [{ label: 'Mercatify', href: 'requests.html' }, { label: 'Stack intake' }]
-  });
-  content.appendChild(document.getElementById('tpl').content.cloneNode(true));
+  var content = mountPortalShell({});
+
+  /* She only ever sees her own ref — the queue is not reachable from here. */
+  var myRef = readClientRef();
+  var mine = myRef ? findRequest(myRef) : null;
+  if (mine) { showSent(mine); return; }
+  showForm();
+
+  /* ─────────────── submitted view ─────────────── */
+  function showSent(req) {
+    content.innerHTML = '';
+    content.appendChild(document.getElementById('tpl-sent').content.cloneNode(true));
+
+    document.getElementById('r-ref').textContent = req.ref;
+    document.getElementById('r-when').textContent = 'Sent on ' + req.received + '. We usually come back within two working days.';
+    document.getElementById('r-company').textContent = req.company;
+    document.getElementById('r-meta').textContent =
+      (req.industry || '') + (req.people ? ' · ' + req.people + ' people' : '') +
+      ' · ' + money(requestMonthly(req), req.currency) + '/mo on licences';
+    document.getElementById('r-pains').textContent = req.pains || 'Not stated.';
+    document.getElementById('r-keep').textContent = req.mustKeep || 'Not stated.';
+
+    var list = document.getElementById('r-tools');
+    (req.tools || []).forEach(function (t) {
+      var bits = [];
+      if (t.seats) bits.push(t.seats + ' seats');
+      if (t.monthly) bits.push(money(t.monthly, req.currency) + '/mo');
+      list.appendChild(node('li', {}, [
+        node('div', { class: 'sent__tool' }, [
+          node('b', { text: t.name }),
+          node('span', { class: 'small muted', text: bits.join(' · ') })
+        ]),
+        node('div', { class: 'sent__caps', text: (t.caps || []).map(capLabel).join(', ') || '—' })
+      ]));
+    });
+
+    document.getElementById('again').addEventListener('click', function () {
+      /* The sent request stays in Mercatify's queue — clearing only unlinks it
+         from this browser so she can fill the form again. */
+      clearClientRef();
+      window.location.reload();
+    });
+  }
+
+  /* ─────────────── the form ─────────────── */
+  function showForm() {
+  content.innerHTML = '';
+  content.appendChild(document.getElementById('tpl-form').content.cloneNode(true));
 
   var state = {
     meta: { name: '', industry: '', people: '', currency: 'EUR', pains: '', mustKeep: '' },
@@ -283,8 +370,8 @@
   }
 
   function toggleTool(id) {
-    /* Nothing is pre-ticked. A module counts as used only when the client says
-       so — a default here would put numbers in the mapping nobody confirmed. */
+    /* Nothing is pre-ticked. A module counts as used only when she says so — a
+       default here would put numbers in the mapping nobody confirmed. */
     if (state.sel[id]) delete state.sel[id];
     else state.sel[id] = { mods: {}, seats: '', monthly: '' };
     sync(true);
@@ -386,10 +473,9 @@
     saveCase({ v: 1, kind: 'mercatify-case', brief: b });
   }
 
-  /* ---------- sending ----------
-     A request in the queue is the brief flattened to one caps array per tool:
-     that is all the mapping screen needs, and it keeps the stored shape small
-     enough to read by eye in devtools. */
+  /* A request in the queue is the brief flattened to one caps array per tool:
+     that is all the mapping needs, and it keeps the stored shape small enough
+     to read by eye in devtools. */
   function send() {
     var b = brief();
     if (!b.tools.length) {
@@ -414,27 +500,17 @@
       })
     };
     saveRequest(req);
-    refreshRequestBadge();
-
-    var banner = document.getElementById('sent');
-    document.getElementById('sent-title').textContent = 'Sent as ' + req.ref + '.';
-    document.getElementById('sent-body').innerHTML =
-      'It is in the Mercatify queue with ' + req.tools.length + ' tools. ' +
-      '<a href="modules.html?ref=' + encodeURIComponent(req.ref) + '">Open the module coverage →</a>';
-    banner.hidden = false;
-    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    writeClientRef(req.ref);
+    showSent(req);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   document.getElementById('send').addEventListener('click', send);
-  document.getElementById('send-2').addEventListener('click', send);
   document.getElementById('save-draft').addEventListener('click', function () {
     sync(false);
     this.textContent = 'Draft saved';
     var self = this;
     setTimeout(function () { self.textContent = 'Save draft'; }, 1600);
-  });
-  document.getElementById('copy-json').addEventListener('click', function () {
-    copyText(JSON.stringify(brief(), null, 2), this, 'Copied');
   });
 
   /* restore a draft left in this browser */
@@ -466,6 +542,7 @@
 
   renderCustom();
   sync(true);
+  }
 })();
 </script>
 </body>

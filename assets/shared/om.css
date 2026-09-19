@@ -184,6 +184,27 @@ code, .mono, .num { font-family: "Geist Mono", ui-monospace, SFMono-Regular, Con
   .content { padding: 16px; }
 }
 
+/* ─────────────── client portal shell ───────────────
+   The customer-facing surface: one bar, no sidebar, narrower column. It must
+   not look like a workspace, because there is nothing else in it. */
+.portal { min-height: 100svh; display: flex; flex-direction: column; }
+.portal__bar {
+  position: sticky; top: 0; z-index: 10;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.portal__inner {
+  max-width: 980px; margin: 0 auto; padding: 12px 24px;
+  display: flex; align-items: center; gap: 10px;
+}
+.portal__right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.portal__content { flex: 1; width: 100%; max-width: 980px; margin: 0 auto; padding: 28px 24px 64px; }
+@media (max-width: 700px) {
+  .portal__inner, .portal__content { padding-left: 16px; padding-right: 16px; }
+  .portal__right .small { display: none; }
+}
+
 /* ─────────────── primitives ─────────────── */
 .card {
   background: var(--card); border: 1px solid var(--border);

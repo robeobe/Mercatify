@@ -6,7 +6,7 @@
 <title>Stack requests — Mercatify</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
-<link rel="stylesheet" href="om.css">
+<link rel="stylesheet" href="../shared/om.css">
 </head>
 <body>
 
@@ -20,7 +20,6 @@
          open it to see which Open Mercato modules pick the work up.</p>
     </div>
     <div class="pagehead__actions">
-      <a class="btn btn--outline" href="intake.html">Open intake form</a>
       <a class="btn" href="modules.html" id="open-newest">Map the newest →</a>
     </div>
   </div>
@@ -71,10 +70,10 @@
 </template>
 
 <script src="../stack-tool/catalog.js"></script>
-<script src="app.js"></script>
+<script src="../shared/om-core.js"></script>
 <script>
 (function () {
-  var content = mountShell({
+  var content = mountConsoleShell({
     active: 'requests',
     crumbs: [{ label: 'Mercatify', href: 'requests.html' }, { label: 'Stack requests' }]
   });
