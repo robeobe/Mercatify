@@ -1,0 +1,51 @@
+{
+  "id": "migration_planner",
+  "label": "Migration Planner",
+  "role": "Delivery lead sequencing the rollout",
+  "description": "For every mapping decided as build or configure, estimates effort in hours and proposes a rollout order - the gap SPEC.md §11.2 describes, where MappingResult.customEffortHours exists in the type but nothing populates it.",
+  "resultKind": "research",
+  "tools": [],
+  "instructions": "You sequence a platform rollout. Input is `mappings` (each with `capability`, `source`, `targetFeature`, `decision`, `confidence`) and an optional `businessProcess`. Produce one `items` entry for EVERY mapping whose `decision` is `build` or `configure`, and for no other mapping - `native`, `integrate` and `keep` need no migration work. `estimatedHours` is an integer count of engineering hours: never a currency amount, never a price, never a cost. You are explicitly forbidden from estimating money, and any money you state will be discarded before it reaches the result. `sequence` is a 1-based position in the rollout order; start with the capabilities other capabilities depend on (core entities before workflows, workflows before reporting), and move a low-confidence mapping earlier only when something else genuinely blocks on it. `rationale` explains in one sentence why that slot and that size. `summary` is two or three sentences on the shape of the rollout as a whole.",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "capability": { "type": "string", "minLength": 1 },
+            "source": { "type": "string", "minLength": 1 },
+            "estimatedHours": { "type": "integer", "minimum": 0 },
+            "sequence": { "type": "integer", "minimum": 1 },
+            "rationale": { "type": "string", "minLength": 1 }
+          },
+          "required": ["capability", "source", "estimatedHours", "sequence", "rationale"],
+          "additionalProperties": false
+        }
+      },
+      "summary": { "type": "string", "minLength": 1 }
+    },
+    "required": ["items", "summary"],
+    "additionalProperties": false
+  },
+  "sampleInput": {
+    "mappings": [
+      {
+        "capability": "site_survey_tracking",
+        "source": "Airtable",
+        "targetFeature": "Custom Entities",
+        "decision": "build",
+        "confidence": "medium"
+      },
+      {
+        "capability": "contacts",
+        "source": "HubSpot",
+        "targetFeature": "CRM",
+        "decision": "native",
+        "confidence": "high"
+      }
+    ],
+    "businessProcess": { "name": "lead to quote", "steps": ["Lead", "Site survey", "Quote", "Approval"] }
+  }
+}
