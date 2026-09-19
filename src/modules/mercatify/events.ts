@@ -22,6 +22,9 @@ const events = [
   // The moment the report becomes visible to the client — the only path that
   // moves a case to `sent`.
   { id: 'mercatify.report.sent', label: 'Client Report Sent', entity: 'case', category: 'lifecycle' },
+  // The client's answer to a sent report (`accepted` or `consult`). The seam
+  // S-06's Lab handoff subscribes to — read the case's status for which one.
+  { id: 'mercatify.case.answered', label: 'Client Answered The Report', entity: 'case', category: 'lifecycle' },
 ] as const
 
 export const eventsConfig = createModuleEvents({

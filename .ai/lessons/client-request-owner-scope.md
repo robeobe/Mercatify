@@ -13,4 +13,6 @@ topics: ["data-scoping", "acl"]
 
 **Rule**: Stamp `createdByUserId` from `auth.sub` on create. Callers without `mercatify.mapping.view` are always filtered to that owner. `mine=true` additionally excludes drafts and still requires an actor id. Never key this on role names.
 
-**Applies to**: `src/modules/mercatify/api/cases/route.ts`, `lib/case-list-filters.ts`, `/backend/requests`.
+The same rule governs client-facing *writes* and *single-record reads*, where there is no list to filter: issue #21 / S-10 gates `mercatify.cases.answer` and `GET /api/mercatify/cases/report/client` on `createdByUserId === auth.sub` inside the command/route, and treats a case with no recorded owner as nobody's — the feature only gets you to the route.
+
+**Applies to**: `src/modules/mercatify/api/cases/route.ts`, `api/cases/answer/route.ts`, `api/cases/report/client/route.ts`, `commands/client-answer.ts`, `lib/case-list-filters.ts`, `/backend/requests`.

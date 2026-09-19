@@ -14,7 +14,7 @@ import { formatDate } from '@open-mercato/ui/utils/format'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { WhoseTurn } from '../lib/request-progress'
+import { isReportReadyStatus, type WhoseTurn } from '../lib/request-progress'
 
 const ENTITY_ID = 'mercatify:interview_case'
 const PAGE_SIZE = 50
@@ -144,6 +144,15 @@ export default function RequestsTable() {
         <RowActions
           items={[
             { id: 'mercatify.requests.open', label: t('mercatify.requests.table.actions.open'), href: `/backend/requests/${row.id}` },
+            // Only offered once the report is actually out — the route 404s
+            // before that anyway, but a dead action is not an empty state.
+            ...(isReportReadyStatus(row.status)
+              ? [{
+                id: 'mercatify.requests.openReport',
+                label: t('mercatify.requests.table.actions.openReport'),
+                href: `/backend/requests/${row.id}/report`,
+              }]
+              : []),
           ]}
         />
       )}

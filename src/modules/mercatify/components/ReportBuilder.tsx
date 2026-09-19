@@ -385,6 +385,15 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
         </section>
       </div>
 
+      {/* S-10: the client's answer, read back where the admin sent from. */}
+      {data.status === 'accepted' || data.status === 'consult' ? (
+        <Alert status={data.status === 'accepted' ? 'success' : 'information'} className="mt-6">
+          <AlertDescription data-testid="mercatify-report-client-answer">
+            {t(`mercatify.report.clientAnswer.${data.status}`)}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-border p-4">
         <p className="mr-auto text-sm text-muted-foreground" data-testid="mercatify-report-send-state">
           {data.sentAt
