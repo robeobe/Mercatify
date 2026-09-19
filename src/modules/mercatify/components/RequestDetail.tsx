@@ -154,8 +154,8 @@ export function RequestDetailLoader({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <div className="grid items-start gap-5 lg:[grid-template-columns:minmax(0,1fr)_300px]">
-        <div className="min-w-0 space-y-4">
+      <div className="grid items-start gap-5 lg:grid-cols-3">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-4 flex flex-wrap items-baseline gap-2.5">
               <h2 className="text-lg font-semibold tracking-tight">
@@ -181,7 +181,7 @@ export function RequestDetailLoader({ id }: { id: string }) {
                       <b className="text-sm">{tool.name}</b>
                       <span className="text-sm text-muted-foreground">{bits}</span>
                     </div>
-                    <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{toolUseLabels(tool)}</div>
+                    <div className="mt-0.5 text-sm text-muted-foreground">{toolUseLabels(tool)}</div>
                   </li>
                 )
               })}

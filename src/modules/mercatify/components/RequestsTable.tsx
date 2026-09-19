@@ -95,7 +95,7 @@ export default function RequestsTable() {
         )}
       />
 
-      <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {items.map((item) => {
           const status = String(item.status ?? 'new')
           const answered = isAnsweredStatus(status)
@@ -120,7 +120,7 @@ export default function RequestsTable() {
               tabIndex={0}
               onClick={() => router.push(href)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(href) } }}
-              className={`flex cursor-pointer flex-col gap-2.5 rounded-xl border p-[18px] shadow-sm transition-colors hover:border-foreground ${
+              className={`flex cursor-pointer flex-col gap-2.5 rounded-xl border p-4 shadow-sm transition-colors hover:border-foreground ${
                 ready
                   ? 'border-status-success-border bg-status-success-bg'
                   : 'border-border bg-card'
@@ -138,7 +138,7 @@ export default function RequestsTable() {
                 <div className="text-lg font-semibold tracking-tight">
                   {item.companyName || t('mercatify.client.requests.fallbackTitle', 'Your stack')}
                 </div>
-                <div className="text-[0.8125rem] text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   {t('mercatify.client.requests.meta', '{tools} tools · {amount}/mo · sent {date}', {
                     tools: (item.tools ?? []).length,
                     amount: money(monthlyTotal(item.tools), item.currency),
@@ -146,7 +146,7 @@ export default function RequestsTable() {
                   })}
                 </div>
               </div>
-              <div className="text-[0.8125rem] text-muted-foreground">{state}</div>
+              <div className="text-sm text-muted-foreground">{state}</div>
               <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
                 {ready ? (
                   <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>

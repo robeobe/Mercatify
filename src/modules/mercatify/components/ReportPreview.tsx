@@ -178,8 +178,8 @@ export default function ReportPreview({ report }: { report: ReportModel }) {
           <TableHeader>
             <TableRow>
               <TableHead scope="col" className="whitespace-nowrap">{t('mercatify.report.tools.column.tool')}</TableHead>
-              <TableHead scope="col" className="w-[42%] min-w-[16rem]">{t('mercatify.report.tools.column.capability')}</TableHead>
-              <TableHead scope="col" className="min-w-[9rem]">{t('mercatify.report.tools.column.target')}</TableHead>
+              <TableHead scope="col" className="w-2/5 min-w-64">{t('mercatify.report.tools.column.capability')}</TableHead>
+              <TableHead scope="col" className="min-w-36">{t('mercatify.report.tools.column.target')}</TableHead>
               <TableHead scope="col" className="whitespace-nowrap">{t('mercatify.report.tools.column.verdict')}</TableHead>
               <TableHead scope="col" className="whitespace-nowrap">{t('mercatify.report.tools.column.confidence')}</TableHead>
               <TableHead scope="col" className="whitespace-nowrap text-right">{t('mercatify.report.tools.column.monthly')}</TableHead>

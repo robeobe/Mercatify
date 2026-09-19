@@ -7,7 +7,7 @@ import type { TrackStep, TrackStepState } from './client/progressSteps'
 /** `.track li::before` in `assets/shared/om.css` — a 12px dot on the rail. */
 function dotClass(state: TrackStepState): string {
   if (state === 'done') return 'border-status-success-icon bg-status-success-icon'
-  if (state === 'current') return 'border-foreground bg-background shadow-[0_0_0_3px_var(--muted)]'
+  if (state === 'current') return 'border-foreground bg-background ring-2 ring-muted'
   return 'border-border bg-background'
 }
 
@@ -25,7 +25,7 @@ export function RequestProgressTrack({ steps }: { steps: TrackStep[] }) {
         return (
           <li
             key={step.key}
-            className={`relative pl-[30px] ${last ? 'pb-0' : 'pb-[18px]'}`}
+            className={`relative pl-8 ${last ? 'pb-0' : 'pb-4'}`}
             aria-current={step.state === 'current' ? 'step' : undefined}
           >
             <span
@@ -35,7 +35,7 @@ export function RequestProgressTrack({ steps }: { steps: TrackStep[] }) {
             {last ? null : (
               <span
                 aria-hidden="true"
-                className={`absolute bottom-0 left-[9px] top-[18px] w-0.5 ${connectorClass(step.state)}`}
+                className={`absolute bottom-0 left-2 top-4 w-0.5 ${connectorClass(step.state)}`}
               />
             )}
             <div>
@@ -46,7 +46,7 @@ export function RequestProgressTrack({ steps }: { steps: TrackStep[] }) {
                 <span className="ml-1.5 text-xs font-normal text-muted-foreground">{step.when}</span>
               ) : null}
             </div>
-            <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{step.body}</div>
+            <div className="mt-0.5 text-sm text-muted-foreground">{step.body}</div>
           </li>
         )
       })}

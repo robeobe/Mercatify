@@ -304,7 +304,7 @@ export default function StackRequestsQueue() {
         onChange={(event) => setText(event.target.value)}
         placeholder={t('mercatify.queue.toolbar.search', 'Filter by company, ref or tool…')}
         aria-label={t('mercatify.queue.toolbar.searchLabel', 'Filter requests')}
-        className="h-8 max-w-[280px]"
+        className="h-8 max-w-xs"
       />
       <Select value={status} onValueChange={setStatus}>
         <SelectTrigger className="h-8 w-auto" aria-label={t('mercatify.queue.toolbar.statusLabel', 'Status')}>

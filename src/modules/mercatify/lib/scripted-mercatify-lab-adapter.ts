@@ -92,16 +92,16 @@ export function buildScriptedMapping(request: MercatifyEvaluationRequest): Merca
       rows.push(unknownToolRow(tool))
       continue
     }
-    for (const module of modulesFor(tool, catalog)) {
+    for (const catalogModule of modulesFor(tool, catalog)) {
       rows.push({
-        capability: module.name,
+        capability: catalogModule.name,
         // S-04's savings formula groups rows by `source === the intake tool
         // name`, so this must stay the exact name the client submitted.
         source: tool.name,
-        decision: catalogModuleDecision(module),
-        target: catalogModuleTarget(module, tool.name),
-        justification: justify(tool.name, module),
-        confidence: module.conf,
+        decision: catalogModuleDecision(catalogModule),
+        target: catalogModuleTarget(catalogModule, tool.name),
+        justification: justify(tool.name, catalogModule),
+        confidence: catalogModule.conf,
       })
     }
   }

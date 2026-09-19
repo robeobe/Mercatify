@@ -201,7 +201,7 @@ export default function ClientReport({ caseId }: { caseId: string }) {
             ]).map((option) => (
               <label
                 key={option.value}
-                className="grid cursor-pointer grid-cols-[18px_1fr] items-start gap-3 rounded-xl border border-border bg-card px-4 py-3.5 font-normal hover:bg-muted"
+                className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card px-4 py-3.5 font-normal hover:bg-muted"
               >
                 <input
                   type="radio"
@@ -213,7 +213,7 @@ export default function ClientReport({ caseId }: { caseId: string }) {
                 />
                 <span>
                   <span className="block text-sm font-semibold">{option.title}</span>
-                  <span className="mt-0.5 block text-[0.8125rem] text-muted-foreground">{option.desc}</span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{option.desc}</span>
                 </span>
               </label>
             ))}
@@ -231,11 +231,11 @@ export default function ClientReport({ caseId }: { caseId: string }) {
                   'mercatify.client.report.answer.note.placeholder',
                   'The stock numbers are the thing that hurts — can we start there? Best reached Tuesday mornings.',
                 )}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
               />
             </div>
 
-            <div className="sticky bottom-0 z-[5] mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur">
+            <div className="sticky bottom-0 z-10 mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur">
               <div className="min-w-0 flex-1 text-sm text-muted-foreground">
                 {t('mercatify.client.report.answer.bar', 'Your answer goes straight to the consultant who wrote this.')}
               </div>
