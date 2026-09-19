@@ -1,0 +1,184 @@
+{
+  "v": 2,
+  "kind": "mercatify-brief",
+  "created": "2026-09-19",
+  "company": {
+    "name": "Voltix Energy Sp. z o.o.",
+    "industry": "",
+    "people": 34
+  },
+  "contact": {
+    "name": "Marta Nowak",
+    "role": "COO"
+  },
+  "currency": "USD",
+  "pains": "",
+  "mustKeep": "",
+  "readWhat": "A 62-minute kick-off call with Marta Nowak and Piotr Zieliński (operations); seven supplier invoices for August 2026; three screen-shares covering HubSpot pipeline, Jobber dispatch and the Airtable permit base.",
+  "period": "Licence costs as billed in August 2026 at 34 seats. Effort estimates assume the current team size and one October 2026 start. Seasonal crew growth is handled in section 08.",
+  "exclusions": "Statutory accounting, payroll, Microsoft 365, and anything touching electrical compliance sign-off. None of it was assessed, and none of it appears in the savings figure.",
+  "tools": [
+    {
+      "id": "hubspot",
+      "name": "HubSpot Sales",
+      "plan": "Sales Professional",
+      "kind": "CRM & marketing",
+      "category": "CRM",
+      "seats": 10,
+      "unitPrice": 89,
+      "monthly": 890,
+      "termEnds": "2027-02-28",
+      "termType": "annual",
+      "modules": [
+        {
+          "id": "sales",
+          "name": "CRM",
+          "desc": "Contacts, deals, pipeline stages, email log",
+          "caps": ["crm.contacts", "crm.pipeline", "crm.email"],
+          "evidenceKind": "observed",
+          "evidenceNote": "3 pipelines, 11 custom deal properties, no marketing automation in use"
+        }
+      ]
+    },
+    {
+      "id": "zendesk",
+      "name": "Zendesk Suite",
+      "plan": "Growth",
+      "kind": "Support",
+      "category": "Support",
+      "seats": 5,
+      "unitPrice": 83,
+      "monthly": 415,
+      "termEnds": "",
+      "termType": "monthly",
+      "modules": [
+        {
+          "id": "support",
+          "name": "Support",
+          "desc": "Post-install tickets, warranty claims",
+          "caps": ["support.tickets", "support.sla"],
+          "evidenceKind": "observed",
+          "evidenceNote": "3 macros, 2 SLA policies, email channel only"
+        }
+      ]
+    },
+    {
+      "id": "jobber",
+      "name": "Jobber",
+      "plan": "Connect",
+      "kind": "Field service",
+      "category": "Field service",
+      "seats": 12,
+      "unitPrice": 29,
+      "monthly": 349,
+      "termEnds": "",
+      "termType": "monthly",
+      "modules": [
+        {
+          "id": "sched",
+          "name": "Field service",
+          "desc": "Crew scheduling, job sheets, on-site checklists",
+          "caps": ["field.scheduling", "field.jobsheets"],
+          "evidenceKind": "inferred",
+          "evidenceNote": "offline use on site not confirmed — see risk 8.2"
+        }
+      ]
+    },
+    {
+      "id": "airtable",
+      "name": "Airtable",
+      "plan": "Team",
+      "kind": "Ad-hoc registers",
+      "category": "Ad-hoc registers",
+      "seats": 12,
+      "unitPrice": 20,
+      "monthly": 240,
+      "termEnds": "",
+      "termType": "monthly",
+      "modules": [
+        {
+          "id": "bases",
+          "name": "Ad-hoc registers",
+          "desc": "Installer certifications, site surveys, permit tracking",
+          "caps": ["data.custom"],
+          "evidenceKind": "observed",
+          "evidenceNote": "4 bases, 9 tables, all flat — no automations"
+        }
+      ]
+    },
+    {
+      "id": "pandadoc",
+      "name": "PandaDoc",
+      "plan": "Business",
+      "kind": "Quotes & e-signature",
+      "category": "Quotes & e-signature",
+      "seats": 5,
+      "unitPrice": 40,
+      "monthly": 199,
+      "termEnds": "",
+      "termType": "monthly",
+      "modules": [
+        {
+          "id": "templates",
+          "name": "Quotes",
+          "desc": "Quote templates driven by panel configuration",
+          "caps": ["quotes.cpq", "docs.templates"],
+          "evidenceKind": "estimated",
+          "evidenceNote": "40 h to build · the only net-new module"
+        },
+        {
+          "id": "esign",
+          "name": "Legally binding signature",
+          "desc": "Customer signs the installation contract",
+          "caps": ["esignature"],
+          "evidenceKind": "inferred",
+          "evidenceNote": "Retained on a signature-only plan at the same list price"
+        }
+      ]
+    },
+    {
+      "id": "inventory-app",
+      "name": "Sortly",
+      "plan": "Advanced",
+      "kind": "Inventory",
+      "category": "Inventory",
+      "seats": 5,
+      "unitPrice": 30,
+      "monthly": 149,
+      "termEnds": "",
+      "termType": "monthly",
+      "modules": [
+        {
+          "id": "stock",
+          "name": "Inventory",
+          "desc": "Panels and inverters across two warehouses",
+          "caps": ["inventory.stock", "inventory.multiwarehouse", "inventory.barcode"],
+          "evidenceKind": "observed",
+          "evidenceNote": "1,240 SKUs, barcode scanning on goods-in"
+        }
+      ]
+    },
+    {
+      "id": "accounting",
+      "name": "Xero",
+      "plan": "Established",
+      "kind": "Accounting",
+      "category": "Accounting",
+      "seats": 3,
+      "unitPrice": 26,
+      "monthly": 78,
+      "termEnds": "",
+      "termType": "monthly",
+      "modules": [
+        {
+          "id": "ledger",
+          "name": "Accounting",
+          "desc": "Statutory books, VAT filing",
+          "caps": ["accounting.ledger"],
+          "evidenceKind": "inferred",
+          "evidenceNote": "Out of scope by recommendation, not by omission"
+        }
+      ]
+    }
+  ]
+}
