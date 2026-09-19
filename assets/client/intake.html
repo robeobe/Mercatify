@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Your stack — Mercatify</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
 <link rel="stylesheet" href="../shared/om.css">
 <style>
   /* The tool picker exists on this one screen only; the shell is in om.css. */
@@ -14,7 +12,7 @@
   @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } .rail { position: static; } }
 
   .tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-  .tool { border: 1px solid var(--border); border-radius: calc(var(--radius) + 2px); background: var(--card); overflow: hidden; }
+  .tool { border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); overflow: hidden; }
   .tool.is-on { border-color: var(--foreground); }
   .tool__head {
     display: flex; align-items: flex-start; gap: 10px; width: 100%;
@@ -40,7 +38,7 @@
   }
   .mods label:hover { background: var(--muted); }
   .mods input[type="checkbox"] { margin-top: 2px; }
-  .m-name { font-weight: 500; font-size: 0.8125rem; }
+  .m-name { font-weight: 500; font-size: 0.875rem; }
   .m-desc { display: block; color: var(--muted-foreground); font-size: 0.75rem; }
   .m-dup { margin-left: 6px; vertical-align: 1px; }
   .tool__cost { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
@@ -51,7 +49,7 @@
   .sent__list li:last-child { border-bottom: 0; }
   .sent__tool { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .sent__tool b { font-size: 0.875rem; }
-  .sent__caps { color: var(--muted-foreground); font-size: 0.8125rem; margin-top: 2px; }
+  .sent__caps { color: var(--muted-foreground); font-size: 0.875rem; margin-top: 2px; }
 </style>
 </head>
 <body>

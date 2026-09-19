@@ -4,15 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Module coverage — Mercatify</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
 <link rel="stylesheet" href="../shared/om.css">
 <style>
   /* Coverage-only pieces. Everything else comes from om.css. */
   .modcard { display: grid; gap: 10px; }
   .modrow {
     display: grid; grid-template-columns: 220px minmax(0, 1fr) auto; gap: 14px; align-items: start;
-    padding: 12px 14px; border: 1px solid var(--border); border-radius: calc(var(--radius) + 2px);
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-xl);
     background: var(--card);
   }
   .modrow--outside { border-style: dashed; }

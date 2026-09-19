@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stack requests — Mercatify</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
 <link rel="stylesheet" href="../shared/om.css">
 </head>
 <body>
@@ -125,7 +123,7 @@
       var toolNames = (r.tools || []).map(function (t) { return t.name; });
 
       var tr = node('tr', {}, [
-        node('td', {}, [node('a', { class: 'linkcell mono', href: href, text: r.ref })]),
+        node('td', { class: 'nowrap' }, [node('a', { class: 'linkcell mono', href: href, text: r.ref })]),
         node('td', {}, [
           node('span', { style: 'font-weight:500', text: r.company }),
           node('span', { class: 'sub', text: r.industry || '—' })
@@ -139,7 +137,7 @@
           dups ? node('span', { class: 'badge badge--warning', text: String(dups) }) : node('span', { class: 'muted', text: '0' })
         ]),
         node('td', { class: 'num', text: fmtMoney(requestMonthly(r), r.currency) }),
-        node('td', { text: r.received }),
+        node('td', { class: 'nowrap', text: r.received }),
         node('td', {}, [
           node('span', { class: 'badge ' + (STATUS_BADGE[r.status] || ''), text: STATUS_LABEL[r.status] || r.status }),
           node('span', { class: 'sub', text: r.owner ? 'owner: ' + r.owner : 'unassigned' })
