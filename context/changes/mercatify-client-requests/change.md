@@ -1,7 +1,7 @@
 ---
 change_id: mercatify-client-requests
 title: Show the client's list of their own requests and a per-request progress track
-status: new
+status: in-progress
 created: 2026-09-19
 updated: 2026-09-19
 archived_at: null

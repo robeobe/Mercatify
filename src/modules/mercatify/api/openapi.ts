@@ -42,6 +42,15 @@ export const interviewCaseListItemSchema = z
     updatedAt: z.string().nullable().optional(),
     tools: z.array(interviewCaseToolItemSchema).optional(),
     mappingConfirmedAt: z.string().nullable().optional(),
+    createdByUserId: z.string().nullable().optional(),
+    submittedAt: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional(),
+    whoseTurn: z.enum(['mercatify', 'client']).optional(),
+    progress: z.array(z.object({
+      key: z.enum(['sent', 'review', 'report', 'decision']),
+      state: z.enum(['done', 'current', 'pending']),
+      at: z.string().nullable(),
+    })).optional(),
   })
   .passthrough()
 

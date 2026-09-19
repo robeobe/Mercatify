@@ -162,6 +162,8 @@ describe('mercatify case commands', () => {
     expect(created.organizationId).toBe(ORG_A)
     expect(created.status).toBe('draft')
     expect(created.title).toBe('Sample interview case')
+    expect(created.createdByUserId).toBe('user-1')
+    expect(created.submittedAt).toBeNull()
 
     const updated = await updateCaseCommand.execute(
       { id: created.id, companyName: 'Renamed', status: 'draft' },
@@ -320,6 +322,8 @@ describe('mercatify case commands', () => {
       makeCtx(world),
     )
     expect(created.status).toBe('new')
+    expect(created.createdByUserId).toBe('user-1')
+    expect(created.submittedAt).toBeInstanceOf(Date)
     await expectCrudStatus(
       () => updateCaseCommand.execute({ id: created.id, companyName: 'Tampered' }, makeCtx(world)),
       400,
