@@ -158,13 +158,10 @@
            the queue — that is a deliberate step taken inside it. */
         /* Row actions stay quiet — the platform's RowActions uses ghost, and a
            filled button on every row would make the whole table shout. */
-        node('td', { class: 'nowrap' }, requestActions(r).map(function (a, i) {
-          return node('a', {
-            class: 'btn btn--sm ' + (a.primary ? 'btn--outline' : 'btn--muted'),
-            style: i ? 'margin-left:6px' : '',
-            href: a.href, text: a.label
-          });
-        }))
+        node('td', { class: 'nowrap' }, [(function () {
+          var a = requestActions(r)[0];
+          return node('a', { class: 'btn btn--sm btn--outline', href: a.href, text: a.label });
+        })()])
       ]);
       rowsEl.appendChild(tr);
     });
