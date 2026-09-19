@@ -1,0 +1,19 @@
+{
+  "mercatify.audit.cases.create": "Interview-Fall erstellen",
+  "mercatify.audit.cases.delete": "Interview-Fall löschen",
+  "mercatify.audit.cases.update": "Interview-Fall aktualisieren",
+  "mercatify.cases.page.title": "Interview-Fälle",
+  "mercatify.cases.status.completed": "Abgeschlossen",
+  "mercatify.cases.status.draft": "Entwurf",
+  "mercatify.cases.status.inProgress": "In Bearbeitung",
+  "mercatify.cases.table.column.status": "Status",
+  "mercatify.cases.table.column.title": "Titel",
+  "mercatify.cases.table.column.updatedAt": "Aktualisiert",
+  "mercatify.cases.table.empty": "Noch keine Interview-Fälle.",
+  "mercatify.cases.table.emptyDescription": "Fälle erscheinen hier, sobald ein Interview angelegt wurde.",
+  "mercatify.cases.table.error.forbidden": "Sie haben keine Berechtigung, Interview-Fälle anzuzeigen.",
+  "mercatify.cases.table.error.generic": "Interview-Fälle konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+  "mercatify.cases.table.loading": "Interview-Fälle werden geladen...",
+  "mercatify.cases.table.title": "Interview-Fälle",
+  "mercatify.nav.group": "Mercatify"
+}

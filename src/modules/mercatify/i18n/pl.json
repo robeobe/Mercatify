@@ -1,0 +1,19 @@
+{
+  "mercatify.audit.cases.create": "Utwórz przypadek wywiadu",
+  "mercatify.audit.cases.delete": "Usuń przypadek wywiadu",
+  "mercatify.audit.cases.update": "Zaktualizuj przypadek wywiadu",
+  "mercatify.cases.page.title": "Przypadki wywiadu",
+  "mercatify.cases.status.completed": "Zakończony",
+  "mercatify.cases.status.draft": "Szkic",
+  "mercatify.cases.status.inProgress": "W toku",
+  "mercatify.cases.table.column.status": "Status",
+  "mercatify.cases.table.column.title": "Tytuł",
+  "mercatify.cases.table.column.updatedAt": "Zaktualizowano",
+  "mercatify.cases.table.empty": "Brak przypadków wywiadu.",
+  "mercatify.cases.table.emptyDescription": "Przypadki pojawią się tutaj po utworzeniu wywiadu.",
+  "mercatify.cases.table.error.forbidden": "Nie masz uprawnień do przeglądania przypadków wywiadu.",
+  "mercatify.cases.table.error.generic": "Nie udało się wczytać przypadków wywiadu. Spróbuj ponownie.",
+  "mercatify.cases.table.loading": "Wczytywanie przypadków wywiadu...",
+  "mercatify.cases.table.title": "Przypadki wywiadu",
+  "mercatify.nav.group": "Mercatify"
+}
