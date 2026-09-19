@@ -299,37 +299,39 @@ See each phase's Manual Success Criteria; Phase 4's list is the end-to-end walkt
 ### Phase 1: Data model, contracts, ACL, events
 
 #### Automated
-- [ ] 1.1 `yarn generate` completes without error
-- [ ] 1.2 `yarn typecheck` passes
-- [ ] 1.3 `yarn lint` passes
-- [ ] 1.4 `yarn db:generate` reviewed and scoped; snapshot updated
+- [x] 1.1 `yarn generate` completes without error
+- [x] 1.2 `yarn typecheck` passes
+- [x] 1.3 `yarn lint` passes
+- [x] 1.4 `yarn db:generate` reviewed and scoped — only `mercatify_interview_cases.handoff_document` (nullable text add); snapshot updated
 
 #### Manual
-- [ ] 1.5 User asked before `yarn db:migrate`
+- [x] 1.5 User asked before `yarn db:migrate` — approved, applied (`Migration20260919184316_mercatify`)
 
 ### Phase 2: Markdown builder + commands
 
 #### Automated
-- [ ] 2.1 `yarn test` passes
-- [ ] 2.2 `yarn typecheck` passes
+- [x] 2.1 `yarn test` passes (31/31, including the confirmed-mapping precondition, the "generate never re-runs" independence invariant, optimistic locking, and tenant scoping)
+- [x] 2.2 `yarn typecheck` passes
 
 ### Phase 3: API routes
 
 #### Automated
-- [ ] 3.1 `yarn generate` completes without error
-- [ ] 3.2 `yarn typecheck` passes
-- [ ] 3.3 `yarn lint` passes
-- [ ] 3.4 `yarn ds:check` passes
+- [x] 3.1 `yarn generate` completes without error (66 API paths, up from 64)
+- [x] 3.2 `yarn typecheck` passes
+- [x] 3.3 `yarn lint` passes
+- [x] 3.4 `yarn ds:check` passes
 
 #### Manual
-- [ ] 3.5 Role/permission and lifecycle walkthrough confirmed live
+- [x] 3.5 Role/permission and lifecycle walkthrough confirmed live against the running dev server + migrated DB: `generate` 400s pre-confirmation, succeeds post-confirmation (6 rows → full markdown table), is idempotent, and a manual `PUT` survives a later `generate` call unchanged (the independence invariant, live); employee session gets 403 with `requiredFeatures` on all three routes; `GET /api/mercatify/cases` for the employee role never includes a `handoffDocument` field
 
 ### Phase 4: Backend UI
 
 #### Automated
-- [ ] 4.1 Broad gate passes: `yarn generate && yarn typecheck && yarn lint && yarn ds:check && yarn test && yarn build`
-- [ ] 4.2 `yarn i18n:check-hardcoded` passes
+- [x] 4.1 Broad gate passes: `yarn generate && yarn typecheck && yarn lint && yarn ds:check && yarn test && yarn build`
+- [x] 4.2 `yarn i18n:check-hardcoded` passes (no hard-coded strings introduced)
 
 #### Manual
-- [ ] 4.3 Full admin walkthrough (not-confirmed state, generate, edit, paste-replace, conflict) verified live
-- [ ] 4.4 Employee-role unreachability confirmed
+- [x] 4.3 Full admin walkthrough verified live: not-confirmed state (400 from generate, page renders without crashing), generate (idempotent), edit/paste-replace (survives a later generate call), stale-version conflict (409 `optimistic_lock_conflict`); `/backend/cases/[id]/handoff` and `/backend/cases/[id]/mapping` both render 200 for admin
+- [x] 4.4 Employee-role unreachability confirmed live: 403 with `requiredFeatures` on `GET`/`PUT /api/mercatify/handoff-document` and `POST /api/mercatify/handoff-document/generate`
+
+**Verified during manual walkthrough**: test cases created for the live walkthrough (`QA Handoff Co`, `Not Yet Confirmed Co`) were soft-deleted afterward via `DELETE /api/mercatify/cases`, leaving no residue in the shared dev database.

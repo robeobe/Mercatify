@@ -208,7 +208,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
   - ~~Whether editing the table regenerates the `.md`, or the two are independent artifacts~~ — **Resolved 2026-09-19** (user decision, PRD Open Question 8): independent artifacts. Editing the table never touches the `.md`; the `.md` is the only document that travels to Lab.
   - Handling of pasted content that may carry sensitive data — no rule captured (PRD Open Question 9). Owner: team. Block: no.
 - **Risk:** None from the regeneration question anymore (resolved as independent artifacts — no serializer, no cross-artifact conflict story needed). Remaining risk is ordinary UI risk for a plain textarea editor with paste-to-replace.
-- **Status:** ready (unblocked)
+- **Status:** done
 
 ### S-09: Admin builds and sends the report
 > **Added 2026-09-19** (gap found reviewing `assets/console/report.html`; distinct from `S-04`'s three saving lines and `S-05`'s `.md` editor — neither builds the report screen or its **Send to the client** action, and nothing currently flips a request's status to `sent`).
