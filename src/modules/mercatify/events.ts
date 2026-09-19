@@ -10,6 +10,12 @@ const events = [
   { id: 'mercatify.case.created', label: 'Interview Case Created', entity: 'case', category: 'crud' },
   { id: 'mercatify.case.updated', label: 'Interview Case Updated', entity: 'case', category: 'crud' },
   { id: 'mercatify.case.deleted', label: 'Interview Case Deleted', entity: 'case', category: 'crud' },
+  // `${module}.${entity}.${action}` — the naming `emitCrudSideEffects`/`markOrmEntityChange`
+  // derives automatically (see data engine's `flushOrmEntityChanges`). Mapping rows are
+  // generated (created) and admin-edited (updated); never individually deleted.
+  { id: 'mercatify.mapping_row.created', label: 'Capability Mapping Row Created', entity: 'mapping_row', category: 'crud' },
+  { id: 'mercatify.mapping_row.updated', label: 'Capability Mapping Row Updated', entity: 'mapping_row', category: 'crud' },
+  { id: 'mercatify.mapping.confirmed', label: 'Capability Mapping Confirmed', entity: 'case', category: 'lifecycle' },
 ] as const
 
 export const eventsConfig = createModuleEvents({

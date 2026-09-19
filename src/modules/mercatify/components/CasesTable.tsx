@@ -6,6 +6,7 @@ import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { EmptyState } from '@open-mercato/ui/primitives/empty-state'
 import { Alert, AlertDescription } from '@open-mercato/ui/primitives/alert'
 import { StatusBadge, type StatusMap } from '@open-mercato/ui/primitives/status-badge'
+import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { formatDate } from '@open-mercato/ui/utils/format'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -94,6 +95,13 @@ export default function CasesTable() {
         <EmptyState
           title={t('mercatify.cases.table.empty')}
           description={t('mercatify.cases.table.emptyDescription')}
+        />
+      )}
+      rowActions={(row) => (
+        <RowActions
+          items={[
+            { label: t('mercatify.cases.table.actions.viewMapping'), href: `/backend/cases/${row.id}/mapping` },
+          ]}
         />
       )}
       pagination={{
