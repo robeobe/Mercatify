@@ -34,6 +34,7 @@ function row(overrides: Partial<ReportMappingRowInput> & { id: string; source: s
     position: 0,
     capability: `${overrides.source} capability`,
     targetLabel: 'Sales',
+    targetModuleId: 'sales',
     confidence: 'high',
     justification: 'because',
     flagged: false,

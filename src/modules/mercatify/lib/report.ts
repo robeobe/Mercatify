@@ -35,6 +35,7 @@ export type ReportMappingRowInput = {
   source: string
   decision: string
   targetLabel: string | null
+  targetModuleId: string | null
   confidence: string
   justification: string
   flagged: boolean
@@ -113,6 +114,8 @@ export type ReportToolRow = {
   id: string
   capability: string
   targetLabel: string | null
+  /** Named in the `module_not_enabled` flag message, exactly as the mapping table does. */
+  targetModuleId: string | null
   decision: string
   confidence: string
   justification: string
@@ -275,6 +278,7 @@ function buildToolGroups(
     id: row.id,
     capability: row.capability,
     targetLabel: row.targetLabel,
+    targetModuleId: row.targetModuleId,
     decision: row.decision,
     confidence: row.confidence,
     justification: row.justification,

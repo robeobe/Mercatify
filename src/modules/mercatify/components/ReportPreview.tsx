@@ -215,7 +215,7 @@ export default function ReportPreview({ report }: { report: ReportModel }) {
                   {row.flagged ? (
                     <Tag variant="error" dot>
                       {row.flagReason === 'module_not_enabled'
-                        ? t('mercatify.mapping.table.flag.moduleNotEnabled', { module: row.targetLabel ?? '' })
+                        ? t('mercatify.mapping.table.flag.moduleNotEnabled', { module: row.targetModuleId ?? '' })
                         : t('mercatify.mapping.table.flag.unmapped')}
                     </Tag>
                   ) : (

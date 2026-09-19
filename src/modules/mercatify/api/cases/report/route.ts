@@ -83,6 +83,7 @@ export async function GET(req: Request) {
         source: row.source,
         decision: row.decision,
         targetLabel: row.targetLabel ?? null,
+        targetModuleId: row.targetModuleId ?? null,
         confidence: row.confidence,
         justification: row.justification,
         flagged: row.flagged,

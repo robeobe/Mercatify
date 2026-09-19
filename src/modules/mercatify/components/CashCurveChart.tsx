@@ -6,7 +6,9 @@ import type { ReportCashCurve } from '../lib/report'
 
 const WIDTH = 720
 const HEIGHT = 300
-const LEFT = 68
+// Wide enough that a right-aligned negative currency tick ("-€30,000.00")
+// still fits inside the viewBox instead of being clipped at the edge.
+const LEFT = 116
 const RIGHT = 700
 const TOP = 24
 const BOTTOM = 250

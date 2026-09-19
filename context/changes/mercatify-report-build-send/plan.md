@@ -683,25 +683,25 @@ applied** by this change.
 
 #### Manual
 
-- [ ] 3.5 GET returns the model for a confirmed case and 403s for a client-role session
-- [ ] 3.6 POST send moves the case to `sent` exactly once
+- [x] 3.5 GET returns the model for a confirmed case and 403s for a client-role session
+- [x] 3.6 POST send moves the case to `sent` exactly once
 
 ### Phase 4: The report screen
 
 #### Automated
 
-- [x] 4.1 Discovery regenerates cleanly: `yarn generate`
-- [x] 4.2 Types compile: `yarn typecheck`
-- [x] 4.3 Lint passes: `yarn lint`
-- [x] 4.4 Design-system check passes: `yarn ds:check`
-- [x] 4.5 No hard-coded strings: `yarn i18n:check-hardcoded`
-- [x] 4.6 Full unit suite passes: `yarn test`
-- [x] 4.7 Production build succeeds: `yarn build`
+- [x] 4.1 Discovery regenerates cleanly: `yarn generate` — b4b6a0b
+- [x] 4.2 Types compile: `yarn typecheck` — b4b6a0b
+- [x] 4.3 Lint passes: `yarn lint` — b4b6a0b
+- [x] 4.4 Design-system check passes: `yarn ds:check` — b4b6a0b
+- [x] 4.5 No hard-coded strings: `yarn i18n:check-hardcoded` — b4b6a0b
+- [x] 4.6 Full unit suite passes: `yarn test` — b4b6a0b
+- [x] 4.7 Production build succeeds: `yarn build` — b4b6a0b
 
 #### Manual
 
-- [ ] 4.8 Every section from issue #20's acceptance criteria renders on a confirmed case
-- [ ] 4.9 Compose edits update the preview live and persist across a reload
-- [ ] 4.10 Send moves the case to `sent`, and nothing else can produce that status
-- [ ] 4.11 An unconfirmed case shows the "finish the mapping first" state
-- [ ] 4.12 Keyboard-only pass; the cash curve is announced by its label
+- [x] 4.8 Every section from issue #20's acceptance criteria renders on a confirmed case
+- [x] 4.9 Compose edits update the preview live and persist across a reload
+- [x] 4.10 Send moves the case to `sent`, and nothing else can produce that status
+- [x] 4.11 An unconfirmed case shows the "finish the mapping first" state
+- [x] 4.12 Keyboard-only pass; the cash curve is announced by its label
