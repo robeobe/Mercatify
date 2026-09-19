@@ -4,15 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Module coverage — Mercatify</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
 <link rel="stylesheet" href="../shared/om.css">
 <style>
   /* Coverage-only pieces. Everything else comes from om.css. */
   .modcard { display: grid; gap: 10px; }
   .modrow {
     display: grid; grid-template-columns: 220px minmax(0, 1fr) auto; gap: 14px; align-items: start;
-    padding: 12px 14px; border: 1px solid var(--border); border-radius: calc(var(--radius) + 2px);
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-xl);
     background: var(--card);
   }
   .modrow--outside { border-style: dashed; }
@@ -23,7 +21,8 @@
   .capchip {
     display: inline-flex; align-items: center; gap: 6px;
     border: 1px solid var(--border); border-radius: 999px;
-    padding: 2px 9px; font-size: 0.75rem; background: var(--background);
+    padding: 3px 10px; background: var(--background);
+    font: inherit; font-size: 0.75rem; color: inherit; text-align: left;
   }
   .capchip__src { color: var(--muted-foreground); font-size: 0.6875rem; }
   .capchip--dup { border-color: var(--status-warning-border); background: var(--status-warning-bg); color: var(--status-warning-text); }
@@ -33,6 +32,14 @@
     color: var(--muted-foreground); margin: 20px 0 8px;
   }
   .grouphead::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  /* editable mapping rows */
+  #caprows select { height: 32px; min-width: 150px; }
+  #caprows input[type="text"] { height: 32px; min-width: 150px; }
+  #caprows td { vertical-align: top; }
+  .capchip { cursor: pointer; }
+  .capchip:hover { border-color: var(--foreground); }
+  @keyframes cap-flash { from { background: var(--status-info-bg); } to { background: transparent; } }
+  #caprows tr.flash td { animation: cap-flash 1.6s ease-out; }
   @media (max-width: 800px) { .modrow { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -52,6 +59,8 @@
       <label class="sr-only" for="pick">Request</label>
       <select id="pick" style="width:auto"></select>
       <a class="btn btn--outline" href="requests.html">Back to queue</a>
+      <button class="btn btn--outline" type="button" id="to-edit">Edit the mapping</button>
+      <a class="btn" id="to-report">Build the report →</a>
     </div>
   </div>
 
@@ -82,15 +91,31 @@
   </div>
 
   <nav class="tabs" style="margin-top:22px">
-    <a class="tab" href="#by-module" data-view="module" aria-current="page">By module</a>
-    <a class="tab" href="#by-capability" data-view="capability">By capability</a>
+    <a class="tab" href="#by-module" data-view="module" aria-current="page">Overview by module</a>
+    <a class="tab" href="#edit" data-view="capability">
+      Edit the mapping<span id="tab-edits" class="badge badge--outline" style="margin-left:6px" hidden></span>
+    </a>
   </nav>
 
   <section id="view-module">
+    <div class="alert" style="margin-bottom:12px">
+      <div>
+        <strong>This is the agent's pass, not a verdict.</strong>
+        <span>Click any job below — or use <em>Edit the mapping</em> — to change which module
+          takes it over and how hard it is. The report is built from whatever you leave here.</span>
+      </div>
+    </div>
     <div id="modules"></div>
   </section>
 
   <section id="view-capability" hidden>
+    <div class="alert" style="margin-bottom:12px">
+      <div>
+        <strong>Every row here is editable.</strong>
+        <span>The agent's pass is a starting point — change the module or the verdict where it
+          got it wrong, and the report picks the change up. Edited rows are marked.</span>
+      </div>
+    </div>
     <div class="tablewrap">
       <div class="tablescroll">
         <table>
@@ -100,12 +125,14 @@
               <th>Paid for in</th>
               <th>Lands in</th>
               <th>Verdict</th>
+              <th>Note for the report</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="caprows"></tbody>
         </table>
       </div>
-      <div class="tablefoot"><span id="capfoot">—</span><span>One row per capability slug.</span></div>
+      <div class="tablefoot"><span id="capfoot">—</span><span id="capedits">no rows edited</span></div>
     </div>
   </section>
 </template>
@@ -126,8 +153,6 @@
 
   var all = loadRequests();
   var pick = document.getElementById('pick');
-  var STATUS_BADGE = { new: 'badge--info', mapping: 'badge--warning', mapped: 'badge--success' };
-  var STATUS_LABEL = { new: 'new', mapping: 'in mapping', mapped: 'mapped' };
 
   if (!all.length) {
     document.getElementById('modules').innerHTML =
@@ -145,13 +170,19 @@
   pick.addEventListener('change', function () {
     window.location.search = '?ref=' + encodeURIComponent(pick.value);
   });
+  document.getElementById('to-report').href = 'report.html?ref=' + encodeURIComponent(current.ref);
 
   function capChip(c) {
-    var chip = node('span', { class: 'capchip' + (c.duplicate ? ' capchip--dup' : '') }, [
+    var chip = node('button', {
+      type: 'button',
+      class: 'capchip' + (c.duplicate ? ' capchip--dup' : ''),
+      onclick: function () { showView('capability', c.cap); }
+    }, [
       node('span', { text: c.label }),
       node('span', { class: 'capchip__src', text: c.tools.join(' + ') })
     ]);
-    if (c.duplicate) chip.title = 'Paid for in ' + c.tools.length + ' tools today';
+    chip.title = (c.duplicate ? 'Paid for in ' + c.tools.length + ' tools today. ' : '') +
+      'Click to change where this job lands';
     return chip;
   }
 
@@ -204,31 +235,114 @@
     });
   }
 
+  /* The module picker offers every installed module plus the three honest
+     non-answers, so a consultant can always say "we would build this". */
+  function moduleOptions(selected) {
+    var sel = node('select', { class: 'cap-module' });
+    var groups = {};
+    OM_MODULES.forEach(function (m) { (groups[m.group] = groups[m.group] || []).push(m); });
+    Object.keys(groups).forEach(function (g) {
+      var og = node('optgroup', { label: g });
+      groups[g].forEach(function (m) {
+        og.appendChild(node('option', { value: m.id, text: m.label }));
+      });
+      sel.appendChild(og);
+    });
+    var og2 = node('optgroup', { label: 'Not covered' });
+    Object.keys(OM_OUTSIDE).forEach(function (k) {
+      og2.appendChild(node('option', { value: OM_OUTSIDE[k].id, text: OM_OUTSIDE[k].label }));
+    });
+    sel.appendChild(og2);
+    sel.value = selected;
+    return sel;
+  }
+
+  function verdictOptions(selected) {
+    var sel = node('select', { class: 'cap-verdict' });
+    Object.keys(STATUS_META).forEach(function (k) {
+      sel.appendChild(node('option', { value: k, text: STATUS_META[k].label + ' — ' + STATUS_META[k].hint }));
+    });
+    sel.value = selected;
+    return sel;
+  }
+
+  /* An edit writes straight through to the stored override and re-renders the
+     whole screen: the module view, the counters and the report all read the
+     same numbers, so they cannot disagree with the row you just changed. */
+  function editRow(req, cap, patch) {
+    setCapOverride(req, cap, patch);
+    renderHeader(req);
+    renderModules(req);
+    renderCaps(req);
+  }
+
   function renderCaps(req) {
     var body = document.getElementById('caprows');
     body.innerHTML = '';
     var caps = requestCaps(req);
     caps.forEach(function (c) {
-      var meta = STATUS_META[c.status];
       var mod = moduleById(c.module);
       var outside = c.module.indexOf('__') === 0;
-      body.appendChild(node('tr', {}, [
+
+      var modSel = moduleOptions(c.module);
+      modSel.addEventListener('change', function () {
+        editRow(req, c.cap, { module: modSel.value, status: c.status });
+      });
+      var verSel = verdictOptions(c.status);
+      verSel.addEventListener('change', function () {
+        editRow(req, c.cap, { module: c.module, status: verSel.value });
+      });
+      var noteInput = node('input', { type: 'text', placeholder: 'why, in one line' });
+      noteInput.value = c.note || '';
+      /* Notes save on blur rather than per keystroke — a re-render on every
+         letter would steal focus from the field being typed into. */
+      noteInput.addEventListener('change', function () {
+        setCapOverride(req, c.cap, { module: c.module, status: c.status, note: noteInput.value });
+        renderCaps(req);
+      });
+
+      var reset = node('button', {
+        class: 'btn btn--ghost btn--sm', type: 'button', text: 'Reset',
+        title: 'Drop the manual edit and go back to what the agent proposed',
+        onclick: function () { editRow(req, c.cap, null); }
+      });
+      if (!c.edited) { reset.disabled = true; }
+
+      body.appendChild(node('tr', { class: c.edited ? 'edited' : '', 'data-cap': c.cap }, [
         node('td', {}, [
           node('span', { style: 'font-weight:500', text: c.label }),
           node('span', { class: 'sub mono', text: c.cap })
         ]),
         node('td', {}, [
           node('span', { text: c.tools.join(', ') }),
-          c.duplicate ? node('span', { class: 'sub' }, [node('span', { class: 'badge badge--warning', text: 'paid for twice' })]) : node('span', { class: 'sub', text: 'one tool' })
+          c.duplicate
+            ? node('span', { class: 'sub' }, [node('span', { class: 'badge badge--warning', text: 'paid for twice' })])
+            : node('span', { class: 'sub', text: 'one tool' })
         ]),
         node('td', {}, [
-          node('span', { text: mod.label }),
+          modSel,
           node('span', { class: 'sub mono', text: outside ? '—' : 'modules/' + mod.id })
         ]),
-        node('td', {}, [node('span', { class: 'badge ' + meta.badge, text: meta.label })])
+        node('td', {}, [
+          verSel,
+          c.edited
+            ? node('span', { class: 'sub' }, [node('span', { class: 'badge badge--outline', text: 'edited by hand' })])
+            : node('span', { class: 'sub', text: 'from the agent' })
+        ]),
+        node('td', {}, [noteInput]),
+        node('td', {}, [reset])
       ]));
     });
-    document.getElementById('capfoot').textContent = caps.length + ' capabilities across ' + (req.tools || []).length + ' tools';
+
+    var edits = caps.filter(function (c) { return c.edited; }).length;
+    document.getElementById('capfoot').textContent =
+      caps.length + ' capabilities across ' + (req.tools || []).length + ' tools';
+    document.getElementById('capedits').textContent = edits
+      ? edits + ' row' + (edits === 1 ? '' : 's') + ' edited by hand'
+      : 'no rows edited — all verdicts still the agent’s';
+    var tabBadge = document.getElementById('tab-edits');
+    tabBadge.hidden = !edits;
+    tabBadge.textContent = edits ? String(edits) : '';
   }
 
   function renderHeader(req) {
@@ -240,8 +354,8 @@
     document.getElementById('c-company').textContent = req.company;
     document.getElementById('c-ref').textContent = req.ref;
     var st = document.getElementById('c-status');
-    st.textContent = STATUS_LABEL[req.status] || req.status;
-    st.className = 'badge ' + (STATUS_BADGE[req.status] || '');
+    st.textContent = statusLabel(req);
+    st.className = statusBadge(req);
     document.getElementById('c-industry').textContent =
       (req.industry || '') + (req.people ? ' · ' + req.people + ' people' : '') +
       ' · ' + fmtMoney(requestMonthly(req), req.currency) + '/mo on licences';
@@ -257,21 +371,48 @@
     document.getElementById('k-build').textContent = counts.build;
   }
 
-  /* tabs */
+  /* ── views ──
+     Editing used to live behind a tab called "By capability", which told nobody
+     that it was where you correct the agent. It is now named for what it does,
+     reachable from the header and from any job chip on the overview, and kept
+     in the URL so a reload or a shared link lands back on it. */
+  function showView(which, capToFlash) {
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) {
+      if (t.getAttribute('data-view') === which) t.setAttribute('aria-current', 'page');
+      else t.removeAttribute('aria-current');
+    });
+    var byModule = which === 'module';
+    document.getElementById('view-module').hidden = !byModule;
+    document.getElementById('view-capability').hidden = byModule;
+    if (history.replaceState) {
+      history.replaceState(null, '', window.location.pathname + window.location.search +
+        (byModule ? '#by-module' : '#edit'));
+    }
+    if (capToFlash) {
+      var row = document.querySelector('#caprows tr[data-cap="' + capToFlash + '"]');
+      if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.classList.remove('flash');
+        void row.offsetWidth;   /* restart the animation if the same row is picked twice */
+        row.classList.add('flash');
+        var sel = row.querySelector('select.cap-module');
+        if (sel) sel.focus({ preventScroll: true });
+      }
+    }
+  }
+
   Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (tab) {
     tab.addEventListener('click', function (e) {
       e.preventDefault();
-      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) { t.removeAttribute('aria-current'); });
-      tab.setAttribute('aria-current', 'page');
-      var byModule = tab.getAttribute('data-view') === 'module';
-      document.getElementById('view-module').hidden = !byModule;
-      document.getElementById('view-capability').hidden = byModule;
+      showView(tab.getAttribute('data-view'));
     });
   });
+  document.getElementById('to-edit').addEventListener('click', function () { showView('capability'); });
 
   renderHeader(current);
   renderModules(current);
   renderCaps(current);
+  if (window.location.hash === '#edit') showView('capability');
 })();
 </script>
 </body>

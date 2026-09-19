@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your stack map — Mercatify</title>
+<link rel="stylesheet" href="../shared/om.css">
+<style>
+  .answer { display: grid; gap: 12px; }
+  .answer__choice {
+    display: grid; grid-template-columns: 18px 1fr; gap: 12px; align-items: start;
+    padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-xl);
+    cursor: pointer; font-weight: 400; margin: 0; background: var(--card);
+  }
+  .answer__choice:hover { background: var(--muted); }
+  .answer__choice input { margin-top: 2px; }
+  .answer__title { font-weight: 600; font-size: 0.875rem; display: block; }
+  .answer__desc { color: var(--muted-foreground); font-size: 0.8125rem; display: block; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div id="shell"></div>
+
+<template id="tpl-offer">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Your stack map</h1>
+      <p id="p-sub"></p>
+    </div>
+    <div class="pagehead__actions">
+      <a class="btn btn--ghost" id="back">← Back to your request</a>
+      <button class="btn btn--outline" type="button" id="print">Print / PDF</button>
+    </div>
+  </div>
+
+  <div id="answered" hidden></div>
+
+  <div id="p-offer"></div>
+
+  <div class="section" id="answer-head">
+    <h2>What would you like to do?</h2>
+    <p>No pressure either way — the map is yours to keep whichever you pick.</p>
+  </div>
+
+  <form class="answer" id="answer-form">
+    <label class="answer__choice">
+      <input type="radio" name="kind" value="accepted" checked>
+      <span>
+        <span class="answer__title">Accept — let's do this</span>
+        <span class="answer__desc">We start with the first thing on the list and come back to you
+          with a plan and a date. Nothing is signed by clicking here.</span>
+      </span>
+    </label>
+    <label class="answer__choice">
+      <input type="radio" name="kind" value="consult">
+      <span>
+        <span class="answer__title">I would like to talk to someone first</span>
+        <span class="answer__desc">Someone from Sales calls you to go through the map. Say below
+          what you would like them to cover.</span>
+      </span>
+    </label>
+
+    <div>
+      <label for="f-msg">Anything you want to add</label>
+      <textarea id="f-msg" placeholder="The stock numbers are the thing that hurts — can we start there? Best reached Tuesday mornings."></textarea>
+    </div>
+
+    <div class="actionbar">
+      <div class="actionbar__text">Your answer goes straight to the consultant who wrote this.</div>
+      <button class="btn" type="submit" id="send-answer">Send my answer</button>
+    </div>
+  </form>
+</template>
+
+<template id="tpl-none">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Your stack map</h1>
+      <p>Not ready yet.</p>
+    </div>
+  </div>
+  <div class="empty">
+    We are still reading what you sent. You will find the map here as soon as a consultant
+    has been through it — usually within two working days.
+    <div style="margin-top:14px"><a class="btn btn--outline" href="requests.html">Back to my requests</a></div>
+  </div>
+</template>
+
+<script src="../stack-tool/catalog.js"></script>
+<script src="../shared/om-core.js"></script>
+<script>
+(function () {
+  var content = mountPortalShell({ active: 'requests' });
+
+  /* Same rule as the rest of the client app, and the same refusal to silently
+     substitute: an unknown ref is not found, not somebody else's map. */
+  var asked = qs('ref');
+  var req = asked ? clientRequest(asked) : clientRequests()[0];
+
+  if (!req || req.status === 'new' || req.status === 'mapping' || req.status === 'mapped' || !req.report) {
+    content.appendChild(document.getElementById('tpl-none').content.cloneNode(true));
+    return;
+  }
+
+  content.appendChild(document.getElementById('tpl-offer').content.cloneNode(true));
+
+  var offer = buildOffer(req);
+  document.getElementById('p-sub').textContent =
+    req.company + ' · ' + offer.caps.length + ' jobs across ' + (req.tools || []).length +
+    ' tools · prepared ' + offer.generatedAt;
+  document.getElementById('p-offer').appendChild(renderOffer(offer));
+  document.getElementById('back').href = 'request.html?ref=' + encodeURIComponent(req.ref);
+  document.getElementById('print').addEventListener('click', function () { window.print(); });
+
+  var form = document.getElementById('answer-form');
+
+  function showAnswered() {
+    var r = req.clientResponse;
+    var box = document.getElementById('answered');
+    box.hidden = false;
+    box.className = 'alert alert--success';
+    box.style.marginBottom = '16px';
+    box.innerHTML = '';
+    box.appendChild(node('div', {}, [
+      node('strong', {
+        text: r.kind === 'accepted'
+          ? 'You accepted this on ' + r.at + '.'
+          : 'You asked for a call on ' + r.at + '.'
+      }),
+      node('span', {
+        text: r.kind === 'accepted'
+          ? 'A consultant is putting the first step together and will come back to you.'
+          : 'Someone from Sales will get in touch to walk you through it.'
+      }),
+      r.message ? node('span', { class: 'sub', text: 'You wrote: ' + r.message }) : document.createTextNode('')
+    ]));
+    form.hidden = true;
+    document.getElementById('answer-head').hidden = true;
+  }
+
+  if (req.clientResponse) showAnswered();
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var kind = form.querySelector('input[name="kind"]:checked').value;
+    var answer = {
+      kind: kind,
+      at: today(),
+      message: document.getElementById('f-msg').value.trim()
+    };
+    patchRequest(req.ref, {
+      clientResponse: answer,
+      status: kind === 'accepted' ? 'accepted' : 'consult'
+    });
+    req.clientResponse = answer;
+    req.status = kind === 'accepted' ? 'accepted' : 'consult';
+    showAnswered();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+</script>
+</body>
+</html>
