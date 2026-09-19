@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapping — Mercatify</title>
+<link rel="stylesheet" href="tool.css">
+<style>
+  .mapwrap table { min-width: 1320px; table-layout: fixed; }
+  .mapwrap th:nth-child(1), .mapwrap td:nth-child(1) { width: 180px; }
+  .mapwrap th:nth-child(2), .mapwrap td:nth-child(2) { width: 230px; }
+  .mapwrap th:nth-child(3), .mapwrap td:nth-child(3) { width: 180px; }
+  .mapwrap th:nth-child(4), .mapwrap td:nth-child(4) { width: 200px; }
+  .mapwrap th:nth-child(5), .mapwrap td:nth-child(5) { width: 150px; }
+  .mapwrap th:nth-child(6), .mapwrap td:nth-child(6) { width: 110px; }
+  .mapwrap th:nth-child(7), .mapwrap td:nth-child(7) { width: 90px; }
+  .mapwrap th:nth-child(8), .mapwrap td:nth-child(8) { width: 220px; }
+  .mapwrap select, .mapwrap input[type="text"] { width: 100%; }
+  .mapwrap td .sub { line-height: 1.35; }
+  .totals { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .capcell { display: flex; flex-wrap: wrap; gap: 4px; }
+  .dupbox { display: grid; gap: 8px; }
+  .dupline { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--rule); }
+  .dupline:first-child { border-top: 0; }
+  .dupline .lbl { font-weight: 600; min-width: 190px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="mark" aria-hidden="true">M</span> Mercatify</div>
+  <nav class="steps" aria-label="Steps">
+    <a class="step" href="intake.html"><span class="n">01</span> Intake</a>
+    <a class="step" href="mapping.html" aria-current="page"><span class="n">02</span> Mapping</a>
+    <a class="step" href="report.html"><span class="n">03</span> Report</a>
+  </nav>
+  <button class="btn btn--ghost btn--sm" id="theme" type="button">Theme</button>
+</header>
+
+<main class="wrap">
+
+  <div class="head">
+    <p class="eyebrow">Step 02 · filled in by us — an agent's job, done by hand for now</p>
+    <h1>One verdict per module.</h1>
+    <p class="lede">Paste the client's brief. Every module they ticked becomes a row, pre-filled with
+      the catalog's default target and verdict. Change what is wrong, put hours against anything marked
+      <span class="chip chip--build">build</span>, and the report writes itself from what is left.</p>
+  </div>
+
+  <section class="card" id="loader">
+    <h3 style="margin-bottom:10px">Load a brief</h3>
+    <div class="io">
+      <label for="in">Paste the brief — JSON, or the plain-text version with the JSON at the end</label>
+      <textarea id="in" spellcheck="false" placeholder='{ "kind": "mercatify-brief", … }'></textarea>
+      <div class="row">
+        <button class="btn" type="button" id="load">Load brief</button>
+        <button class="btn btn--ghost" type="button" id="load-local">Load from this browser</button>
+        <label class="btn btn--ghost" for="file" style="margin:0">Open .json file</label>
+        <input type="file" id="file" accept="application/json,.json" style="display:none">
+        <span class="hint" id="load-msg"></span>
+      </div>
+    </div>
+  </section>
+
+  <div id="work" hidden>
+
+    <section class="card">
+      <div class="spread">
+        <div>
+          <h3 id="case-name">—</h3>
+          <p class="hint" id="case-sub">—</p>
+        </div>
+        <div class="row no-print">
+          <button class="btn btn--ghost btn--sm" type="button" id="reset-defaults">Reset to catalog defaults</button>
+          <button class="btn btn--ghost btn--sm" type="button" id="unload">Load another brief</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="section">
+      <h2>Jobs done twice</h2>
+      <p>Same capability, more than one invoice. Decide once which tool owns it — the others
+        are the rows that can be cancelled without anyone noticing.</p>
+    </div>
+    <section class="card dupbox" id="dups"></section>
+
+    <div class="section">
+      <h2>After — tool by tool</h2>
+      <p>Verdicts: <span class="chip chip--native">native</span> already there ·
+        <span class="chip chip--configure">configure</span> there, needs setting up ·
+        <span class="chip chip--build">build</span> genuinely new ·
+        <span class="chip chip--integrate">integrate</span> stays external, wired in ·
+        <span class="chip chip--keep">keep</span> out of scope on purpose ·
+        <span class="chip chip--drop">drop</span> nobody would miss it.</p>
+    </div>
+
+    <div class="tablewrap mapwrap">
+      <table id="map">
+        <thead>
+          <tr>
+            <th scope="col">Module</th>
+            <th scope="col">What it is used for</th>
+            <th scope="col">Capability</th>
+            <th scope="col">Open Mercato</th>
+            <th scope="col">Verdict</th>
+            <th scope="col">Confidence</th>
+            <th scope="col" class="num">Hours</th>
+            <th scope="col">Evidence / note</th>
+          </tr>
+        </thead>
+        <tbody id="map-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Assumptions</h2>
+      <p>The model never computes money. These three numbers and the table above are the only
+        inputs; the report multiplies them in public.</p>
+    </div>
+    <section class="card">
+      <div class="grid grid--3">
+        <div>
+          <label for="a-hosting">Hosting &amp; ops, per month</label>
+          <input type="number" id="a-hosting" min="0" placeholder="180">
+        </div>
+        <div>
+          <label for="a-rate">Build rate, per hour</label>
+          <input type="number" id="a-rate" min="0" placeholder="120">
+        </div>
+        <div>
+          <label for="a-analyst">Reviewed by</label>
+          <input type="text" id="a-analyst" placeholder="Joanna Pawłowska">
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <label for="a-notes">Caveats that belong in the report</label>
+        <textarea id="a-notes" placeholder="Offline use on site not confirmed. Seat counts from the March invoice."></textarea>
+      </div>
+    </section>
+
+    <div class="section">
+      <h2>Where this lands</h2>
+    </div>
+    <section class="card">
+      <div class="totals" id="totals"></div>
+      <div class="row" style="margin-top:16px">
+        <a class="btn btn--accent" href="report.html" id="to-report">Generate report →</a>
+        <button class="btn btn--ghost" type="button" id="copy-map">Copy mapping</button>
+        <button class="btn btn--ghost" type="button" id="dl-map">Download .json</button>
+      </div>
+    </section>
+
+  </div>
+
+  <p class="footer">Mercatify · step 02 of 03. Everything on this page is what the decision-engine
+     agent would return — typed, editable, and waiting for a human to dispose.</p>
+</main>
+
+<script src="catalog.js"></script>
+<script>
+(function(){
+  initTheme('theme');
+
+  var data = null;   /* { brief, rows, assumptions } */
+
+  /* ---------- loading ---------- */
+  function parseBrief(text){
+    var t = (text || '').trim();
+    if (!t) return null;
+    var i = t.indexOf('{');
+    var j = t.lastIndexOf('}');
+    if (i === -1 || j === -1) return null;
+    try { return JSON.parse(t.slice(i, j + 1)); } catch (e) { return null; }
+  }
+
+  function seedRows(brief){
+    var rows = [];
+    (brief.tools || []).forEach(function(t){
+      (t.modules || []).forEach(function(m){
+        var cat = findModule(t.id, m.id);
+        rows.push({
+          id: t.id + '::' + m.id,
+          toolId: t.id, toolName: t.name,
+          modId: m.id, modName: m.name,
+          usage: m.desc || '',
+          caps: m.caps || [],
+          om: cat ? cat.om : '',
+          verdict: cat ? cat.verdict : (t.custom ? 'build' : ''),
+          conf: cat ? cat.conf : 'low',
+          hours: cat && cat.verdict === 'build' ? 40 : '',
+          note: t.custom ? 'Off catalog — unmapped, needs a look' : ''
+        });
+      });
+    });
+    return rows;
+  }
+
+  function adopt(brief, existing){
+    var tools = (brief.tools || []).map(function(t){
+      return { id:t.id, name:t.name, kind:t.kind, custom:!!t.custom,
+               seats:t.seats, monthly:t.monthly, after:'', afterTouched:false,
+               modules:t.modules };
+    });
+    data = {
+      v: 1, kind: 'mercatify-mapping',
+      created: new Date().toISOString().slice(0, 10),
+      company: brief.company || {}, currency: brief.currency || 'EUR',
+      pains: brief.pains || '', mustKeep: brief.mustKeep || '',
+      tools: tools,
+      rows: (existing && existing.rows) || seedRows(brief),
+      assumptions: (existing && existing.assumptions) || { hosting:'', rate:'', analyst:'', notes:'' }
+    };
+    if (existing && existing.tools) {
+      existing.tools.forEach(function(et){
+        var t = data.tools.filter(function(x){ return x.id === et.id; })[0];
+        if (t && et.afterTouched) { t.after = et.after; t.afterTouched = true; }
+      });
+    }
+    document.getElementById('a-hosting').value = data.assumptions.hosting || '';
+    document.getElementById('a-rate').value = data.assumptions.rate || '';
+    document.getElementById('a-analyst').value = data.assumptions.analyst || '';
+    document.getElementById('a-notes').value = data.assumptions.notes || '';
+    document.getElementById('loader').hidden = true;
+    document.getElementById('work').hidden = false;
+    renderAll();
+  }
+
+  function msg(text, ok){
+    var m = document.getElementById('load-msg');
+    m.textContent = text;
+    m.style.color = ok ? 'var(--accent-text)' : 'var(--ink-2)';
+  }
+
+  document.getElementById('load').addEventListener('click', function(){
+    var b = parseBrief(document.getElementById('in').value);
+    if (!b || !b.tools) { msg('That does not look like a brief — paste the whole thing, including the JSON.', false); return; }
+    adopt(b, null);
+  });
+  document.getElementById('load-local').addEventListener('click', function(){
+    var c = loadCase();
+    if (!c || !c.brief) { msg('Nothing saved in this browser yet.', false); return; }
+    adopt(c.brief, c.mapping && c.mapping.rows ? c.mapping : null);
+  });
+  document.getElementById('file').addEventListener('change', function(e){
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      var b = parseBrief(String(r.result));
+      if (!b || !b.tools) { msg('That file is not a brief.', false); return; }
+      adopt(b, null);
+    };
+    r.readAsText(f);
+  });
+  document.getElementById('unload').addEventListener('click', function(){
+    document.getElementById('work').hidden = true;
+    document.getElementById('loader').hidden = false;
+    msg('', true);
+  });
+  document.getElementById('reset-defaults').addEventListener('click', function(){
+    if (!data) return;
+    data.rows = seedRows({ tools: data.tools });
+    renderAll();
+  });
+
+  /* ---------- rendering ---------- */
+  function toolVerdictState(tool){
+    var rows = data.rows.filter(function(r){ return r.toolId === tool.id; });
+    var retain = rows.some(function(r){ return r.verdict === 'keep' || r.verdict === 'integrate'; });
+    return retain ? 'retained' : 'cancelled';
+  }
+
+  function autoAfter(){
+    data.tools.forEach(function(t){
+      if (t.afterTouched) return;
+      t.after = toolVerdictState(t) === 'retained' ? (t.monthly || '') : 0;
+    });
+  }
+
+  function renderDups(){
+    var box = document.getElementById('dups');
+    box.innerHTML = '';
+    var ov = overlaps(data.tools);
+    if (!ov.length) {
+      box.appendChild(el('p', { class:'hint', text:'No capability is covered by two tools. Rare, and worth saying out loud in the report.' }));
+      return;
+    }
+    ov.forEach(function(o){
+      var spend = o.tools.reduce(function(s, x){
+        var t = data.tools.filter(function(y){ return y.id === x.toolId; })[0];
+        return s + (t ? (Number(t.monthly) || 0) : 0);
+      }, 0);
+      var line = el('div', { class:'dupline' }, [
+        el('span', { class:'lbl', text: o.label }),
+        el('span', { class:'hint', text: o.tools.map(function(x){ return x.toolName + ' · ' + x.moduleName; }).join('   ·   ') })
+      ]);
+      if (spend) {
+        line.appendChild(el('span', { class:'hint', style:'margin-left:auto;white-space:nowrap',
+          text: money(spend, data.currency) + '/mo across those tools' }));
+      }
+      box.appendChild(line);
+    });
+  }
+
+  function renderTable(){
+    var body = document.getElementById('map-body');
+    body.innerHTML = '';
+
+    data.tools.forEach(function(t){
+      var state = toolVerdictState(t);
+      var head = el('tr', { class:'trow--group' });
+      var cell = el('td', { colspan:'8' });
+      var left = el('span', {}, [
+        el('strong', { text: t.name }),
+        el('span', { class:'sub', text: '  ' + (t.kind || '') + (t.seats ? ' · ' + t.seats + ' seats' : '') })
+      ]);
+      var right = el('span', { class:'row', style:'margin-left:auto' });
+      right.appendChild(el('span', { class:'sub', text: t.monthly ? money(t.monthly, data.currency) + '/mo now' : 'no cost given' }));
+      var afterLabel = el('label', { for:'after-' + t.id, text:'keeps paying', style:'margin:0;white-space:nowrap' });
+      var after = el('input', { type:'number', min:'0', id:'after-' + t.id, style:'width:90px' });
+      after.value = (t.after === 0 || t.after) ? t.after : '';
+      after.addEventListener('input', function(){ t.after = after.value; t.afterTouched = true; renderTotals(); persist(); });
+      right.appendChild(afterLabel);
+      right.appendChild(after);
+      right.appendChild(el('span', { class: 'chip ' + (state === 'retained' ? 'chip--keep' : 'chip--native'),
+        text: state === 'retained' ? 'stays' : 'can be cancelled' }));
+      var flex = el('div', { class:'row', style:'width:100%' }, [left, right]);
+      cell.appendChild(flex);
+      head.appendChild(cell);
+      body.appendChild(head);
+
+      data.rows.filter(function(r){ return r.toolId === t.id; }).forEach(function(r){
+        body.appendChild(rowEl(r));
+      });
+    });
+  }
+
+  function rowEl(r){
+    var tr = el('tr');
+
+    tr.appendChild(el('td', {}, [
+      el('div', { text: r.modName }),
+      el('div', { class:'sub', text: r.toolName })
+    ]));
+
+    var usage = el('input', { type:'text', value: r.usage, 'aria-label':'What ' + r.modName + ' is used for' });
+    usage.addEventListener('input', function(){ r.usage = usage.value; persist(); });
+    tr.appendChild(el('td', {}, [usage]));
+
+    var caps = el('div', { class:'capcell' });
+    (r.caps || []).forEach(function(c){ caps.appendChild(el('span', { class:'chip', text: capLabel(c) })); });
+    if (!r.caps || !r.caps.length) caps.appendChild(el('span', { class:'chip chip--drop', text:'unmapped' }));
+    tr.appendChild(el('td', {}, [caps]));
+
+    var om = el('select', { 'aria-label':'Open Mercato target for ' + r.modName });
+    om.appendChild(el('option', { value:'', text:'— pick a target —' }));
+    OM_TARGETS.forEach(function(o){
+      var opt = el('option', { value:o, text:o });
+      if (o === r.om) opt.selected = true;
+      om.appendChild(opt);
+    });
+    if (r.om && OM_TARGETS.indexOf(r.om) === -1) {
+      var extra = el('option', { value:r.om, text:r.om }); extra.selected = true; om.appendChild(extra);
+    }
+    om.addEventListener('change', function(){ r.om = om.value; persist(); });
+    tr.appendChild(el('td', {}, [om]));
+
+    var v = el('select', { 'aria-label':'Verdict for ' + r.modName });
+    v.appendChild(el('option', { value:'', text:'—' }));
+    Object.keys(VERDICTS).forEach(function(k){
+      var opt = el('option', { value:k, text: VERDICTS[k].label, title: VERDICTS[k].hint });
+      if (k === r.verdict) opt.selected = true;
+      v.appendChild(opt);
+    });
+    v.addEventListener('change', function(){
+      r.verdict = v.value;
+      if (r.verdict === 'build' && !r.hours) r.hours = 40;
+      if (r.verdict !== 'build') r.hours = '';
+      renderAll();
+    });
+    /* the legend above the table carries the meaning; rows stay one line tall */
+    if (r.verdict) v.title = VERDICTS[r.verdict].hint;
+    tr.appendChild(el('td', {}, [v]));
+
+    var c = el('select', { 'aria-label':'Confidence for ' + r.modName });
+    CONFIDENCE.forEach(function(k){
+      var opt = el('option', { value:k, text:k });
+      if (k === r.conf) opt.selected = true;
+      c.appendChild(opt);
+    });
+    c.addEventListener('change', function(){ r.conf = c.value; persist(); });
+    tr.appendChild(el('td', {}, [c]));
+
+    var h = el('input', { type:'number', min:'0', step:'1', 'aria-label':'Build hours for ' + r.modName });
+    h.value = r.hours === 0 || r.hours ? r.hours : '';
+    h.disabled = r.verdict !== 'build';
+    h.addEventListener('input', function(){ r.hours = h.value; renderTotals(); persist(); });
+    tr.appendChild(el('td', { class:'num' }, [h]));
+
+    var n = el('input', { type:'text', value: r.note || '', 'aria-label':'Note for ' + r.modName });
+    n.addEventListener('input', function(){ r.note = n.value; persist(); });
+    tr.appendChild(el('td', {}, [n]));
+
+    return tr;
+  }
+
+  function renderTotals(){
+    autoAfter();
+    var t = computeTotals(data);
+    var box = document.getElementById('totals');
+    box.innerHTML = '';
+    function tile(k, v, s, cls){
+      box.appendChild(el('div', { class:'kpi ' + (cls || '') }, [
+        el('div', { class:'k', text:k }),
+        el('div', { class:'v', text:v }),
+        el('div', { class:'s', text:s })
+      ]));
+    }
+    var cur = data.currency;
+    var cancelled = data.tools.filter(function(x){ return toolVerdictState(x) === 'cancelled'; }).length;
+    tile('Licences today', money(t.monthlyNow, cur) + '/mo', data.tools.length + ' tools' + (t.seats ? ' · ' + t.seats + ' seats' : ''));
+    tile('Licences after', money(t.monthlyAfter, cur) + '/mo', t.hosting ? 'incl. ' + money(t.hosting, cur) + ' hosting' : 'hosting not entered');
+    tile('Net saving', money(t.annualSaving, cur) + '/yr', cancelled + ' of ' + plural(data.tools.length, 'tool') + ' cancelled', 'kpi--accent');
+    tile('One-off build', t.hours + ' h', t.rate ? money(t.oneOff, cur) + (t.breakEven ? ' · break-even month ' + t.breakEven : '') : 'rate not entered');
+    persist();
+  }
+
+  function renderAll(){
+    if (!data) return;
+    document.getElementById('case-name').textContent = data.company.name || 'Unnamed case';
+    var bits = [];
+    if (data.company.industry) bits.push(data.company.industry);
+    if (data.company.people) bits.push(data.company.people + ' people');
+    bits.push(data.tools.length + ' tools');
+    bits.push(data.rows.length + ' modules');
+    document.getElementById('case-sub').textContent = bits.join(' · ');
+    renderDups();
+    renderTable();
+    renderTotals();
+  }
+
+  /* assumptions */
+  ['hosting', 'rate', 'analyst', 'notes'].forEach(function(k){
+    var id = 'a-' + k;
+    document.getElementById(id).addEventListener('input', function(){
+      if (!data) return;
+      data.assumptions[k] = document.getElementById(id).value;
+      renderTotals();
+    });
+  });
+
+  function persist(){
+    if (!data) return;
+    var c = loadCase() || { v:1, kind:'mercatify-case' };
+    c.mapping = data;
+    if (!c.brief) c.brief = { company:data.company, currency:data.currency, tools:data.tools };
+    saveCase(c);
+  }
+
+  document.getElementById('copy-map').addEventListener('click', function(){
+    copyText(JSON.stringify(data, null, 2), this, 'Mapping copied');
+  });
+  document.getElementById('dl-map').addEventListener('click', function(){
+    var name = (data.company.name || 'stack-mapping').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name + '-mapping.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  /* pick up whatever is already in this browser */
+  var c = loadCase();
+  if (c && c.mapping && c.mapping.rows && c.mapping.rows.length) {
+    adopt({ tools: c.mapping.tools, company: c.mapping.company, currency: c.mapping.currency,
+            pains: c.mapping.pains, mustKeep: c.mapping.mustKeep }, c.mapping);
+  } else if (c && c.brief && c.brief.tools && c.brief.tools.length) {
+    msg('A brief from step 01 is waiting in this browser.', true);
+  }
+})();
+</script>
+</body>
+</html>

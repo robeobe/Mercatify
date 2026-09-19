@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Mercatify</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
+<link rel="stylesheet" href="../shared/om.css">
+</head>
+<body>
+
+<div class="auth">
+  <div class="auth__card">
+    <div class="auth__head">
+      <span class="om-mark om-mark--lg" aria-hidden="true">M</span>
+      <h1>Mercatify</h1>
+      <p class="auth__sub">Access your workspace</p>
+    </div>
+    <div class="auth__body">
+      <form id="login" novalidate>
+        <div class="alert alert--success">
+          <div>
+            <strong>You're logging in to Voltix Energy.</strong>
+            <span class="small">Tenant resolved from your invite link.</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="username"
+                 value="ola@voltix.example" required>
+        </div>
+
+        <div>
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password"
+                 value="secret" required>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" name="remember" checked>
+          <span>Remember me</span>
+        </label>
+
+        <div class="alert" id="error" role="alert" hidden>
+          <div id="error-text">Enter an email and a password.</div>
+        </div>
+
+        <button class="btn btn--tall" type="submit" id="submit">Sign in</button>
+
+        <p class="auth__foot"><a href="#">Forgot password?</a></p>
+      </form>
+
+      <p class="auth__demo">
+        Demo workspace — no account is created and nothing leaves this browser.
+        Any email and password get you in.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/om-core.js"></script>
+<script>
+(function () {
+  initOmTheme();
+
+  var form = document.getElementById('login');
+  var btn = document.getElementById('submit');
+  var err = document.getElementById('error');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = document.getElementById('email').value.trim();
+    var pass = document.getElementById('password').value;
+
+    /* The only rejection a mock can honestly make: an empty field. Anything
+       else would fake a credential check the demo cannot perform. */
+    if (!email || !pass) { err.hidden = false; return; }
+    err.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+
+    var name = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, function (c) {
+      return c.toUpperCase();
+    });
+    writeSession('client', { email: email, name: name, role: 'Client' });
+
+    /* A beat of latency so the button state is visible — the real login also
+       takes a moment and the demo should not look like a hyperlink. */
+    setTimeout(function () { window.location.href = 'intake.html'; }, 450);
+  });
+})();
+</script>
+</body>
+</html>
