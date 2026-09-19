@@ -56,6 +56,7 @@ export const interviewCaseListSchema = z.object({
   id: z.string().uuid().optional(),
   ids: z.string().optional(),
   status: interviewCaseStatusSchema.optional(),
+  mine: z.coerce.boolean().optional(),
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(100).default(50),
   sortField: z.enum(['id', 'title', 'status', 'created_at', 'updated_at']).optional().default('created_at'),

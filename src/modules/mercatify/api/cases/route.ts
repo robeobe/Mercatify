@@ -1,7 +1,7 @@
 import { makeCrudRoute, type CrudCtx } from '@open-mercato/shared/lib/crud/factory'
-import type { Where, WhereValue } from '@open-mercato/shared/lib/query/types'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { EntityManager } from '@mikro-orm/postgresql'
+import { badRequest } from '@open-mercato/shared/lib/crud/errors'
 import { InterviewCase, InterviewCaseTool } from '../../data/entities'
 import {
   interviewCaseCreateSchema,
@@ -9,6 +9,8 @@ import {
   interviewCaseUpdateSchema,
 } from '../../data/validators'
 import { serializeTool } from '../../lib/case-tools'
+import { buildInterviewCaseListFilters } from '../../lib/case-list-filters'
+import { buildClientRequestView } from '../../lib/request-progress'
 import {
   createMercatifyCrudOpenApi,
   createMercatifyPagedListResponseSchema,
@@ -33,6 +35,8 @@ type BaseFields = {
   must_keep: string | null
   tenant_id: string | null
   organization_id: string | null
+  created_by_user_id: string | null
+  submitted_at: Date | string | null
   created_at: Date
   updated_at: Date | string | null
   mapping_confirmed_at: Date | string | null
@@ -50,6 +54,8 @@ const baseListFields = [
   'must_keep',
   'tenant_id',
   'organization_id',
+  'created_by_user_id',
+  'submitted_at',
   'created_at',
   'updated_at',
   'mapping_confirmed_at',
@@ -73,6 +79,27 @@ function toIsoTimestamp(value: unknown): string | null {
   return null
 }
 
+type RbacService = {
+  userHasAllFeatures: (
+    userId: string,
+    features: string[],
+    scope: { tenantId: string | null; organizationId: string | null },
+  ) => Promise<boolean>
+}
+
+async function canSeeAllOrgCases(ctx: CrudCtx): Promise<boolean> {
+  const userId = ctx.auth?.sub
+  if (!userId) return false
+  try {
+    const rbac = ctx.container.resolve('rbacService') as RbacService
+    const tenantId = ctx.auth?.tenantId ?? null
+    const organizationId = ctx.selectedOrganizationId ?? ctx.organizationScope?.selectedId ?? null
+    return await rbac.userHasAllFeatures(userId, ['mercatify.mapping.view'], { tenantId, organizationId })
+  } catch {
+    return false
+  }
+}
+
 export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   metadata: {
     GET: { requireAuth: true, requireFeatures: ['mercatify.cases.view'] },
@@ -94,33 +121,43 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
     entityId: ENTITY_ID,
     fields: baseListFields,
     sortFieldMap,
-    buildFilters: async (q: Query): Promise<Where<BaseFields>> => {
-      const filters: Where<BaseFields> = {}
-      const F = filters as Record<string, WhereValue>
-      if (q.ids) {
-        const ids = q.ids.split(',').map((value) => value.trim()).filter((value) => value.length > 0)
-        if (ids.length > 0) F.id = { $in: ids }
-      }
-      if (q.id) F.id = q.id
-      if (q.status) F.status = q.status
-      return filters
+    buildFilters: async (q: Query, ctx: CrudCtx) => {
+      const built = buildInterviewCaseListFilters({
+        id: q.id,
+        ids: q.ids,
+        status: q.status,
+        mine: q.mine,
+        actorUserId: ctx.auth?.sub ? String(ctx.auth.sub) : null,
+        canSeeAllOrgCases: await canSeeAllOrgCases(ctx),
+      })
+      if (!built.ok) throw badRequest('User context is required')
+      return built.filters
     },
-    transformItem: (item: BaseFields) => ({
-      id: String(item.id),
-      title: String(item.title),
-      status: String(item.status),
-      companyName: item.company_name ?? null,
-      industry: item.industry ?? null,
-      peopleCount: item.people_count ?? null,
-      currency: item.currency ?? null,
-      pains: item.pains ?? null,
-      mustKeep: item.must_keep ?? null,
-      tenant_id: item.tenant_id ?? null,
-      organization_id: item.organization_id ?? null,
-      updatedAt: toIsoTimestamp(item.updated_at),
-      mappingConfirmedAt: toIsoTimestamp(item.mapping_confirmed_at),
-      tools: [] as ReturnType<typeof serializeTool>[],
-    }),
+    transformItem: (item: BaseFields) => {
+      const submittedAt = toIsoTimestamp(item.submitted_at)
+      const view = buildClientRequestView(String(item.status), submittedAt)
+      return {
+        id: String(item.id),
+        title: String(item.title),
+        status: String(item.status),
+        companyName: item.company_name ?? null,
+        industry: item.industry ?? null,
+        peopleCount: item.people_count ?? null,
+        currency: item.currency ?? null,
+        pains: item.pains ?? null,
+        mustKeep: item.must_keep ?? null,
+        tenant_id: item.tenant_id ?? null,
+        organization_id: item.organization_id ?? null,
+        createdByUserId: item.created_by_user_id ?? null,
+        submittedAt,
+        createdAt: toIsoTimestamp(item.created_at),
+        updatedAt: toIsoTimestamp(item.updated_at),
+        mappingConfirmedAt: toIsoTimestamp(item.mapping_confirmed_at),
+        whoseTurn: view.whoseTurn,
+        progress: view.progress,
+        tools: [] as ReturnType<typeof serializeTool>[],
+      }
+    },
   },
   hooks: {
     afterList: async (res, ctx: CrudCtx & { query: Query }) => {

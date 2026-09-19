@@ -155,6 +155,8 @@ const createCaseCommand: CommandHandler<Record<string, unknown>, InterviewCase> 
       mustKeep: parsed.mustKeep ?? null,
       tenantId: scope.tenantId,
       organizationId: scope.organizationId,
+      createdByUserId: ctx.auth?.sub ? String(ctx.auth.sub) : null,
+      submittedAt: parsed.status === 'draft' ? null : now,
       createdAt: now,
       updatedAt: now,
     })
@@ -245,6 +247,7 @@ const updateCaseCommand: CommandHandler<Record<string, unknown>, InterviewCase> 
     applyProfileFields(entity, parsed)
     entity.title = deriveCaseTitle(parsed.companyName !== undefined ? parsed.companyName : entity.companyName)
     if (parsed.status !== undefined) entity.status = parsed.status
+    if (nextStatus !== 'draft' && !entity.submittedAt) entity.submittedAt = new Date()
 
     await withAtomicFlush(
       em,

@@ -404,11 +404,17 @@ export function CaseForm({
   caseId,
   initial,
   isLoading,
+  listHref = LIST_HREF,
+  formTitle,
+  showLockAlert = true,
 }: {
   mode: FormMode
   caseId?: string
   initial?: CaseFormValues
   isLoading?: boolean
+  listHref?: string
+  formTitle?: string
+  showLockAlert?: boolean
 }) {
   const t = useT()
   const router = useRouter()
@@ -472,20 +478,20 @@ export function CaseForm({
 
   return (
     <CrudForm<CaseFormValues>
-      title={mode === 'create' ? t('mercatify.cases.create.title') : t('mercatify.cases.detail.title')}
-      backHref={LIST_HREF}
+      title={formTitle ?? (mode === 'create' ? t('mercatify.cases.create.title') : t('mercatify.cases.detail.title'))}
+      backHref={listHref}
       entityId={ENTITY_ID}
       formId={FORM_ID}
       fields={fields}
       groups={groups}
       initialValues={initial ?? emptyValues()}
       submitLabel={t('mercatify.cases.form.actions.saveDraft')}
-      cancelHref={LIST_HREF}
+      cancelHref={listHref}
       extraActions={extraActions}
       hideFooterActions={readOnly}
       isLoading={isLoading}
       loadingMessage={t('mercatify.cases.form.loading')}
-      contentHeader={readOnly ? (
+      contentHeader={readOnly && showLockAlert ? (
         <Alert>
           <AlertTitle>{t('mercatify.cases.form.sentConfirmation')}</AlertTitle>
           <AlertDescription>{t('mercatify.cases.form.sentConfirmationBody')}</AlertDescription>
