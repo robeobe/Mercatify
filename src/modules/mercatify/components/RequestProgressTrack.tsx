@@ -1,47 +1,55 @@
 "use client"
 
 import * as React from 'react'
-import type { ClientProgressStep, ClientProgressStepKey } from '../lib/request-progress'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import type { TrackStep, TrackStepState } from './client/progressSteps'
 
-const TITLE_KEYS: Record<ClientProgressStepKey, string> = {
-  sent: 'mercatify.requests.progress.sent.title',
-  review: 'mercatify.requests.progress.review.title',
-  report: 'mercatify.requests.progress.report.title',
-  decision: 'mercatify.requests.progress.decision.title',
+/** `.track li::before` in `assets/shared/om.css` — a 12px dot on the rail. */
+function dotClass(state: TrackStepState): string {
+  if (state === 'done') return 'border-status-success-icon bg-status-success-icon'
+  if (state === 'current') return 'border-foreground bg-background shadow-[0_0_0_3px_var(--muted)]'
+  return 'border-border bg-background'
 }
 
-const BODY_KEYS: Record<ClientProgressStepKey, string> = {
-  sent: 'mercatify.requests.progress.sent.body',
-  review: 'mercatify.requests.progress.review.body',
-  report: 'mercatify.requests.progress.report.body',
-  decision: 'mercatify.requests.progress.decision.body',
+/** `.track li::after` — the connector down to the next step. */
+function connectorClass(state: TrackStepState): string {
+  return state === 'done' ? 'bg-status-success-icon' : 'bg-border'
 }
 
-function stepClassName(state: ClientProgressStep['state']): string {
-  if (state === 'done') return 'border-primary text-foreground'
-  if (state === 'current') return 'border-primary text-foreground'
-  return 'border-border text-muted-foreground'
-}
-
-export function RequestProgressTrack({
-  steps,
-}: {
-  steps: ClientProgressStep[]
-}) {
+export function RequestProgressTrack({ steps }: { steps: TrackStep[] }) {
   const t = useT()
   return (
-    <ol className="space-y-4" aria-label={t('mercatify.requests.progress.label')}>
-      {steps.map((step) => (
-        <li
-          key={step.key}
-          className={`border-l-2 pl-4 ${stepClassName(step.state)}`}
-          aria-current={step.state === 'current' ? 'step' : undefined}
-        >
-          <div className="text-sm font-medium">{t(TITLE_KEYS[step.key])}</div>
-          <p className="text-sm text-muted-foreground">{t(BODY_KEYS[step.key])}</p>
-        </li>
-      ))}
+    <ol className="grid" aria-label={t('mercatify.client.track.label', 'Request progress')}>
+      {steps.map((step, index) => {
+        const last = index === steps.length - 1
+        return (
+          <li
+            key={step.key}
+            className={`relative pl-[30px] ${last ? 'pb-0' : 'pb-[18px]'}`}
+            aria-current={step.state === 'current' ? 'step' : undefined}
+          >
+            <span
+              aria-hidden="true"
+              className={`absolute left-1 top-1 h-3 w-3 rounded-full border-2 ${dotClass(step.state)}`}
+            />
+            {last ? null : (
+              <span
+                aria-hidden="true"
+                className={`absolute bottom-0 left-[9px] top-[18px] w-0.5 ${connectorClass(step.state)}`}
+              />
+            )}
+            <div>
+              <span className={`text-sm font-medium ${step.state === 'pending' ? 'text-muted-foreground' : ''}`}>
+                {step.title}
+              </span>
+              {step.when ? (
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">{step.when}</span>
+              ) : null}
+            </div>
+            <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{step.body}</div>
+          </li>
+        )
+      })}
     </ol>
   )
 }
