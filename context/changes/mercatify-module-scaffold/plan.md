@@ -418,15 +418,15 @@ No existing data is moved or transformed — the module introduces one new table
 ### Phase 4: Backend page and the seeded demo case
 
 #### Automated
-- [x] 4.1 `yarn generate` completes and the generated backend-route manifest lists `/backend/cases`
-- [x] 4.2 `yarn typecheck` passes
-- [x] 4.3 `yarn lint` passes
-- [x] 4.4 `yarn ds:check` passes
+- [x] 4.1 `yarn generate` completes and the generated backend-route manifest lists `/backend/cases` — 5d893ea
+- [x] 4.2 `yarn typecheck` passes — 5d893ea
+- [x] 4.3 `yarn lint` passes — 5d893ea
+- [x] 4.4 `yarn ds:check` passes — 5d893ea
 - [ ] 4.5 `yarn test` passes
 - [ ] 4.6 `yarn build` completes
-- [x] 4.7 `yarn i18n:check-hardcoded` reports no hard-coded strings in the module
-- [x] 4.8 `node scripts/check-lessons.mjs` passes
-- [x] 4.9 `git status` shows changes only under `src/modules/mercatify/`, `src/modules.ts`, and `.ai/lessons*`
+- [x] 4.7 `yarn i18n:check-hardcoded` reports no hard-coded strings in the module — 5d893ea
+- [x] 4.8 `node scripts/check-lessons.mjs` passes — 5d893ea
+- [x] 4.9 `git status` shows changes only under `src/modules/mercatify/`, `src/modules.ts`, and `.ai/lessons*` — 5d893ea
 
 #### Manual
 - [ ] 4.10 A user holding `mercatify.cases.view` opens `/backend/cases` and sees the nav entry and the seeded case
