@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="en">
+<!-- PLIK GENEROWANY z full.html przez build.py — nie edytuj tutaj -->
+<html lang="pl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mercatify pitch</title>
+<title>Mercatify — prezentacja</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
 <style>
@@ -37,7 +38,7 @@
   .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
   /* ---------- slide frame ---------- */
-  .slide { display: none; height: 100%; padding: clamp(28px, 5vw, 72px); flex-direction: column; justify-content: center; }
+  .slide { display: none; position: relative; height: 100%; padding: clamp(28px, 5vw, 72px); flex-direction: column; justify-content: center; }
   .slide.is-active { display: flex; }
   .slide__inner { width: 100%; max-width: 1120px; margin: 0 auto; }
 
@@ -57,18 +58,95 @@
   .stat-row .v small { font-size: .5em; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }
   .stat-row .v.lime { color: var(--lime); }
 
-  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; margin-top: 44px; }
-  .box { border: 1px solid var(--rule); padding: 24px 22px; display: flex; flex-direction: column; gap: 12px; }
-  .box--lime { border-color: var(--lime); }
-  .box .n { font-family: var(--mono); font-size: .7rem; letter-spacing: .12em; color: var(--lime); }
-  .box h3 { font-size: clamp(1rem, 1.6vw, 1.25rem); }
-  .box p { font-size: clamp(.88rem, 1.3vw, 1rem); color: var(--ink-2); }
+  .source { margin-top: 22px; max-width: 92ch; font-size: clamp(.72rem, 1vw, .84rem); line-height: 1.5; color: var(--ink-3); }
+  .source b { color: var(--lime); font-weight: 500; }
+  .source a { color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- szyna krokow ---------- */
+  .rail { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; margin-top: clamp(32px, 5vw, 60px); }
+  .rail__step { position: relative; text-align: center; padding: 0 clamp(6px, 1.2vw, 16px); }
+  .rail__step::before {
+    content: ""; position: absolute; z-index: 0; height: 1px; background: var(--rule);
+    top: calc(clamp(58px, 6.4vw, 88px) / 2); left: 50%; right: -50%;
+  }
+  .rail__step:last-child::before { display: none; }
+  .rail__step.is-end + .rail__step::before,
+  .rail__step:nth-last-child(2)::before { background: linear-gradient(90deg, var(--rule), var(--lime)); }
+  .rail__n {
+    position: relative; z-index: 1; margin: 0 auto;
+    width: clamp(58px, 6.4vw, 88px); height: clamp(58px, 6.4vw, 88px);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule); border-radius: clamp(16px, 1.8vw, 24px); background: var(--bg);
+    font-family: var(--mono); font-size: clamp(.72rem, 1vw, .92rem); color: var(--ink-2);
+  }
+  .rail__step.is-on .rail__n { border-color: var(--lime); color: var(--lime); }
+  .rail__step.is-end .rail__n { background: var(--lime); border-color: var(--lime); color: #0C0C0C; }
+  .rail__step h3 { margin-top: clamp(14px, 1.8vw, 22px); font-size: clamp(.92rem, 1.5vw, 1.2rem); }
+  .rail__step p { margin-top: 9px; font-size: clamp(.76rem, 1.12vw, .92rem); line-height: 1.4; color: var(--ink-2); }
+  @media (max-width: 820px) {
+    .rail { grid-auto-flow: row; grid-auto-columns: auto; gap: 22px; }
+    .rail__step::before { display: none; }
+  }
+
+  .thesis .title { font-size: clamp(1.85rem, 3.7vw, 3rem); line-height: 1.16; }
+  .thesis .punch { margin-top: clamp(30px, 3.6vw, 48px); max-width: 64ch; }
+
+  .punch { margin-top: 24px; max-width: 46ch; font-size: clamp(1.05rem, 2vw, 1.6rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; color: var(--ink); }
+  .punch--rule { padding-left: 20px; border-left: 2px solid var(--lime); }
+
+  /* ---------- problem slide ---------- */
+  .problem .slide__inner { max-width: 1300px; }
+  .problem__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: clamp(24px, 4vw, 60px); align-items: center; }
+  @media (max-width: 900px) { .problem__grid { grid-template-columns: 1fr; gap: 34px; } }
+
+  .kicker--dot { display: inline-flex; align-items: center; gap: 10px; }
+  .kicker--dot::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lime); flex: none; }
+
+  .problem h2 { font-size: 1rem; font-weight: 400; }
+  .bignum { display: block; font-size: clamp(4.5rem, 15vw, 13rem); font-weight: 600; letter-spacing: -0.05em; line-height: .8; font-variant-numeric: tabular-nums; }
+  .bignum .pct { font-size: .92em; margin-left: .02em; color: rgba(250, 250, 250, .3); }
+  .bignum__cap { display: block; margin-top: 28px; font-size: clamp(1rem, 1.85vw, 1.55rem); font-weight: 400; line-height: 1.34; letter-spacing: -0.01em; color: var(--ink-2); }
+
+  .stats { display: grid; gap: clamp(10px, 1.3vw, 18px); }
+  .stat {
+    border: 1px solid var(--rule); border-radius: 18px;
+    padding: clamp(16px, 2vw, 26px) clamp(20px, 2.4vw, 30px);
+    display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    align-items: center; gap: clamp(18px, 2.6vw, 36px);
+    background: linear-gradient(180deg, rgba(28, 28, 28, .78) 0%, rgba(18, 18, 18, .78) 100%);
+  }
+  .stat b { font-size: clamp(1.5rem, 2.9vw, 2.6rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat span { display: block; font-size: clamp(.85rem, 1.15vw, 1.05rem); line-height: 1.35; color: var(--ink-2); }
+  @media (max-width: 760px) { .stat { grid-template-columns: 1fr; gap: 10px; } }
+  .stat--own {
+    border-color: var(--lime);
+    background: radial-gradient(circle at 24% 18%, #E4FFB4 0%, #B4F372 55%, #93DC4E 100%);
+    box-shadow: 0 0 60px rgba(180, 243, 114, .22);
+  }
+  .stat--own b { color: #0C0C0C; }
+  .stat--own span { color: var(--lime-dark); font-weight: 500; }
 
   .chain { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 40px; font-family: var(--mono); font-size: clamp(.72rem, 1.2vw, .9rem); }
   .chain b { font-weight: 400; border: 1px solid var(--rule); padding: 9px 13px; }
   .chain b.on { border-color: var(--lime); color: var(--lime); }
   .chain b.human { border-color: var(--lime); background: var(--lime); color: #0C0C0C; }
   .chain i { color: var(--ink-3); font-style: normal; }
+
+  .orch { margin-top: 28px; border: 1px solid var(--rule); }
+  .orch__row { display: grid; grid-template-columns: .85fr 1.2fr 1fr .95fr; }
+  .orch__stage { padding: 18px 16px; border-left: 1px solid var(--rule); display: flex; flex-direction: column; gap: 12px; }
+  .orch__stage:first-child { border-left: 0; }
+  .orch__lbl { font-family: var(--mono); font-size: .64rem; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; gap: 10px; }
+  .orch__lbl b { font-weight: 400; color: var(--lime); }
+  .orch__nodes { display: flex; flex-direction: column; gap: 6px; }
+  .orch__node { font-family: var(--mono); font-size: clamp(.7rem, 1.05vw, .84rem); border: 1px solid var(--rule); padding: 8px 11px; }
+  .orch__node--critic { border-color: var(--violet); color: var(--violet); }
+  .orch__node--human { border-color: var(--lime); background: var(--lime); color: #0C0C0C; }
+  .orch__stage p { font-size: clamp(.78rem, 1.1vw, .9rem); color: var(--ink-2); }
+  .orch__loop { border-top: 1px solid var(--rule); padding: 13px 16px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; font-size: clamp(.78rem, 1.1vw, .9rem); color: var(--ink-2); line-height: 1.45; }
+  .orch__loop b { font-family: var(--mono); font-weight: 400; font-size: .84em; letter-spacing: .06em; text-transform: uppercase; color: var(--violet); white-space: nowrap; }
+  @media (max-width: 860px) { .orch__row { grid-template-columns: 1fr 1fr; } .orch__stage:nth-child(3) { border-left: 0; } .orch__stage:nth-child(n+3) { border-top: 1px solid var(--rule); } }
+
 
   .lines { margin: 40px 0 0; padding: 0; list-style: none; }
   .lines li { border-top: 1px solid var(--rule); padding: 18px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 28px; align-items: baseline; }
@@ -90,10 +168,39 @@
   .cover::before {
     content: ""; position: absolute; inset: 0; z-index: -1;
     background-image:
-      linear-gradient(100deg, #0C0C0C 0%, #0C0C0C 34%, rgba(12,12,12,.8) 56%, rgba(12,12,12,.3) 82%, rgba(12,12,12,.15) 100%),
+      linear-gradient(90deg, #0C0C0C 0%, #0C0C0C 46%, rgba(12, 12, 12, .96) 55%, rgba(12, 12, 12, .62) 72%, rgba(12, 12, 12, .16) 90%, rgba(12, 12, 12, 0) 100%),
       url("hero2.png");
     background-size: cover; background-position: right center;
   }
+  /* tekst okladki trzyma sie lewej polowy, zeby nie wchodzil w grafike */
+  .cover .title, .cover .sub { max-width: min(100%, 640px); }
+  .cover .title { font-size: clamp(2rem, 4.4vw, 3.4rem); }
+
+  /* slajd ask: grafika siedzi w prawej polowie, lewa krawedz wytlumiona w tlo */
+  .cover--map::before {
+    background-image:
+      linear-gradient(90deg, #0C0C0C 0%, #0C0C0C 43%, rgba(12, 12, 12, .8) 47%, rgba(12, 12, 12, 0) 52.5%),
+      url("stack-map.png");
+    background-size: cover, 52% auto;
+    background-position: center, right -1% center;
+    background-repeat: no-repeat;
+    /* wygaszamy dopiero poza ilustracja — w srodku grafika zostaje ostra i w pelnym kryciu */
+    -webkit-mask-image: radial-gradient(44% 36% at 74% 50%, #000 62%, transparent 100%);
+            mask-image: radial-gradient(44% 36% at 74% 50%, #000 62%, transparent 100%);
+  }
+  .cover--map .title { font-size: clamp(1.7rem, 3.1vw, 2.5rem); }
+  .cover--map .title, .cover--map .sub { max-width: min(46%, 680px); }
+
+  .photo { position: relative; justify-content: flex-end; }
+  .photo::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background-image:
+      linear-gradient(to top, rgba(12,12,12,.96) 0%, rgba(12,12,12,.88) 20%, rgba(12,12,12,.45) 46%, rgba(12,12,12,.2) 70%, rgba(12,12,12,.35) 100%),
+      url("team.png");
+    background-size: cover; background-position: center 38%;
+  }
+  .photo .slide__inner { padding-bottom: 8px; }
+  .photo .sub { color: var(--ink); max-width: 52ch; }
 
   .demo-mark { font-family: var(--mono); font-size: clamp(3rem, 12vw, 9rem); letter-spacing: -0.04em; color: var(--lime); line-height: 1; }
 
@@ -124,7 +231,9 @@
     .slide__note { display: block; margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--ink-2); font-size: .9rem; max-width: 80ch; }
   }
 
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -132,148 +241,130 @@
 <div class="bar" id="bar"></div>
 
 <!-- 01 -->
-<section class="slide cover is-active" data-time="0:00" data-note="Cześć, jesteśmy Mercatify. Jedno zdanie na start: firma, do której przychodzisz z listą swoich SaaS-ów, a wychodzisz z mapą, wyceną i działającym podglądem własnego systemu. // Nie mówimy jeszcze nic o agentach — najpierw problem.">
+<section class="slide cover is-active" data-time="0:00" data-note="Cześć, jesteśmy Mercatify. Jedno zdanie na start: firma, do której przychodzisz z listą swoich SaaS-ów, a wychodzisz z mapą pokrycia, policzoną kwotą i wyceną przejścia na własny system. // Nie mówimy jeszcze nic o agentach — najpierw problem.">
   <div class="slide__inner">
     <span class="kicker">Mercatify</span>
-    <h1 class="title">Your SaaS stack is already your specification.</h1>
-    <p class="sub">An AI company that turns the tools you rent into software you own.</p>
+    <h1 class="title">Twój stack SaaS to już gotowa specyfikacja.</h1>
+    <p class="sub">Firma AI, która zamienia wynajmowane co miesiąc narzędzia w jeden system na Open Mercato — twój, nie wypożyczony.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 02 -->
-<section class="slide" data-time="0:15" data-note="Typowa firma na 30 osób płaci za siedem narzędzi. Nikt w tej firmie nie umie powiedzieć, co dokładnie robi połowa z nich. Rachunek rośnie co roku, a dane leżą w siedmiu miejscach. // To nie jest problem techniczny, tylko problem pieniędzy i kontroli.">
+<section class="slide problem" data-time="0:15" data-note="Jedna liczba ustawia cala reszte, i nie jest nasza: w przecietnym produkcie SaaS 80 procent funkcji jest rzadko albo nigdy nieuzywanych. Pomiar Pendo na 615 subskrypcjach. Czyli nie placisz za narzedzie, ktorego nie potrzebujesz — placisz za CALY produkt, zeby uzywac jego wycinka. // Po prawej to samo w pieniadzach, po kolei: licencje wykorzystane w 54 procentach i rachunek, ktory sam z siebie rosnie o 8 do 12 procent przy kazdym odnowieniu. // A teraz zatrzymaj sie na zielonym. Zero. Tyle z tego jest twoje — po roku placenia, po pieciu latach placenia, zawsze zero. To nie jest pomiar, to definicja wynajmu. I to jest jedyna liczba na tym slajdzie, ktora potrafimy zmienic. // KONTRA, na ktora musisz byc gotowa: „te 20 procent, ktorych uzywam, to wlasnie ta trudna czesc”. Ma racje — i dlatego mamy piec werdyktow, nie jeden. Czesc zostaje u dostawcy, czesc wpinamy przez integracje. Powiedz to zanim ktos zapyta.">
   <div class="slide__inner">
-    <span class="kicker">The problem</span>
-    <h2 class="title">Nobody knows what half these tools actually do.</h2>
-    <div class="stat-row">
-      <div><span class="k">Tools in a typical SME stack</span><span class="v">7</span></div>
-      <div><span class="k">Monthly licences</span><span class="v">$2,320</span></div>
-      <div><span class="k">Per year, rented</span><span class="v">$27,840</span></div>
-      <div><span class="k">Owned by the client</span><span class="v">$0</span></div>
+    <div class="problem__grid">
+      <div>
+        <span class="kicker kicker--dot">Problem</span>
+        <h2>
+          <span class="bignum">80<span class="pct">%</span></span>
+          <span class="bignum__cap">funkcji w przeciętnym produkcie SaaS<br>jest rzadko albo nigdy nieużywanych</span>
+        </h2>
+        <p class="punch">Płacisz za całość. Używasz wycinka. Nie masz nic.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>54%</b><span>kupionych licencji jest realnie używanych</span></div>
+        <div class="stat"><b>+8–12%</b><span>o tyle rośnie rachunek przy każdym odnowieniu</span></div>
+        <div class="stat stat--own"><b>0%</b><span>tyle z tego masz na własność</span></div>
+      </div>
     </div>
+    <p class="source"><b>Pendo</b>, Feature Adoption Report — 615 subskrypcji, 2019. <b>Zylo</b>, SaaS Management Index 2026 — 40 mln licencji, dane z dużych organizacji. <b>Cledara</b> — typowa podwyżka przy odnowieniu. Zero własności to nie pomiar, tylko definicja subskrypcji.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 03 -->
-<section class="slide" data-time="0:45" data-note="I tu jest nasza teza. Nikt nie pyta klienta „jakiego ERP potrzebujesz", bo on tego nie wie. Ale on już podjął wszystkie decyzje — one są w jego stacku. Za co płaci co miesiąc, to jest opis tego, jak jego firma działa. // Stack jest specyfikacją. Wystarczy umieć ją przeczytać.">
+<section class="slide thesis" data-time="0:50" data-note="I tu jest nasza teza. Nikt nie pyta klienta „jakiego ERP potrzebujesz”, bo on tego nie wie. Ale wszystkie decyzje już podjął — one siedzą w jego stacku. Każda subskrypcja to jedna decyzja, a razem to gotowy dokument wymagań, tylko nikt go nigdy nie napisał. // Za co płacisz co miesiąc, to jest opis tego, jak twoja firma działa. // Stack jest specyfikacją. Wystarczy umieć ją przeczytać.">
   <div class="slide__inner">
-    <span class="kicker">The insight</span>
-    <h2 class="title">We don't ask what system you need.<br>We read what you already pay for.</h2>
-    <p class="sub">Every subscription is a decision somebody already made. The live stack is the requirements document — nobody had to write it.</p>
+    <span class="kicker">Teza</span>
+    <h2 class="title">Nie pytamy, jakiego systemu potrzebujesz.<br>Czytamy to, za co już płacisz.</h2>
+    <p class="punch punch--rule">Nie przepisujemy stacku. Sprawdzamy, co z niego jest naprawdę używane — i tylko to budujemy na Open Mercato.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 04 -->
-<section class="slide" data-time="1:05" data-note="Co dostaje klient: mapę pokrycia — co Open Mercato bierze od razu, co trzeba skonfigurować, co dokodować, co zostaje u dostawcy. Do tego policzone oszczędności i klikalny podgląd tej jednej rzeczy, która boli najbardziej. // Wszystko w kilkanaście minut zamiast w kilka tygodni.">
+<section class="slide" data-time="1:10" data-note="Osiem sekund, ani chwili dluzej — to tylko mapa drogowa tego, co zaraz zobaczycie na zywo. Wchodzi stack, wychodzi mapa pokrycia, oszczednosci i wycena, a na koncu podglad Open Mercato generowany z zatwierdzonego raportu. // Nie tlumacze tego slajdu. Przechodze dalej.">
   <div class="slide__inner">
-    <span class="kicker">What the client gets</span>
-    <h2 class="title">A coverage map, the money, and a working preview.</h2>
-    <div class="chain">
-      <b>their stack</b><i>→</i>
-      <b class="on">coverage map</b><i>→</i>
-      <b class="on">savings</b><i>→</i>
-      <b class="on">clickable preview</b><i>→</i>
-      <b class="human">quote</b>
+    <span class="kicker kicker--dot">Co dostaje klient</span>
+    <div class="rail">
+      <div class="rail__step">
+        <div class="rail__n">01</div>
+        <h3>jego stack</h3>
+      </div>
+      <div class="rail__step is-on">
+        <div class="rail__n">02</div>
+        <h3>mapa pokrycia</h3>
+      </div>
+      <div class="rail__step is-on">
+        <div class="rail__n">03</div>
+        <h3>oszczędności</h3>
+      </div>
+      <div class="rail__step is-on">
+        <div class="rail__n">04</div>
+        <h3>wycena</h3>
+      </div>
+      <div class="rail__step is-end">
+        <div class="rail__n">05</div>
+        <h3>podgląd Open Mercato</h3>
+      </div>
     </div>
-    <p class="sub" style="margin-top:34px;">One decision per capability: native, configure, build, integrate or keep. Each with evidence and a confidence band the client can challenge.</p>
+    <p class="sub" style="margin-top:clamp(32px,4.4vw,52px);max-width:76ch;">Jedna decyzja na każdą zdolność — a podgląd powstaje z zatwierdzonego raportu, nie z powietrza.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 05 -->
-<section class="slide" data-time="1:25" data-note="TU IDZIE DEMO — 100 sekund, trzy uderzenia: (1) wchodzi stack klienta, (2) wychodzi mapa z werdyktami i kwotą, (3) klikamy podgląd. // Nie tłumaczymy w trakcie, jak to działa. Wyjaśnienie idzie po demie.">
+<section class="slide" data-time="1:20" data-note="TU IDZIE DEMO — 100 sekund, trzy uderzenia: (1) wchodzi stack klienta, (2) wychodzi mapa z werdyktami dla każdej zdolności, (3) pokazujemy kwotę i skąd się wzięła. // W TEJ WERSJI NIE MA SLAJDOW WYJASNIAJACYCH — powiedz te rzeczy na glos w trakcie dema, jednym zdaniem kazda: (1) porownujemy zdolnosci, nie nazwy produktow; (2) werdykty biora sie z kuratorowanego katalogu, nie z rozumowania modelu na zywo; (3) kwoty liczy czysta funkcja z faktur klienta — model ich nie dotyka; (4) pewnosc podajemy jako pasmo: wysoka, srednia, niska, nigdy jako procent.">
   <div class="slide__inner" style="text-align:center;">
-    <span class="kicker" style="margin-bottom:34px;">100 seconds</span>
+    <span class="kicker" style="margin-bottom:34px;">100 sekund</span>
     <div class="demo-mark">DEMO</div>
-    <p class="sub" style="margin:34px auto 0;">Stack in. Map, money and preview out.</p>
+    <p class="sub" style="margin:34px auto 0;">Wchodzi stack. Wychodzi mapa pokrycia i policzona kwota.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 06 -->
-<section class="slide" data-time="3:05" data-note="Teraz trzy rzeczy, dzięki którym to nie jest zgadywanie modelu. Pierwsza: porównujemy funkcje, nie nazwy produktów. Każdy SaaS i każdy moduł Open Mercato opisujemy tym samym słownikiem — „multi-warehouse inventory", „RMA workflow". Wtedy porównanie to operacja na zbiorach, a nie esej konsultanta.">
+<section class="slide" data-time="3:00" data-note="To jest slajd, dla którego warto było przyjść. Klasyczny presales to dwa do sześciu tygodni warsztatów rozliczanych dniówką, a produktem końcowym jest prezentacja. // My zrobiliśmy z tego godziny: dowód przy każdym werdykcie, kwota policzona z faktur klienta, jedna decyzja na zdolność, którą klient może podważyć punkt po punkcie. // I nigdy nie proponujemy wymiany całego stacku — wskazujemy jeden kawałek do odcięcia najpierw, z uzasadnieniem kosztowym. Rip-and-replace umiera na zarządzie. // POWIEDZ TO NA GŁOS, dosłownie, patrząc na salę, a nie na ekran: „Nie wymyśliliśmy nowej usługi. Zautomatyzowaliśmy tę, którą każdy partner wdrożeniowy świadczy dziś dniówką.” Potem dwie sekundy ciszy. // To zdanie rozbraja pytanie „czy to w ogóle ma rynek”, zanim ktoś je zada: rynek już istnieje i już za to płaci, tylko dziś kupuje to w godzinach konsultanta.">
   <div class="slide__inner">
-    <span class="kicker">Why it isn't guesswork · 1 of 3</span>
-    <h2 class="title">Capabilities, not product names.</h2>
-    <div class="chain" style="margin-top:38px;">
-      <b>HubSpot</b><i>·</i><b>Jobber</b><i>·</i><b>Zendesk</b><i>·</i><b>Sortly</b>
+    <span class="kicker">Dlaczego nikt tego nie zrobił</span>
+    <h2 class="title">Wszyscy już to robią. Ręcznie.</h2>
+    <div class="versus">
+      <div class="now"><h3>Klasyczny presales</h3><p class="big">2–6 tygodni</p><p style="margin-top:14px;">Warsztaty rozliczane dniówką, deklaracje pokrycia, których nikt nie zweryfikuje, i prezentacja jako produkt końcowy.</p></div>
+      <div class="then"><h3>Mercatify</h3><p class="big">Godziny</p><p style="margin-top:14px;">Dowód przy każdym werdykcie, oszczędności policzone z faktur klienta i jedna decyzja na zdolność, którą klient może podważyć punkt po punkcie.</p></div>
     </div>
-    <div class="chain" style="margin-top:14px;">
-      <b class="on">multi-warehouse inventory</b><b class="on">RMA workflow</b><b class="on">B2B price lists</b><b class="on">crew scheduling</b>
-    </div>
-    <p class="sub" style="margin-top:34px;">One vocabulary describes the SaaS tools and the platform. Comparison becomes set arithmetic instead of a consultant's essay.</p>
+    <p class="sub" style="margin-top:30px;max-width:72ch;">Nie wymyśliliśmy nowej usługi. Zautomatyzowaliśmy tę, którą każdy partner wdrożeniowy świadczy dziś dniówką.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 07 -->
-<section class="slide" data-time="3:30" data-note="Druga i trzecia rzecz, i to są nasze żelazne zasady. Katalog jest źródłem prawdy — decyzje biorą się z kuratorowanej macierzy, nie z rozumowania modelu na żywo. Model nigdy nie liczy pieniędzy: wybiera dane wejściowe, a kwotę zwraca czysta funkcja, z faktur klienta. I pewność podajemy jako pasmo, nie jako procent — bo „87% dopasowania" to liczba, której nikt nie obroni.">
+<section class="slide cover cover--map" data-time="3:25" data-note="Ask. Przyniescie nam swoj stack — siedem faktur wystarczy — a przemielimy go przy Was, na zywo. // Gdyby padlo pytanie o dogfooding: Mercatify samo dziala na Open Mercato. Kazda sprawa, artefakt i wycena to rekord w produkcie, ktory sprzedajemy. // Dziekujemy, pytania. // UWAGA DO PRZEROBIENIA: ten ask jest napisany pod sale hackathonowa. Dla partnerow wdrozeniowych zmien na „dajcie nam jeden swoj stack klienta”. Dla inwestorow brakuje calego slajdu o modelu — nigdzie w decku nie pada, za co klient placi Mercatify.">
   <div class="slide__inner">
-    <span class="kicker">Why it isn't guesswork · 2 and 3 of 3</span>
-    <h2 class="title">Three rules we don't break.</h2>
-    <div class="cols">
-      <div class="box"><span class="n">01</span><h3>The catalog decides</h3><p>Known tool to platform verdicts come from a curated matrix by lookup. The model narrates; it never rules on the critical path.</p></div>
-      <div class="box"><span class="n">02</span><h3>The model never computes money</h3><p>It selects inputs. A pure function returns the figure, from the client's own invoices. Every number is recomputable by hand.</p></div>
-      <div class="box"><span class="n">03</span><h3>Confidence is a band</h3><p>High, medium, low. A spurious "87% match" is a claim nobody can defend in a room full of people who know their own business.</p></div>
-    </div>
+    <span class="kicker">Mercatify</span>
+    <h2 class="title">Powiedz, za co płacisz.<br>Powiemy, co możesz mieć na własność.</h2>
+    <p class="sub">Przynieście nam swój stack — przemielimy go przy Was, na żywo.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 08 -->
-<section class="slide" data-time="4:00" data-note="I teraz do tracku. To nie jest jeden prompt — to firma. Sześć wyspecjalizowanych agentów, każdy oddaje typowany, walidowany wynik następnemu. Agenci są propose-only: nigdy nie zapisują sami, tylko proponują, a człowiek dysponuje. To nie jest nasz wynalazek na weekend, tylko architektura orkiestratora Open Mercato — bieg, ślad, propozycja, akceptacja. // I dogfooding: Mercatify samo działa na Open Mercato. Każda sprawa i każdy artefakt to rekord w panelu produktu, który sprzedajemy.">
+<section class="slide photo" data-time="3:40" aria-label="Zespół Side Quest przy wspólnym stole z laptopami" data-note="Ostatni slajd: my. Nazywamy się Side Quest. Dzięki za najlepszą imprezę informatyków — spędziliśmy ją przy jednym stole, budując to, co właśnie zobaczyliście.">
   <div class="slide__inner">
-    <span class="kicker">The AI company</span>
-    <h2 class="title">Six agents, one human, nothing written without approval.</h2>
-    <div class="chain" style="margin-top:38px;">
-      <b>discovery</b><i>→</i>
-      <b>capability-mapper</b><i>→</i>
-      <b>decision-engine</b><i>→</i>
-      <b>finops</b><i>→</i>
-      <b>preview-builder</b><i>→</i>
-      <b>critic</b><i>→</i>
-      <b class="human">consultant approves</b>
-    </div>
-    <ul class="lines">
-      <li><strong>Propose, never write</strong><span>Every agent returns a typed, validated result. A human disposes. That boundary is the platform's own architecture, not something we bolted on.</span></li>
-      <li><strong>Mercatify runs on Open Mercato</strong><span>Every case, artifact and quote is a record in the product we are selling. We ask clients to trust it with their operations, so we run on it.</span></li>
-    </ul>
+    <span class="kicker">Zespół</span>
+    <h2 class="title">Nazywamy się Side Quest.</h2>
+    <p class="sub">Dzięki za najlepszą imprezę informatyków — spędziliśmy ją przy jednym stole, budując to, co przed chwilą zobaczyliście.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
-<!-- 09 -->
-<section class="slide" data-time="4:25" data-note="Dwie rzeczy, które sprawiają, że to się sprzedaje. Nigdy nie proponujemy wymiany całego stacku — wskazujemy jeden kawałek do odcięcia najpierw, z uzasadnieniem kosztowym. Rip-and-replace umiera na zarządzie. // I liczby: presales skraca się z tygodni do godzin, a wycena przestaje być efektem ubocznym rozmowy, tylko staje się produktem.">
-  <div class="slide__inner">
-    <span class="kicker">Why it sells</span>
-    <h2 class="title">One piece at a time — and presales in hours.</h2>
-    <div class="versus">
-      <div class="now"><h3>Traditional presales</h3><p class="big">2–6 weeks</p><p style="margin-top:14px;">Workshops billed by the day, coverage claims nobody can verify, a slide deck as the deliverable.</p></div>
-      <div class="then"><h3>Mercatify</h3><p class="big">Hours</p><p style="margin-top:14px;">Evidence per verdict, savings computed from invoices, and the client clicks their future system before deciding.</p></div>
-    </div>
-    <p class="slide__note"></p>
-  </div>
-</section>
 
-<!-- 10 -->
-<section class="slide cover" data-time="4:45" data-note="Zamknięcie. Open Mercato potrzebuje tego do pracy z partnerami — każdy partner wdrożeniowy prowadzi dziś ten sam presales ręcznie. My go zautomatyzowaliśmy, zostawiając człowieka tam, gdzie musi być: na końcu, przy podpisie. // Dziękujemy, pytania.">
-  <div class="slide__inner">
-    <span class="kicker">Mercatify</span>
-    <h2 class="title">Tell us what you pay for.<br>We'll tell you what you own.</h2>
-    <p class="sub">Every implementation partner runs this presales by hand today. We automated it — and left the human exactly where the client wants one: at the end, signing.</p>
-    <p class="slide__note"></p>
-  </div>
-</section>
-
-<div class="clock" id="clock">T — start timer</div>
-<div class="help">← → slides · N notes · T timer · P print</div>
-<div class="count" id="count">1 / 10</div>
+<div class="clock" id="clock">T — włącz stoper</div>
+<div class="help">← → slajdy · N notatki · T stoper · P druk</div>
+<div class="count" id="count">1 / 8</div>
 
 <div class="notes" id="notes" hidden>
-  <h4>Speaker notes</h4>
+  <h4>Notatki prelegenta</h4>
   <p id="noteBody"></p>
 </div>
 
@@ -315,7 +406,7 @@
     }
 
     function toggleTimer() {
-      if (timerId) { clearInterval(timerId); timerId = null; clock.textContent = 'timer paused'; return; }
+      if (timerId) { clearInterval(timerId); timerId = null; clock.textContent = 'stoper wstrzymany'; return; }
       timerId = setInterval(function () { left -= 1; paint(); }, 1000);
       paint();
     }
