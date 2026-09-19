@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { parseArgs, formatTable } from '../../bin/migrate-cli'
+import { parseArgs, formatTable, validateRequestShape } from '../../bin/migrate-cli'
 
 describe('parseArgs', () => {
   it('reads the request path and defaults to json', () => {
@@ -35,5 +35,38 @@ describe('formatTable', () => {
     expect(lines[0]).toContain('Airtable.a')
     expect(lines[0]).toContain('24h')
     expect(lines[1]).toContain('Zapier.b')
+  })
+})
+
+describe('validateRequestShape', () => {
+  const valid = {
+    stack: [{ id: 'p1', name: 'Airtable', category: 'database', monthlyCost: 400 }],
+    capabilities: [{ id: 'c1', saasProductId: 'p1', capability: 'x', importance: 'core' }],
+    costs: { omOperatingCost: 8400, implementationCost: 12000 },
+  }
+
+  it('passes a well-shaped request through unchanged', () => {
+    expect(validateRequestShape(valid)).toEqual(valid)
+  })
+
+  it('rejects a request missing "stack"', () => {
+    const { stack: _stack, ...rest } = valid
+    expect(() => validateRequestShape(rest)).toThrow(/"stack"/)
+  })
+
+  it('rejects a request missing "capabilities"', () => {
+    const { capabilities: _capabilities, ...rest } = valid
+    expect(() => validateRequestShape(rest)).toThrow(/"capabilities"/)
+  })
+
+  it('rejects a request missing "costs"', () => {
+    const { costs: _costs, ...rest } = valid
+    expect(() => validateRequestShape(rest)).toThrow(/"costs"/)
+  })
+
+  it('rejects a non-object top level', () => {
+    expect(() => validateRequestShape([])).toThrow(/JSON object/)
+    expect(() => validateRequestShape('oops')).toThrow(/JSON object/)
+    expect(() => validateRequestShape(null)).toThrow(/JSON object/)
   })
 })

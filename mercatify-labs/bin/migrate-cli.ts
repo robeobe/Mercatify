@@ -15,6 +15,7 @@ import { computeScenario } from '../src/computeScenario'
 import { planMigration, type MigrationPlanItem } from '../src/migrationPlanner'
 import { attachEffortHours, totalEstimatedHours } from '../src/effortHours'
 import { findCatalogGaps } from '../src/catalogGaps'
+import type { SaaSCapabilityInput, SaaSProductInput } from '../src/types'
 
 export interface MigrateCliArgs {
   requestPath: string
@@ -53,12 +54,48 @@ export function formatTable(items: MigrationPlanItem[]): string {
     .join('\n')
 }
 
+export interface MigrateCliRequest {
+  stack: SaaSProductInput[]
+  capabilities: SaaSCapabilityInput[]
+  costs: { omOperatingCost: number; implementationCost: number }
+}
+
+/**
+ * Czysty walidator kształtu - testówany jednostkowo. Nie jest pełnym
+ * walidatorem schematu (celowo, patrz brief) - sprawdza tylko, że wejście
+ * jest obiektem i że trzy pola, których CLI faktycznie używa, istnieją i
+ * mają odpowiedni ogólny kształt. Bez tego zły plik wejściowy (np. brak
+ * `stack`) rozbija się dopiero w `mapCapabilities` z nieczytelnym
+ * `TypeError: Cannot read properties of undefined (reading 'map')`.
+ */
+export function validateRequestShape(request: unknown): MigrateCliRequest {
+  if (typeof request !== 'object' || request === null || Array.isArray(request)) {
+    throw new Error('Invalid request file: expected a JSON object with "stack", "capabilities", "costs"')
+  }
+  const req = request as Record<string, unknown>
+  if (!Array.isArray(req.stack)) throw new Error('Invalid request file: missing "stack"')
+  if (!Array.isArray(req.capabilities)) throw new Error('Invalid request file: missing "capabilities"')
+  if (typeof req.costs !== 'object' || req.costs === null || Array.isArray(req.costs)) {
+    throw new Error('Invalid request file: missing "costs"')
+  }
+  return {
+    stack: req.stack as SaaSProductInput[],
+    capabilities: req.capabilities as SaaSCapabilityInput[],
+    costs: req.costs as { omOperatingCost: number; implementationCost: number },
+  }
+}
+
 const LLM_BASE_URL = process.env.LLM_BASE_URL ?? 'http://127.0.0.1:1234/v1'
+/** Osobny, krótki deadline na sam preflight - niezależny od LLM_TIMEOUT_MS,
+ * który rządzi wywołaniem agenta (180000 ms), a nie sprawdzeniem "czy LM
+ * Studio w ogóle żyje". Bez tego zawieszony/czarnodziurowy adres nie kończy
+ * się w 5 sekundach, tylko na systemowym timeoucie TCP connect. */
+const PREFLIGHT_TIMEOUT_MS = 1000
 
 /** Preflight: LM Studio odpowiada? Lepiej zginąć tu niż w timeoucie agenta. */
 async function assertLlmReachable(): Promise<void> {
   try {
-    const response = await fetch(`${LLM_BASE_URL}/models`)
+    const response = await fetch(`${LLM_BASE_URL}/models`, { signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS) })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
   } catch (err) {
     console.error(`LM Studio not reachable at ${LLM_BASE_URL} (${(err as Error).message}).`)
@@ -71,7 +108,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
   await assertLlmReachable()
 
-  const request = JSON.parse(readFileSync(args.requestPath, 'utf8'))
+  const request = validateRequestShape(JSON.parse(readFileSync(args.requestPath, 'utf8')))
   const mappings = mapCapabilities(request.stack, request.capabilities)
   const scenario = computeScenario(mappings, request.stack, request.costs)
 
