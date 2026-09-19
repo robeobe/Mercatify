@@ -9,9 +9,10 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import { getEnabledModuleIds } from '@open-mercato/shared/security/enabledModulesRegistry'
 import { getModules } from '@open-mercato/shared/lib/modules/registry'
-import { InterviewCase, MappingRow } from '../data/entities'
+import { InterviewCase, InterviewCaseTool, MappingRow } from '../data/entities'
 import { mappingRowUpdateSchema } from '../data/validators'
 import { getMercatifyLabPort, type MercatifyMappingRow } from '../lib/mercatify-lab-port'
+import { monthlyCostToNumber } from '../lib/case-tools'
 import { emitMercatifyEvent } from '../events'
 
 const CASE_ENTITY_ID = 'mercatify:interview_case' as const
@@ -140,18 +141,32 @@ const generateMappingCommand: CommandHandler<Record<string, unknown>, { generate
       return { generated: false, rows: existing }
     }
 
-    // No real intake/wizard data exists yet (S-01/S-02) — a minimal,
-    // self-contained placeholder request with one synthetic answer is enough
-    // to skip the scripted adapter's `needs_more_info` round and reach a
-    // `complete` mapping. See the plan's Key Discoveries for why this is an
-    // accepted, temporary coupling rather than a real interview payload.
+    // Real intake tools (S-01) are sent as `saasTools` so a real Lab
+    // implementation can ground each mapping row's `source` in an actual
+    // product name — the scripted adapter itself still ignores this (its
+    // fixture is a fixed demo case; see the S-04 plan's Key Discoveries).
+    const tools = await em.find(InterviewCaseTool, {
+      interviewCase: caseId,
+      tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
+    } as FilterQuery<InterviewCaseTool>)
+
+    // No real wizard data exists yet (S-02, superseded) — a minimal,
+    // self-contained placeholder answer is enough to skip the scripted
+    // adapter's `needs_more_info` round and reach a `complete` mapping. See
+    // the plan's Key Discoveries for why this is an accepted, temporary
+    // coupling rather than a real interview payload.
     const result = await getMercatifyLabPort().evaluate({
       contractVersion: 1,
       tenantId: scope.tenantId,
       organizationId: scope.organizationId,
       caseId,
       companyProfile: {},
-      saasTools: [],
+      saasTools: tools.map((tool) => ({
+        name: tool.name,
+        monthlyCost: monthlyCostToNumber(tool.monthlyCost) ?? 0,
+        notes: tool.customUse ?? undefined,
+      })),
       answers: [{ questionId: 'seed', freeText: 'seeded case' }],
     })
 
@@ -172,6 +187,7 @@ const generateMappingCommand: CommandHandler<Record<string, unknown>, { generate
           caseId,
           position: i,
           capability: row.capability,
+          source: row.source,
           decision: row.decision,
           justification: row.justification,
           confidence: row.confidence,

@@ -96,6 +96,20 @@ export type MappingGenerateInput = z.infer<typeof mappingGenerateSchema>
 export type MappingConfirmInput = z.infer<typeof mappingConfirmSchema>
 
 /**
+ * S-04: OM operating cost and implementation cost are customer-provided
+ * inputs (never computed by the analysis — see `lib/savings.ts`), entered by
+ * an admin independently of the intake profile, so this is deliberately not
+ * part of `interviewCaseUpdateSchema`.
+ */
+export const interviewCaseCostsSchema = z.object({
+  id: z.string().uuid(),
+  omOperatingCost: z.number().nonnegative().nullable().optional(),
+  implementationCost: z.number().nonnegative().nullable().optional(),
+})
+
+export type InterviewCaseCostsInput = z.infer<typeof interviewCaseCostsSchema>
+
+/**
  * The handoff document is independent of the mapping table (PRD Open
  * Question 8, resolved): `content` is a free-form replacement, never a
  * derived/serialized view of `MappingRow`.

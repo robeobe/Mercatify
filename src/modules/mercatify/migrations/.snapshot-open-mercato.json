@@ -377,6 +377,23 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
+        "implementation_cost": {
+          "name": "implementation_cost",
+          "type": "numeric(12,2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": 12,
+          "scale": 2,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "decimal"
+        },
         "industry": {
           "name": "industry",
           "type": "text",
@@ -427,6 +444,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "text"
+        },
+        "om_operating_cost": {
+          "name": "om_operating_cost",
+          "type": "numeric(12,2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": 12,
+          "scale": 2,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "decimal"
         },
         "organization_id": {
           "name": "organization_id",
@@ -795,6 +829,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "integer"
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "''",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
         },
         "target_kind": {
           "name": "target_kind",

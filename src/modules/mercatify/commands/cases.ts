@@ -9,12 +9,14 @@ import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import { InterviewCase, InterviewCaseTool } from '../data/entities'
-import { interviewCaseCreateSchema, interviewCaseUpdateSchema } from '../data/validators'
+import { interviewCaseCostsSchema, interviewCaseCreateSchema, interviewCaseUpdateSchema } from '../data/validators'
 import {
   applyProfileFields,
   applyToolFields,
   deriveCaseTitle,
   hasProfileOrToolEdits,
+  monthlyCostToColumn,
+  monthlyCostToNumber,
   serializeTool,
   toolCreateData,
 } from '../lib/case-tools'
@@ -383,8 +385,84 @@ const deleteCaseCommand: CommandHandler<Record<string, unknown>, InterviewCase> 
   },
 }
 
+/**
+ * S-04: sets the two customer-provided cost inputs to the net-saving formula
+ * (`lib/savings.ts`). Deliberately separate from `updateCaseCommand`: these
+ * are admin-entered backstage figures prepared alongside the mapping/report,
+ * not part of the client's intake profile, so they stay editable regardless
+ * of `status` — `updateCaseCommand`'s `status !== 'draft'` guard does not
+ * apply here.
+ */
+const updateCaseCostsCommand: CommandHandler<Record<string, unknown>, InterviewCase> = {
+  id: 'mercatify.cases.costs.update',
+  async prepare(rawInput, ctx) {
+    const parsed = interviewCaseCostsSchema.parse(rawInput ?? {})
+    const scope = ensureScope(ctx)
+    const em = ctx.container.resolve('em') as EntityManager
+    const existing = await loadScopedCase(em, parsed.id, scope)
+    enforceCommandOptimisticLock({
+      resourceKind: ENTITY_ID,
+      resourceId: parsed.id,
+      current: existing.updatedAt,
+      request: ctx.request,
+    })
+    return { before: serializeCase(existing) }
+  },
+  async execute(rawInput, ctx) {
+    const parsed = interviewCaseCostsSchema.parse(rawInput ?? {})
+    const scope = ensureScope(ctx)
+    const de = ctx.container.resolve('dataEngine') as DataEngine
+
+    const entity = await de.updateOrmEntity({
+      entity: InterviewCase,
+      where: {
+        id: parsed.id,
+        tenantId: scope.tenantId,
+        organizationId: scope.organizationId,
+        deletedAt: null,
+      } as FilterQuery<InterviewCase>,
+      apply: (record: InterviewCase) => {
+        if (parsed.omOperatingCost !== undefined) record.omOperatingCost = monthlyCostToColumn(parsed.omOperatingCost)
+        if (parsed.implementationCost !== undefined) record.implementationCost = monthlyCostToColumn(parsed.implementationCost)
+      },
+    })
+    if (!entity) throw notFound('Interview case not found')
+
+    await emitCrudSideEffects({
+      dataEngine: de,
+      action: 'updated',
+      entity,
+      identifiers: {
+        id: String(entity.id),
+        tenantId: scope.tenantId,
+        organizationId: scope.organizationId,
+      },
+      syncOrigin: ctx.syncOrigin,
+      events: caseCrudEvents,
+      indexer: caseCrudIndexer,
+    })
+
+    return entity
+  },
+  buildLog: async ({ result }) => {
+    const { translate } = await resolveTranslations()
+    return {
+      actionLabel: translate('mercatify.audit.cases.costs.update', 'Update interview case costs'),
+      resourceKind: RESOURCE_KIND,
+      resourceId: String(result.id),
+      tenantId: result.tenantId ? String(result.tenantId) : null,
+      organizationId: result.organizationId ? String(result.organizationId) : null,
+      snapshotAfter: {
+        omOperatingCost: monthlyCostToNumber(result.omOperatingCost),
+        implementationCost: monthlyCostToNumber(result.implementationCost),
+      },
+    }
+  },
+}
+
 registerCommand(createCaseCommand)
 registerCommand(updateCaseCommand)
 registerCommand(deleteCaseCommand)
+registerCommand(updateCaseCostsCommand)
 
-export { createCaseCommand, updateCaseCommand, deleteCaseCommand }
+export { createCaseCommand, updateCaseCommand, deleteCaseCommand, updateCaseCostsCommand }

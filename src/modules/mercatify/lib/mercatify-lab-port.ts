@@ -11,6 +11,11 @@ export const MercatifyMappingTargetSchema = z.discriminatedUnion('kind', [
 
 export const MercatifyMappingRowSchema = z.object({
   capability: z.string(),
+  // The SaaS product (named in the request's `saasTools`) this capability was
+  // mapped from — needed by S-04's savings formula to know which subscription
+  // a row's decision would remove. Descriptive analysis output, not a money
+  // field: mirrors `mercatify-labs`' `map_capabilities` output shape.
+  source: z.string(),
   decision: MercatifyDecisionSchema,
   target: MercatifyMappingTargetSchema,
   justification: z.string(),

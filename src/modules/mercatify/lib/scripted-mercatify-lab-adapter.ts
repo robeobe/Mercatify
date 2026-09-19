@@ -13,6 +13,7 @@ const FOLLOW_UP_QUESTION = {
 const SCRIPTED_MAPPING = [
   {
     capability: 'CRM contacts',
+    source: 'Salesforce',
     decision: 'native',
     target: { kind: 'om_module', moduleId: 'customers' },
     justification: 'Contact and company records are already covered by the customers module.',
@@ -20,6 +21,7 @@ const SCRIPTED_MAPPING = [
   },
   {
     capability: 'Invoicing',
+    source: 'FreshBooks',
     decision: 'configure',
     target: { kind: 'om_module', moduleId: 'sales' },
     justification: 'Sales module invoicing covers this once numbering and tax rules are configured.',
@@ -27,6 +29,7 @@ const SCRIPTED_MAPPING = [
   },
   {
     capability: 'Design collaboration',
+    source: 'Figma',
     decision: 'keep',
     target: { kind: 'external_tool', name: 'Figma' },
     justification: 'No in-house equivalent; keep the existing external tool.',
@@ -34,6 +37,7 @@ const SCRIPTED_MAPPING = [
   },
   {
     capability: 'Custom reporting dashboard',
+    source: 'Google Sheets',
     decision: 'build',
     target: { kind: 'om_module', moduleId: 'dashboards' },
     justification: 'Requirements are specific enough that a custom widget is warranted.',
@@ -41,6 +45,7 @@ const SCRIPTED_MAPPING = [
   },
   {
     capability: 'Marketing automation',
+    source: 'Mailchimp',
     decision: 'integrate',
     target: { kind: 'external_tool', name: 'Mailchimp' },
     justification: 'Keep the external tool but wire it in via webhook/event integration.',
@@ -48,6 +53,7 @@ const SCRIPTED_MAPPING = [
   },
   {
     capability: 'Legacy inventory sync',
+    source: 'Legacy ERP',
     decision: 'keep',
     target: { kind: 'unmapped' },
     justification: 'Not enough information yet to map this capability; flagged rather than dropped.',
