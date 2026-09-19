@@ -1,0 +1,14 @@
+{
+  "mercatify.cases.page.title": "Przypadki wywiadu",
+  "mercatify.cases.status.completed": "Zakończony",
+  "mercatify.cases.status.draft": "Szkic",
+  "mercatify.cases.status.inProgress": "W toku",
+  "mercatify.cases.table.column.status": "Status",
+  "mercatify.cases.table.column.title": "Tytuł",
+  "mercatify.cases.table.column.updatedAt": "Zaktualizowano",
+  "mercatify.cases.table.empty": "Brak przypadków wywiadu.",
+  "mercatify.cases.table.error.forbidden": "Nie masz uprawnień do przeglądania przypadków wywiadu.",
+  "mercatify.cases.table.error.generic": "Nie udało się wczytać przypadków wywiadu. Spróbuj ponownie.",
+  "mercatify.cases.table.loading": "Wczytywanie przypadków wywiadu...",
+  "mercatify.nav.group": "Mercatify"
+}

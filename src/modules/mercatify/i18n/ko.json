@@ -1,0 +1,14 @@
+{
+  "mercatify.cases.page.title": "인터뷰 케이스",
+  "mercatify.cases.status.completed": "완료됨",
+  "mercatify.cases.status.draft": "초안",
+  "mercatify.cases.status.inProgress": "진행 중",
+  "mercatify.cases.table.column.status": "상태",
+  "mercatify.cases.table.column.title": "제목",
+  "mercatify.cases.table.column.updatedAt": "업데이트",
+  "mercatify.cases.table.empty": "아직 인터뷰 케이스가 없습니다.",
+  "mercatify.cases.table.error.forbidden": "인터뷰 케이스를 볼 권한이 없습니다.",
+  "mercatify.cases.table.error.generic": "인터뷰 케이스를 불러오지 못했습니다. 다시 시도해 주세요.",
+  "mercatify.cases.table.loading": "인터뷰 케이스를 불러오는 중...",
+  "mercatify.nav.group": "Mercatify"
+}

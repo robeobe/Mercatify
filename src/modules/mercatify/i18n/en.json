@@ -1,0 +1,14 @@
+{
+  "mercatify.cases.page.title": "Interview cases",
+  "mercatify.cases.status.completed": "Completed",
+  "mercatify.cases.status.draft": "Draft",
+  "mercatify.cases.status.inProgress": "In progress",
+  "mercatify.cases.table.column.status": "Status",
+  "mercatify.cases.table.column.title": "Title",
+  "mercatify.cases.table.column.updatedAt": "Updated",
+  "mercatify.cases.table.empty": "No interview cases yet.",
+  "mercatify.cases.table.error.forbidden": "You do not have permission to view interview cases.",
+  "mercatify.cases.table.error.generic": "Unable to load interview cases. Please try again.",
+  "mercatify.cases.table.loading": "Loading interview cases...",
+  "mercatify.nav.group": "Mercatify"
+}
