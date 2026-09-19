@@ -66,6 +66,11 @@ export function handoffCommand(slug: string, requirementsPath: string): string {
   if (!SAFE_SLUG.test(slug)) {
     throw new Error(`[mercatify-labs] Unsafe prototype slug: ${slug} (expected ^[a-z0-9][a-z0-9-]*$)`)
   }
+  if (requirementsPath.includes('"')) {
+    throw new Error(
+      `[mercatify-labs] Unsafe requirements path: ${requirementsPath} (must not contain a '"' character)`,
+    )
+  }
   return (
     'node .ai/skills/om-mockup-prototype/scripts/init-mockup.mjs ' +
     `"${slug}" --requirements "${requirementsPath}"`

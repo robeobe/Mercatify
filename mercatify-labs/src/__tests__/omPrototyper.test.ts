@@ -1,5 +1,7 @@
 /** @jest-environment node */
 import { getAgent, getTool } from '../agentLoader'
+import { listArchetypes, REQUIRED_INVENTORY_STATES, TOKEN_RULES } from '../om/platform'
+import { localToolExecutor } from '../toolExecutor'
 
 function assertStrictModeCompatible(node: any, path = 'root'): void {
   if (!node || typeof node !== 'object') return
@@ -31,14 +33,13 @@ describe('agents/om_prototyper.json', () => {
     expect(tool.backedBy).toBe('src/om/platform.ts')
   })
 
-  it('constrains screens to the four verified archetypes', () => {
+  it('constrains screens to exactly the archetypes listArchetypes() ships (catches enum drift)', () => {
     const schema = getAgent('om_prototyper').resultSchema as any
-    expect(schema.properties.screens.items.properties.archetype.enum.sort()).toEqual([
-      'crud-form',
-      'data-table',
-      'detail-drawer',
-      'kanban',
-    ])
+    expect(schema.properties.screens.items.properties.archetype.enum.sort()).toEqual(
+      listArchetypes()
+        .map((a) => a.archetype)
+        .sort(),
+    )
   })
 
   it('is strict-mode compatible', () => {
@@ -48,6 +49,28 @@ describe('agents/om_prototyper.json', () => {
   it('requires every screen to cite at least one storyIds entry', () => {
     const schema = getAgent('om_prototyper').resultSchema as any
     expect(schema.properties.screens.items.properties.storyIds.minItems).toBe(1)
+  })
+})
+
+describe('localToolExecutor - list_om_archetypes', () => {
+  it('is actually wired up: calling it directly (no fake executor, no LLM) returns the curated archetypes', async () => {
+    // This is the one tool the whole om_prototyper safety design depends on
+    // (SPEC.md R10): if `case 'list_om_archetypes'` in src/toolExecutor.ts
+    // ever broke, every other test would still pass (they all go through a
+    // fake `noTools` executor) while the real agent silently fell back to
+    // describing Open Mercato from training memory instead of curated data.
+    const result = (await localToolExecutor('list_om_archetypes', {})) as {
+      archetypes: Array<{ archetype: string }>
+      requiredInventoryStates: string[]
+      tokenRules: string[]
+    }
+    expect(result.archetypes.map((a) => a.archetype).sort()).toEqual(
+      listArchetypes()
+        .map((a) => a.archetype)
+        .sort(),
+    )
+    expect(result.requiredInventoryStates).toEqual(REQUIRED_INVENTORY_STATES)
+    expect(result.tokenRules).toEqual(TOKEN_RULES)
   })
 })
 
@@ -114,6 +137,10 @@ describe('handoffCommand', () => {
 
   it('rejects a slug the skill script would refuse anyway', () => {
     expect(() => handoffCommand('Voltix Lead', 'x.md')).toThrow(/slug/i)
+  })
+
+  it('rejects a requirements path containing a double quote, which would break the printed command', () => {
+    expect(() => handoffCommand('voltix-lead-to-quote', 'weird/"quoted".md')).toThrow(/requirements path/i)
   })
 })
 
