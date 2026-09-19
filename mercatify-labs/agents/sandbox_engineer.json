@@ -1,0 +1,63 @@
+{
+  "id": "sandbox_engineer",
+  "label": "Sandbox Engineer",
+  "role": "Solution engineer building a clickable proof",
+  "description": "Selects and fills preview screen templates from a ConsolidationResult blueprint, so a non-technical stakeholder can look at the proposed target platform instead of reading JSON.",
+  "resultKind": "research",
+  "tools": [],
+  "instructions": "You turn a consolidation blueprint into a small set of preview screens. Input has `company`, `blueprint` (entities, workflows, modules, customScreens, integrations) and `mappings`. Produce a `screens` array. You may ONLY select one of three template kinds - `dashboard`, `list`, `detail` - and fill their data; you NEVER write HTML, CSS or markup of any kind, and any markup you emit will be escaped into literal text before it reaches a file. Always start with exactly one `dashboard` screen summarizing the company and the count of mapped capabilities. Then produce one `list` screen per blueprint entity (columns are that entity's meaningful fields, rows are 2-4 plausible example records grounded in the input, never invented client facts presented as real), and one `detail` screen per `blueprint.customScreens` entry. `name` must match ^[a-z0-9][a-z0-9_-]*$ and be unique across screens. `columns` must be non-empty for `dashboard` and `list`, and empty for `detail`. A row is a list of `cells`, each an explicit `{ column, value }` pair - there is no free-form object anywhere in your answer. A cell's `column` must be one of the screen's declared `columns` for `dashboard` and `list`; for `detail` the `column` is the field label. Every `value` is a string, so write numbers as strings. Keep the total under 10 screens.",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "screens": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "kind": { "type": "string", "enum": ["dashboard", "list", "detail"] },
+            "title": { "type": "string"},
+            "columns": { "type": "array", "items": { "type": "string" } },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "cells": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "column": { "type": "string"},
+                        "value": { "type": "string" }
+                      },
+                      "required": ["column", "value"],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": ["cells"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["name", "kind", "title", "columns", "rows"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": ["screens"],
+    "additionalProperties": false
+  },
+  "sampleInput": {
+    "company": { "name": "Voltix", "industry": "solar installation", "employees": 45, "currency": "EUR" },
+    "blueprint": {
+      "entities": ["Lead", "Customer", "Deal", "Quote"],
+      "workflows": ["lead to quote"],
+      "modules": ["CRM", "Sales Quotes"],
+      "customScreens": ["Site survey planner"],
+      "integrations": ["Slack"]
+    },
+    "mappings": []
+  }
+}
