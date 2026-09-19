@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stack requests — Mercatify</title>
+<link rel="stylesheet" href="../shared/om.css">
+</head>
+<body>
+
+<div id="shell"></div>
+
+<template id="tpl">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Stack requests</h1>
+      <p>Everything a client has sent from the intake form. One row per company;
+         open it to see which Open Mercato modules pick the work up.</p>
+    </div>
+    <div class="pagehead__actions">
+      <a class="btn" href="modules.html" id="open-newest">Map the newest →</a>
+    </div>
+  </div>
+
+  <div class="grid grid--4" style="margin-bottom:16px">
+    <div class="stat"><div class="stat__k">New</div><div class="stat__v" id="k-new">0</div><div class="stat__s">waiting to be mapped</div></div>
+    <div class="stat"><div class="stat__k">In mapping</div><div class="stat__v" id="k-mapping">0</div><div class="stat__s">picked up by a consultant</div></div>
+    <div class="stat"><div class="stat__k">With the client</div><div class="stat__v" id="k-sent">0</div><div class="stat__s">report sent, awaiting an answer</div></div>
+    <div class="stat"><div class="stat__k">Answered</div><div class="stat__v" id="k-answered">0</div><div class="stat__s" id="k-answered-s">accepted or asked for a call</div></div>
+    <div class="stat"><div class="stat__k">Licences under review</div><div class="stat__v" id="k-money">—</div><div class="stat__s">per month, as declared</div></div>
+  </div>
+
+  <div class="tablewrap">
+    <div class="tabletoolbar">
+      <label class="sr-only" for="q">Filter requests</label>
+      <input type="text" id="q" placeholder="Filter by company, ref or tool…">
+      <label class="sr-only" for="status">Status</label>
+      <select id="status" style="width:auto;height:32px">
+        <option value="">All statuses</option>
+        <option value="new">New</option>
+        <option value="mapping">In mapping</option>
+        <option value="mapped">Mapped</option>
+        <option value="sent">Report sent</option>
+        <option value="accepted">Accepted</option>
+        <option value="consult">Consult asked</option>
+      </select>
+      <span class="small muted" style="margin-left:auto" id="count"></span>
+    </div>
+    <div class="tablescroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Ref</th>
+            <th>Company</th>
+            <th>Tools</th>
+            <th class="num">Jobs</th>
+            <th class="num">Done twice</th>
+            <th class="num">Monthly</th>
+            <th>Received</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="tablefoot">
+      <span id="foot">—</span>
+      <span>Mock queue — rows live in this browser only.</span>
+    </div>
+  </div>
+</template>
+
+<script src="../stack-tool/catalog.js"></script>
+<script src="../shared/om-core.js"></script>
+<script>
+(function () {
+  var content = mountConsoleShell({
+    active: 'requests',
+    crumbs: [{ label: 'Mercatify', href: 'requests.html' }, { label: 'Stack requests' }]
+  });
+  content.appendChild(document.getElementById('tpl').content.cloneNode(true));
+
+  var all = loadRequests();
+  var rowsEl = document.getElementById('rows');
+  var qEl = document.getElementById('q');
+  var statusEl = document.getElementById('status');
+
+  if (all.length) {
+    document.getElementById('open-newest').href = 'modules.html?ref=' + encodeURIComponent(all[0].ref);
+  }
+
+  /* Header figures are declared spend, not a saving — the saving only exists
+     once a mapping says what actually moves. */
+  var declaredMonthly = all.reduce(function (s, r) { return s + requestMonthly(r); }, 0);
+  document.getElementById('k-new').textContent = all.filter(function (r) { return r.status === 'new'; }).length;
+  document.getElementById('k-mapping').textContent = all.filter(function (r) { return r.status === 'mapping'; }).length;
+  document.getElementById('k-sent').textContent = all.filter(function (r) { return r.status === 'sent'; }).length;
+  var accepted = all.filter(function (r) { return r.status === 'accepted'; }).length;
+  var consult = all.filter(function (r) { return r.status === 'consult'; }).length;
+  document.getElementById('k-answered').textContent = accepted + consult;
+  document.getElementById('k-answered-s').textContent = accepted + ' accepted, ' + consult + ' want a call';
+  document.getElementById('k-money').textContent = fmtMoney(declaredMonthly, 'EUR') + '*';
+
+  function render() {
+    var q = (qEl.value || '').toLowerCase().trim();
+    var st = statusEl.value;
+    rowsEl.innerHTML = '';
+
+    var shown = all.filter(function (r) {
+      if (st && r.status !== st) return false;
+      if (!q) return true;
+      var hay = (r.ref + ' ' + r.company + ' ' + (r.industry || '') + ' ' +
+        (r.tools || []).map(function (t) { return t.name; }).join(' ')).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+
+    if (!shown.length) {
+      rowsEl.appendChild(node('tr', {}, [
+        node('td', { colspan: '9' }, [node('div', { class: 'empty', text: 'No request matches that filter.' })])
+      ]));
+    }
+
+    shown.forEach(function (r) {
+      var caps = requestCaps(r);
+      var dups = caps.filter(function (c) { return c.duplicate; }).length;
+      var href = 'modules.html?ref=' + encodeURIComponent(r.ref);
+      var toolNames = (r.tools || []).map(function (t) { return t.name; });
+
+      var tr = node('tr', {}, [
+        node('td', { class: 'nowrap' }, [node('a', { class: 'linkcell mono', href: href, text: r.ref })]),
+        node('td', {}, [
+          node('span', { style: 'font-weight:500', text: r.company }),
+          node('span', { class: 'sub', text: r.industry || '—' })
+        ]),
+        node('td', {}, [
+          node('span', { text: toolNames.slice(0, 3).join(', ') + (toolNames.length > 3 ? ' +' + (toolNames.length - 3) : '') }),
+          node('span', { class: 'sub', text: toolNames.length + ' tools, ' + requestSeats(r) + ' seats' })
+        ]),
+        node('td', { class: 'num', text: String(caps.length) }),
+        node('td', { class: 'num' }, [
+          dups ? node('span', { class: 'badge badge--warning', text: String(dups) }) : node('span', { class: 'muted', text: '0' })
+        ]),
+        node('td', { class: 'num', text: fmtMoney(requestMonthly(r), r.currency) }),
+        node('td', { class: 'nowrap', text: r.received }),
+        node('td', {}, [
+          node('span', { class: statusBadge(r), text: statusLabel(r) }),
+          node('span', { class: 'sub', text: r.clientResponse
+            ? (r.clientResponse.kind === 'accepted' ? 'client accepted' : 'client wants a call')
+            : (r.owner ? 'owner: ' + r.owner : 'unassigned') })
+        ]),
+        node('td', { class: 'nowrap' }, [
+          node('a', { class: 'btn btn--outline btn--sm', href: href, text: 'Map' }),
+          node('a', {
+            class: 'btn btn--outline btn--sm', style: 'margin-left:6px',
+            href: 'report.html?ref=' + encodeURIComponent(r.ref),
+            text: r.sentAt ? 'Report ✓' : 'Report'
+          })
+        ])
+      ]);
+      rowsEl.appendChild(tr);
+    });
+
+    document.getElementById('count').textContent = shown.length + ' of ' + all.length;
+    document.getElementById('foot').textContent =
+      'Showing ' + shown.length + ' request' + (shown.length === 1 ? '' : 's') +
+      ' · *declared licence spend, mixed currencies shown as entered';
+  }
+
+  qEl.addEventListener('input', render);
+  statusEl.addEventListener('change', render);
+  render();
+})();
+</script>
+</body>
+</html>

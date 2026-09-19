@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your stack — Mercatify</title>
+<link rel="stylesheet" href="../shared/om.css">
+<style>
+  /* The tool picker exists on this one screen only; the shell is in om.css. */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
+  .rail { position: sticky; top: 76px; display: grid; gap: 10px; }
+  @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } .rail { position: static; } }
+
+  .tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .tool { border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); overflow: hidden; }
+  .tool.is-on { border-color: var(--foreground); }
+  .tool__head {
+    display: flex; align-items: flex-start; gap: 10px; width: 100%;
+    padding: 12px 14px; background: transparent; border: 0; cursor: pointer;
+    text-align: left; color: inherit; font: inherit;
+  }
+  .tool__head:hover { background: var(--muted); }
+  .tool__tick {
+    flex: none; width: 18px; height: 18px; border-radius: 5px; margin-top: 2px;
+    border: 1px solid var(--border); display: grid; place-items: center;
+    font-size: 11px; color: transparent;
+  }
+  .tool.is-on .tool__tick { background: var(--accent-indigo); border-color: var(--accent-indigo); color: #fff; }
+  .tool__name { font-weight: 600; font-size: 0.875rem; }
+  .tool__kind { font-size: 0.75rem; color: var(--muted-foreground); }
+  .tool__count { margin-left: auto; font-size: 0.75rem; color: var(--muted-foreground); white-space: nowrap; }
+  .tool__body { padding: 0 14px 14px; border-top: 1px solid var(--border); }
+
+  .mods { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 1px; }
+  .mods label {
+    display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start;
+    margin: 0; padding: 7px 8px; border-radius: var(--radius); cursor: pointer; font-weight: 400;
+  }
+  .mods label:hover { background: var(--muted); }
+  .mods input[type="checkbox"] { margin-top: 2px; }
+  .m-name { font-weight: 500; font-size: 0.875rem; }
+  .m-desc { display: block; color: var(--muted-foreground); font-size: 0.75rem; }
+  .m-dup { margin-left: 6px; vertical-align: 1px; }
+  .tool__cost { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+
+  /* submitted view */
+  .sent__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+  .sent__list li { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .sent__list li:last-child { border-bottom: 0; }
+  .sent__tool { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .sent__tool b { font-size: 0.875rem; }
+  .sent__caps { color: var(--muted-foreground); font-size: 0.875rem; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div id="shell"></div>
+
+<!-- ── the form ───────────────────────────────────────────────── -->
+<template id="tpl-form">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Which tools do you pay for?</h1>
+      <p>Tick the tools you have, then the modules you genuinely use — not the ones that came
+         with the plan. Seats and monthly cost are optional, but without them we can only tell
+         you what moves, not what it saves. It takes about four minutes.</p>
+    </div>
+    <div class="pagehead__actions" id="head-actions" hidden>
+      <a class="btn btn--ghost" href="requests.html">← Back to my requests</a>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card">
+        <div class="card__head"><h2>Your company</h2></div>
+        <div class="grid grid--2">
+          <div>
+            <label for="f-company">Company</label>
+            <input type="text" id="f-company" data-meta="name" placeholder="Voltix Energy">
+          </div>
+          <div>
+            <label for="f-industry">What you do</label>
+            <input type="text" id="f-industry" data-meta="industry" placeholder="Solar installer, B2C + small B2B">
+          </div>
+          <div>
+            <label for="f-people">People using software</label>
+            <input type="number" id="f-people" data-meta="people" min="0" placeholder="34">
+          </div>
+          <div>
+            <label for="f-currency">Currency</label>
+            <select id="f-currency" data-meta="currency">
+              <option value="EUR">EUR €</option>
+              <option value="USD">USD $</option>
+              <option value="PLN">PLN zł</option>
+              <option value="GBP">GBP £</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Your stack</h2>
+        <p>Click a tool to open its modules. An <span class="badge badge--warning">also elsewhere</span>
+           tag means another tool you ticked already does that same job — those are the rows where
+           the money usually is.</p>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label class="sr-only" for="f-search">Filter tools</label>
+        <input type="text" id="f-search" placeholder="Filter tools — hubspot, inventory, support…">
+      </div>
+
+      <div class="tools" id="tools"></div>
+
+      <div class="section">
+        <h2>Anything not on the list</h2>
+        <p>In-house apps, spreadsheets that run a process, a tool we have not catalogued.
+           We report those as unmapped rather than guess at them.</p>
+      </div>
+      <div class="card">
+        <div id="custom"></div>
+        <button class="btn btn--outline btn--sm" type="button" id="add-custom">+ Add a tool</button>
+      </div>
+
+      <div class="section">
+        <h2>Two questions that shape everything</h2>
+      </div>
+      <div class="card">
+        <div class="grid grid--2">
+          <div>
+            <label for="f-pains">What hurts today?</label>
+            <textarea id="f-pains" data-meta="pains" placeholder="Stock numbers in three places. Quotes take a day. Nobody knows which installer has which certificate."></textarea>
+          </div>
+          <div>
+            <label for="f-keep">What must not be touched?</label>
+            <textarea id="f-keep" data-meta="mustKeep" placeholder="Accounting stays with our bookkeeper. The e-signature provider is in our contracts."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card__head">
+          <h2>Send it to Mercatify</h2>
+          <p>Nothing is sent until you press the button — until then the answers only exist
+             in this browser.</p>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="send">Send my stack</button>
+          <button class="btn btn--outline" type="button" id="save-draft">Save draft</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="rail" aria-label="Summary">
+      <div class="stat">
+        <div class="stat__k">Tools</div>
+        <div class="stat__v" id="s-tools">0</div>
+        <div class="stat__s" id="s-seats">no seats entered</div>
+      </div>
+      <div class="stat">
+        <div class="stat__k">Modules in use</div>
+        <div class="stat__v" id="s-mods">0</div>
+        <div class="stat__s">what we will look at</div>
+      </div>
+      <div class="stat">
+        <div class="stat__k">Licences today</div>
+        <div class="stat__v" id="s-cost">—</div>
+        <div class="stat__s">per month, as entered</div>
+      </div>
+      <div class="stat">
+        <div class="stat__k">Jobs done twice</div>
+        <div class="stat__v" id="s-dups">0</div>
+        <div class="stat__s" id="s-dups-list">no duplicates yet</div>
+      </div>
+    </aside>
+  </div>
+</template>
+
+<script src="../stack-tool/catalog.js"></script>
+<script src="../shared/om-core.js"></script>
+<script>
+(function () {
+  var content = mountPortalShell({});
+  content.appendChild(document.getElementById('tpl-form').content.cloneNode(true));
+  /* Only offer a way back once there is something to go back to. */
+  if (readClientRefs().length) document.getElementById('head-actions').hidden = false;
+
+  var state = {
+    meta: { name: '', industry: '', people: '', currency: 'EUR', pains: '', mustKeep: '' },
+    sel: {},     /* toolId -> { mods:{modId:true}, seats:'', monthly:'' } */
+    custom: []   /* { name, what, seats, monthly } */
+  };
+
+  var toolsEl = document.getElementById('tools');
+
+  /* A capability ticked under two different tools is the duplicate we are
+     looking for — counted here so the tag can appear on both rows. */
+  function dupCaps() {
+    var counts = {};
+    CATALOG.forEach(function (t) {
+      var s = state.sel[t.id]; if (!s) return;
+      var seen = {};
+      t.modules.forEach(function (m) {
+        if (!s.mods[m.id]) return;
+        m.caps.forEach(function (c) { seen[c] = true; });
+      });
+      Object.keys(seen).forEach(function (c) { counts[c] = (counts[c] || 0) + 1; });
+    });
+    return counts;
+  }
+
+  function render() {
+    var counts = dupCaps();
+    var q = (document.getElementById('f-search').value || '').toLowerCase().trim();
+    toolsEl.innerHTML = '';
+
+    CATALOG.forEach(function (t) {
+      var hay = (t.name + ' ' + t.kind + ' ' + t.modules.map(function (m) {
+        return m.name + ' ' + m.desc + ' ' + m.caps.map(capLabel).join(' ');
+      }).join(' ')).toLowerCase();
+      if (q && hay.indexOf(q) === -1) return;
+
+      var sel = state.sel[t.id];
+      var card = el('div', { class: 'tool' + (sel ? ' is-on' : ''), 'data-tool': t.id });
+      var n = sel ? Object.keys(sel.mods).filter(function (k) { return sel.mods[k]; }).length : 0;
+
+      card.appendChild(el('button', {
+        type: 'button', class: 'tool__head', 'aria-expanded': sel ? 'true' : 'false',
+        onclick: function () { toggleTool(t.id); }
+      }, [
+        el('span', { class: 'tool__tick', 'aria-hidden': 'true', text: '✓' }),
+        el('span', {}, [
+          el('span', { class: 'tool__name', text: t.name }),
+          el('span', { class: 'tool__kind', text: ' — ' + t.kind })
+        ]),
+        el('span', { class: 'tool__count', text: sel ? (n + ' of ' + t.modules.length) : t.modules.length + ' modules' })
+      ]));
+
+      var body = el('div', { class: 'tool__body' });
+      if (!sel) body.hidden = true;
+
+      var list = el('ul', { class: 'mods' });
+      t.modules.forEach(function (m) {
+        var on = !!(sel && sel.mods[m.id]);
+        var isDup = on && m.caps.some(function (c) { return counts[c] > 1; });
+        var label = el('label', {}, []);
+        var cb = el('input', { type: 'checkbox' });
+        cb.checked = on;
+        cb.addEventListener('change', function () { toggleModule(t.id, m.id, cb.checked); });
+        label.appendChild(cb);
+        label.appendChild(el('span', {}, [
+          el('span', { class: 'm-name', text: m.name }),
+          isDup ? el('span', { class: 'badge badge--warning m-dup', text: 'also elsewhere' }) : document.createTextNode(''),
+          el('span', { class: 'm-desc', text: m.desc })
+        ]));
+        list.appendChild(el('li', {}, [label]));
+      });
+      body.appendChild(list);
+
+      var cost = el('div', { class: 'tool__cost' });
+      var seatsId = 'seats-' + t.id, costId = 'cost-' + t.id;
+      var seatWrap = el('div', {}, [el('label', { for: seatsId, text: 'Seats' })]);
+      var seatInput = el('input', { type: 'number', min: '0', id: seatsId, placeholder: '0' });
+      seatInput.value = sel ? (sel.seats || '') : '';
+      seatInput.addEventListener('input', function () { state.sel[t.id].seats = seatInput.value; sync(false); });
+      seatWrap.appendChild(seatInput);
+      var costWrap = el('div', {}, [el('label', { for: costId, text: 'Monthly, all seats (' + state.meta.currency + ')' })]);
+      var costInput = el('input', { type: 'number', min: '0', step: '1', id: costId, placeholder: '0' });
+      costInput.value = sel ? (sel.monthly || '') : '';
+      costInput.addEventListener('input', function () { state.sel[t.id].monthly = costInput.value; sync(false); });
+      costWrap.appendChild(costInput);
+      cost.appendChild(seatWrap); cost.appendChild(costWrap);
+      body.appendChild(cost);
+
+      card.appendChild(body);
+      toolsEl.appendChild(card);
+    });
+  }
+
+  function toggleTool(id) {
+    /* Nothing is pre-ticked. A module counts as used only when she says so — a
+       default here would put numbers in the mapping nobody confirmed. */
+    if (state.sel[id]) delete state.sel[id];
+    else state.sel[id] = { mods: {}, seats: '', monthly: '' };
+    sync(true);
+  }
+
+  function toggleModule(toolId, modId, on) {
+    var s = state.sel[toolId];
+    if (!s) return;
+    if (on) s.mods[modId] = true; else delete s.mods[modId];
+    sync(true);
+  }
+
+  var customEl = document.getElementById('custom');
+  function renderCustom() {
+    customEl.innerHTML = '';
+    state.custom.forEach(function (c, i) {
+      var row = el('div', { class: 'grid grid--2', style: 'margin-bottom:10px' });
+      function field(labelText, key, type, ph) {
+        var id = 'c' + i + '-' + key;
+        var w = el('div', {}, [el('label', { for: id, text: labelText })]);
+        var inp = el('input', { type: type || 'text', id: id, placeholder: ph || '' });
+        inp.value = c[key] || '';
+        inp.addEventListener('input', function () { c[key] = inp.value; sync(false); });
+        w.appendChild(inp);
+        return w;
+      }
+      row.appendChild(field('Tool', 'name', 'text', 'Google Sheets — installer rota'));
+      row.appendChild(field('What it is used for', 'what', 'text', 'Weekly crew planning'));
+      row.appendChild(field('Seats', 'seats', 'number', '0'));
+      var last = el('div', { class: 'row', style: 'align-items:flex-end' });
+      var costWrap = field('Monthly (' + state.meta.currency + ')', 'monthly', 'number', '0');
+      costWrap.style.flex = '1';
+      last.appendChild(costWrap);
+      last.appendChild(el('button', {
+        class: 'btn btn--ghost btn--sm', type: 'button', text: 'Remove',
+        onclick: function () { state.custom.splice(i, 1); renderCustom(); sync(false); }
+      }));
+      row.appendChild(last);
+      customEl.appendChild(row);
+    });
+  }
+  document.getElementById('add-custom').addEventListener('click', function () {
+    state.custom.push({ name: '', what: '', seats: '', monthly: '' });
+    renderCustom(); sync(false);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-meta]'), function (inp) {
+    inp.addEventListener('input', function () {
+      state.meta[inp.getAttribute('data-meta')] = inp.value;
+      if (inp.id === 'f-currency') { render(); renderCustom(); }
+      sync(false);
+    });
+  });
+  document.getElementById('f-search').addEventListener('input', render);
+
+  function brief() {
+    var tools = [];
+    CATALOG.forEach(function (t) {
+      var s = state.sel[t.id]; if (!s) return;
+      var mods = t.modules.filter(function (m) { return s.mods[m.id]; }).map(function (m) {
+        return { id: m.id, name: m.name, desc: m.desc, caps: m.caps };
+      });
+      tools.push({ id: t.id, name: t.name, kind: t.kind, seats: s.seats, monthly: s.monthly, modules: mods });
+    });
+    state.custom.forEach(function (c, i) {
+      if (!c.name) return;
+      tools.push({
+        id: 'custom-' + i, name: c.name, kind: 'off-catalog', seats: c.seats, monthly: c.monthly,
+        custom: true, modules: [{ id: 'use', name: 'What it is used for', desc: c.what || '', caps: [] }]
+      });
+    });
+    return {
+      v: 1, kind: 'mercatify-brief',
+      created: new Date().toISOString().slice(0, 10),
+      company: { name: state.meta.name, industry: state.meta.industry, people: state.meta.people },
+      currency: state.meta.currency,
+      pains: state.meta.pains, mustKeep: state.meta.mustKeep,
+      tools: tools
+    };
+  }
+
+  function sync(rerender) {
+    if (rerender) render();
+    var b = brief();
+    var mods = b.tools.reduce(function (s, t) { return s + t.modules.length; }, 0);
+    var cost = b.tools.reduce(function (s, t) { return s + (Number(t.monthly) || 0); }, 0);
+    var seats = b.tools.reduce(function (s, t) { return s + (Number(t.seats) || 0); }, 0);
+    var ov = overlaps(b.tools);
+
+    document.getElementById('s-tools').textContent = b.tools.length;
+    document.getElementById('s-seats').textContent = seats ? seats + ' seats in total' : 'no seats entered';
+    document.getElementById('s-mods').textContent = mods;
+    document.getElementById('s-cost').textContent = cost ? money(cost, b.currency) : '—';
+    document.getElementById('s-dups').textContent = ov.length;
+    document.getElementById('s-dups-list').textContent = ov.length
+      ? ov.slice(0, 3).map(function (o) { return o.label.toLowerCase(); }).join(', ') + (ov.length > 3 ? '…' : '')
+      : 'no duplicates yet';
+
+    saveCase({ v: 1, kind: 'mercatify-case', brief: b });
+  }
+
+  /* A request in the queue is the brief flattened to one caps array per tool:
+     that is all the mapping needs, and it keeps the stored shape small enough
+     to read by eye in devtools. */
+  function send() {
+    var b = brief();
+    if (!b.tools.length) {
+      alert('Tick at least one tool before sending.');
+      return;
+    }
+    var req = {
+      ref: nextRef(),
+      company: b.company.name || 'Unnamed company',
+      industry: b.company.industry || '',
+      people: b.company.people || '',
+      currency: b.currency,
+      received: b.created,
+      status: 'new',
+      owner: null,
+      pains: b.pains,
+      mustKeep: b.mustKeep,
+      tools: b.tools.map(function (t) {
+        var caps = {};
+        t.modules.forEach(function (m) { (m.caps || []).forEach(function (c) { caps[c] = true; }); });
+        return { name: t.name, seats: t.seats, monthly: t.monthly, caps: Object.keys(caps) };
+      })
+    };
+    saveRequest(req);
+    addClientRef(req.ref);
+    /* Straight to the request itself: the form has done its job, and what she
+       wants next is confirmation that it landed and where it now sits. */
+    window.location.href = 'request.html?ref=' + encodeURIComponent(req.ref);
+  }
+
+  document.getElementById('send').addEventListener('click', send);
+  document.getElementById('save-draft').addEventListener('click', function () {
+    sync(false);
+    this.textContent = 'Draft saved';
+    var self = this;
+    setTimeout(function () { self.textContent = 'Save draft'; }, 1600);
+  });
+
+  /* restore a draft left in this browser */
+  var prev = loadCase();
+  if (prev && prev.brief && prev.brief.tools && prev.brief.tools.length) {
+    var b = prev.brief;
+    state.meta.name = b.company.name || '';
+    state.meta.industry = b.company.industry || '';
+    state.meta.people = b.company.people || '';
+    state.meta.currency = b.currency || 'EUR';
+    state.meta.pains = b.pains || '';
+    state.meta.mustKeep = b.mustKeep || '';
+    b.tools.forEach(function (t) {
+      if (t.custom) {
+        state.custom.push({ name: t.name, what: (t.modules[0] || {}).desc || '', seats: t.seats, monthly: t.monthly });
+      } else if (findTool(t.id)) {
+        var mods = {};
+        t.modules.forEach(function (m) { mods[m.id] = true; });
+        state.sel[t.id] = { mods: mods, seats: t.seats || '', monthly: t.monthly || '' };
+      }
+    });
+    document.getElementById('f-company').value = state.meta.name;
+    document.getElementById('f-industry').value = state.meta.industry;
+    document.getElementById('f-people').value = state.meta.people;
+    document.getElementById('f-currency').value = state.meta.currency;
+    document.getElementById('f-pains').value = state.meta.pains;
+    document.getElementById('f-keep').value = state.meta.mustKeep;
+  }
+
+  renderCustom();
+  sync(true);
+})();
+</script>
+</body>
+</html>
