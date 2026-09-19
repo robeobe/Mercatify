@@ -124,9 +124,10 @@ function getInstallableModuleIds(): Set<string> {
   const ids = new Set<string>(getEnabledModuleIds())
   let coreIds: readonly string[] = CORE_MODULE_IDS_FALLBACK
   try {
-    // `require.resolve` finds the package wherever it is hoisted to.
-    const pkgJson = require.resolve('@open-mercato/core/package.json')
-    const modulesDir = path.join(path.dirname(pkgJson), 'src', 'modules')
+    // Read the directory rather than resolving the package: `@open-mercato/core`
+    // exports no `package.json` subpath, so `require.resolve` would only make
+    // the bundler warn. Missing directory → the mirror below stands in.
+    const modulesDir = path.join(process.cwd(), 'node_modules', '@open-mercato', 'core', 'src', 'modules')
     const entries = fs.readdirSync(modulesDir, { withFileTypes: true })
     const found = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
     if (found.length > 0) coreIds = found

@@ -409,6 +409,7 @@ export function CaseForm({
   formTitle,
   showLockAlert = true,
   showCorrectedListAction = true,
+  embedded = false,
 }: {
   mode: FormMode
   caseId?: string
@@ -420,6 +421,9 @@ export function CaseForm({
   /** Off on the admin case detail: "Send a corrected list" is the client's
    *  move, and it would take an admin to the client intake. */
   showCorrectedListAction?: boolean
+  /** Drop the form's own back/cancel/save header — used where the page
+   *  already carries a pagehead and the intake is read-only context. */
+  embedded?: boolean
 }) {
   const t = useT()
   const router = useRouter()
@@ -488,6 +492,7 @@ export function CaseForm({
       title={formTitle ?? (mode === 'create' ? t('mercatify.cases.create.title') : t('mercatify.cases.detail.title'))}
       backHref={listHref}
       entityId={ENTITY_ID}
+      embedded={embedded}
       formId={FORM_ID}
       fields={fields}
       groups={groups}
@@ -591,5 +596,7 @@ export function CaseEditLoader({ id }: { id: string }) {
 }
 
 export function CaseCreateForm() {
-  return <CaseForm mode="create" />
+  // Embedded: the intake page carries the mockup's own pagehead, so the form's
+  // duplicate back/cancel/save header row is dropped. The footer actions stay.
+  return <CaseForm mode="create" embedded />
 }

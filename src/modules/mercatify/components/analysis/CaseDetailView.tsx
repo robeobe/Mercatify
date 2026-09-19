@@ -131,6 +131,7 @@ export function CaseDetailView({ id }: { id: string }) {
         initial={values}
         showCorrectedListAction={false}
         showLockAlert={false}
+        embedded
       />
     </div>
   )
