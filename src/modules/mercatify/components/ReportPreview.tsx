@@ -177,32 +177,32 @@ export default function ReportPreview({ report }: { report: ReportModel }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead scope="col">{t('mercatify.report.tools.column.tool')}</TableHead>
-              <TableHead scope="col">{t('mercatify.report.tools.column.capability')}</TableHead>
-              <TableHead scope="col">{t('mercatify.report.tools.column.target')}</TableHead>
-              <TableHead scope="col">{t('mercatify.report.tools.column.verdict')}</TableHead>
-              <TableHead scope="col">{t('mercatify.report.tools.column.confidence')}</TableHead>
-              <TableHead scope="col">{t('mercatify.report.tools.column.monthly')}</TableHead>
+              <TableHead scope="col" className="whitespace-nowrap">{t('mercatify.report.tools.column.tool')}</TableHead>
+              <TableHead scope="col" className="w-[42%] min-w-[16rem]">{t('mercatify.report.tools.column.capability')}</TableHead>
+              <TableHead scope="col" className="min-w-[9rem]">{t('mercatify.report.tools.column.target')}</TableHead>
+              <TableHead scope="col" className="whitespace-nowrap">{t('mercatify.report.tools.column.verdict')}</TableHead>
+              <TableHead scope="col" className="whitespace-nowrap">{t('mercatify.report.tools.column.confidence')}</TableHead>
+              <TableHead scope="col" className="whitespace-nowrap text-right">{t('mercatify.report.tools.column.monthly')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {report.toolGroups.flatMap((group) => group.rows.map((row, index) => (
               <TableRow key={row.id}>
-                <TableCell>
+                <TableCell className="whitespace-nowrap align-top">
                   {index === 0 ? (
                     <>
-                      <div>{group.toolName ?? t('mercatify.report.tools.unattributed')}</div>
+                      <div className="font-medium">{group.toolName ?? t('mercatify.report.tools.unattributed')}</div>
                       {group.switchedOff ? (
                         <div className="text-xs text-muted-foreground">{t('mercatify.report.tools.switchedOff')}</div>
                       ) : null}
                     </>
                   ) : null}
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-top">
                   <div>{row.capability}</div>
                   <div className="text-xs text-muted-foreground">{row.justification}</div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-top">
                   {/* A flag is a note for the reader, not an error in their
                       document — same treatment as the mapping table. */}
                   <div>{row.targetLabel ?? '—'}</div>
@@ -214,17 +214,17 @@ export default function ReportPreview({ report }: { report: ReportModel }) {
                     </div>
                   ) : null}
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap align-top">
                   <Tag variant={decisionTagMap[row.decision as MercatifyDecision]}>
                     {t(`mercatify.mapping.decision.${row.decision}`)}
                   </Tag>
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap align-top">
                   <StatusBadge variant={confidenceVariants[row.confidence as MercatifyConfidence]} dot>
                     {t(`mercatify.mapping.confidence.${row.confidence}`)}
                   </StatusBadge>
                 </TableCell>
-                <TableCell>{index === 0 ? money(group.monthlyCost) : ''}</TableCell>
+                <TableCell className="whitespace-nowrap text-right align-top">{index === 0 ? money(group.monthlyCost) : ''}</TableCell>
               </TableRow>
             )))}
           </TableBody>
