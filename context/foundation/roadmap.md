@@ -32,7 +32,7 @@ The insight the product rests on: *"Your SaaS stack is already your specificatio
 | ID   | Change ID                       | Outcome (user can …)                                                                        | Prerequisites               | PRD refs                       | Status   |
 | ---- | ------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------ | -------- |
 | F-01 | `mercatify-module-scaffold`     | (foundation) Mercatify installs as a standard OM module with one seeded interview case       | —                           | FR-014, FR-015                 | done     |
-| F-02 | `mercatify-lab-analysis-contract` | (foundation) the Mercatify ↔ Lab interface is fixed, with a deterministic scripted adapter  | —                           | FR-003, FR-012, FR-013, OQ-2   | ready    |
+| F-02 | `mercatify-lab-analysis-contract` | (foundation) the Mercatify ↔ Lab interface is fixed, with a deterministic scripted adapter  | —                           | FR-003, FR-012, FR-013, OQ-2   | done     |
 | S-03 | `mercatify-mapping-summary`     | see the analysis-filled mapping table, with unmapped items flagged, and edit it              | F-01, F-02                  | US-01, FR-005, FR-006, FR-008  | proposed |
 | S-01 | `mercatify-intake-start`        | open Mercatify and see the starting point: company profile and SaaS tools with monthly costs | F-01                        | US-01, FR-001, FR-014, FR-015  | proposed |
 | S-02 | `mercatify-discovery-wizard`    | answer discovery questions step by step until the analysis says nothing is missing           | S-01, F-02                  | US-01, FR-002, FR-003, FR-004  | proposed |
@@ -96,7 +96,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Unknowns:**
   - Where the spec's iron rules live (catalog used as a lookup; money computed deterministically rather than by the analysis) — inside Lab, or as a requirement this contract imposes on Lab. Owner: team. Block: no (this foundation is the place the decision gets recorded).
 - **Risk:** Sequenced first alongside F-01 because it is the seam two teams work across at the same time; if it lands late, the wizard and the summary are each built against a guess and neither fits Lab. Kept minimal on purpose — one port plus one scripted adapter, not an analysis implementation.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -232,3 +232,4 @@ Carried from PRD §Open Questions, plus one surfaced while probing the codebase.
 ## Done
 
 - **F-01: (foundation) Mercatify is installed as a standard OM module — its own feature flags, its own tenant- and organization-scoped interview case, the demo dataset seeded into that case, and the broad validation gates still green with no change to the core or enterprise packages.** — Archived 2026-09-19 → `context/archive/2026-09-19-mercatify-module-scaffold/`. Lesson: —.
+- **F-02: (foundation) the interface between this module and Mercatify Lab is written down as a versioned contract — what the interview sends, what the analysis returns (further questions, mappings, decisions, confidence bands, amounts), and what the handoff carries — with one deterministic scripted adapter behind it, so every downstream slice can be built, demoed and tested without Lab existing.** — Archived 2026-09-19 → `context/archive/2026-09-19-mercatify-lab-analysis-contract/`. Lesson: —.

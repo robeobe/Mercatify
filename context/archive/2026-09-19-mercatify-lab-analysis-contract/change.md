@@ -1,10 +1,10 @@
 ---
 change_id: mercatify-lab-analysis-contract
 title: Fix the Mercatify to Mercatify Lab contract and ship a scripted adapter
-status: implemented
+status: archived
 created: 2026-09-19
 updated: 2026-09-19
-archived_at: null
+archived_at: 2026-09-19T14:16:36Z
 ---
 
 ## Notes
