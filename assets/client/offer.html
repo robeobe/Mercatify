@@ -87,8 +87,11 @@
   </div>
 </template>
 
+<script src="../shared/catalog.generated.js"></script>
 <script src="../stack-tool/catalog.js"></script>
 <script src="../shared/om-core.js"></script>
+<script src="../shared/report-renderer.generated.js"></script>
+<script src="../shared/report-model.js"></script>
 <script>
 (function () {
   var content = mountPortalShell({ active: 'requests' });
@@ -109,9 +112,13 @@
   document.getElementById('p-sub').textContent =
     req.company + ' · ' + offer.caps.length + ' jobs across ' + (req.tools || []).length +
     ' tools · prepared ' + offer.generatedAt;
-  document.getElementById('p-offer').appendChild(renderOffer(offer));
+  /* The same call the console's preview makes, on the same request. Not a
+     client-side version of the report — the report. */
+  var frame = renderReportInto(document.getElementById('p-offer'), req, {
+    title: 'Your consolidation report'
+  });
   document.getElementById('back').href = 'request.html?ref=' + encodeURIComponent(req.ref);
-  document.getElementById('print').addEventListener('click', function () { window.print(); });
+  document.getElementById('print').addEventListener('click', function () { printReportFrame(frame); });
 
   var form = document.getElementById('answer-form');
 
