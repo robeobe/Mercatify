@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mercatify pitch</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
+<style>
+  :root {
+    --bg: #0C0C0C;
+    --panel: #141414;
+    --ink: #FAFAFA;
+    --ink-2: #9E9E9E;
+    --ink-3: #6D6D6D;
+    --rule: #262626;
+    --lime: #B4F372;
+    --lime-dark: #2F520B;
+    --violet: #BC9AFF;
+    --yellow: #EEFB63;
+    --sans: "Geist Sans", "Geist", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; overflow: hidden;
+  }
+
+  h1, h2, h3 { margin: 0; letter-spacing: -0.03em; line-height: 1.02; font-weight: 600; text-wrap: balance; }
+  p { margin: 0; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------- slide frame ---------- */
+  .slide { display: none; height: 100%; padding: clamp(28px, 5vw, 72px); flex-direction: column; justify-content: center; }
+  .slide.is-active { display: flex; }
+  .slide__inner { width: 100%; max-width: 1120px; margin: 0 auto; }
+
+  .kicker {
+    font-family: var(--mono); font-size: clamp(.68rem, 1.1vw, .8rem);
+    letter-spacing: .16em; text-transform: uppercase; color: var(--lime);
+    display: block; margin-bottom: 22px;
+  }
+  .title { font-size: clamp(2.2rem, 6vw, 4.6rem); }
+  .sub { font-size: clamp(1rem, 1.9vw, 1.5rem); color: var(--ink-2); margin-top: 24px; max-width: 46ch; line-height: 1.4; }
+
+  /* ---------- pieces ---------- */
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-top: 44px; }
+  .stat-row > div { background: var(--bg); padding: 22px 20px; }
+  .stat-row .k { font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 10px; }
+  .stat-row .v { font-size: clamp(1.6rem, 3.4vw, 2.6rem); font-weight: 600; letter-spacing: -0.035em; display: block; font-variant-numeric: tabular-nums; line-height: 1; }
+  .stat-row .v small { font-size: .5em; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }
+  .stat-row .v.lime { color: var(--lime); }
+
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; margin-top: 44px; }
+  .box { border: 1px solid var(--rule); padding: 24px 22px; display: flex; flex-direction: column; gap: 12px; }
+  .box--lime { border-color: var(--lime); }
+  .box .n { font-family: var(--mono); font-size: .7rem; letter-spacing: .12em; color: var(--lime); }
+  .box h3 { font-size: clamp(1rem, 1.6vw, 1.25rem); }
+  .box p { font-size: clamp(.88rem, 1.3vw, 1rem); color: var(--ink-2); }
+
+  .chain { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 40px; font-family: var(--mono); font-size: clamp(.72rem, 1.2vw, .9rem); }
+  .chain b { font-weight: 400; border: 1px solid var(--rule); padding: 9px 13px; }
+  .chain b.on { border-color: var(--lime); color: var(--lime); }
+  .chain b.human { border-color: var(--lime); background: var(--lime); color: #0C0C0C; }
+  .chain i { color: var(--ink-3); font-style: normal; }
+
+  .lines { margin: 40px 0 0; padding: 0; list-style: none; }
+  .lines li { border-top: 1px solid var(--rule); padding: 18px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 28px; align-items: baseline; }
+  .lines li:last-child { border-bottom: 1px solid var(--rule); }
+  .lines strong { font-size: clamp(1rem, 1.7vw, 1.3rem); font-weight: 600; letter-spacing: -0.02em; }
+  .lines span { color: var(--ink-2); font-size: clamp(.88rem, 1.3vw, 1rem); }
+  @media (max-width: 720px) { .lines li { grid-template-columns: 1fr; gap: 8px; } }
+
+  .versus { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 44px; }
+  @media (max-width: 720px) { .versus { grid-template-columns: 1fr; } }
+  .versus > div { border: 1px solid var(--rule); padding: 24px 22px; }
+  .versus .now { color: var(--ink-2); }
+  .versus .then { border-color: var(--lime); }
+  .versus h3 { font-family: var(--mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 400; margin-bottom: 16px; }
+  .versus .then h3 { color: var(--lime); }
+  .versus .big { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 600; letter-spacing: -0.035em; line-height: 1.05; }
+
+  .cover { position: relative; }
+  .cover::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background-image:
+      linear-gradient(100deg, #0C0C0C 0%, #0C0C0C 34%, rgba(12,12,12,.8) 56%, rgba(12,12,12,.3) 82%, rgba(12,12,12,.15) 100%),
+      url("hero2.png");
+    background-size: cover; background-position: right center;
+  }
+
+  .demo-mark { font-family: var(--mono); font-size: clamp(3rem, 12vw, 9rem); letter-spacing: -0.04em; color: var(--lime); line-height: 1; }
+
+  /* ---------- chrome ---------- */
+  .bar { position: fixed; top: 0; left: 0; height: 2px; background: var(--lime); width: 0; transition: width .2s ease; z-index: 5; }
+  .count { position: fixed; right: 20px; bottom: 16px; font-family: var(--mono); font-size: .76rem; color: var(--ink-3); z-index: 5; }
+  .clock { position: fixed; left: 20px; bottom: 16px; font-family: var(--mono); font-size: .76rem; color: var(--ink-3); z-index: 5; }
+  .clock.warn { color: var(--yellow); }
+  .clock.over { color: #F4876A; }
+  .help { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; font-family: var(--mono); font-size: .7rem; color: var(--ink-3); z-index: 5; letter-spacing: .06em; }
+
+  .notes {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+    background: var(--panel); border-top: 1px solid var(--rule);
+    padding: 18px 22px 30px; max-height: 42vh; overflow: auto;
+  }
+  .notes h4 { margin: 0 0 8px; font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--lime); font-weight: 400; }
+  .notes p { font-size: .95rem; color: var(--ink); max-width: 90ch; }
+  .notes p + p { margin-top: 8px; }
+  .notes em { color: var(--ink-2); font-style: normal; }
+
+  .slide__note { display: none; }
+
+  @media print {
+    body { overflow: visible; background: #fff; }
+    .slide { display: flex !important; height: auto; min-height: 60vh; page-break-after: always; border-bottom: 1px solid #ddd; }
+    .bar, .count, .clock, .help, .notes { display: none !important; }
+    .slide__note { display: block; margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--ink-2); font-size: .9rem; max-width: 80ch; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="bar" id="bar"></div>
+
+<!-- 01 -->
+<section class="slide cover is-active" data-time="0:00" data-note="Cześć, jesteśmy Mercatify. Jedno zdanie na start: firma, do której przychodzisz z listą swoich SaaS-ów, a wychodzisz z mapą, wyceną i działającym podglądem własnego systemu. // Nie mówimy jeszcze nic o agentach — najpierw problem.">
+  <div class="slide__inner">
+    <span class="kicker">Mercatify</span>
+    <h1 class="title">Your SaaS stack is already your specification.</h1>
+    <p class="sub">An AI company that turns the tools you rent into software you own.</p>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="slide" data-time="0:15" data-note="Typowa firma na 30 osób płaci za siedem narzędzi. Nikt w tej firmie nie umie powiedzieć, co dokładnie robi połowa z nich. Rachunek rośnie co roku, a dane leżą w siedmiu miejscach. // To nie jest problem techniczny, tylko problem pieniędzy i kontroli.">
+  <div class="slide__inner">
+    <span class="kicker">The problem</span>
+    <h2 class="title">Nobody knows what half these tools actually do.</h2>
+    <div class="stat-row">
+      <div><span class="k">Tools in a typical SME stack</span><span class="v">7</span></div>
+      <div><span class="k">Monthly licences</span><span class="v">$2,320</span></div>
+      <div><span class="k">Per year, rented</span><span class="v">$27,840</span></div>
+      <div><span class="k">Owned by the client</span><span class="v">$0</span></div>
+    </div>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="slide" data-time="0:45" data-note="I tu jest nasza teza. Nikt nie pyta klienta „jakiego ERP potrzebujesz", bo on tego nie wie. Ale on już podjął wszystkie decyzje — one są w jego stacku. Za co płaci co miesiąc, to jest opis tego, jak jego firma działa. // Stack jest specyfikacją. Wystarczy umieć ją przeczytać.">
+  <div class="slide__inner">
+    <span class="kicker">The insight</span>
+    <h2 class="title">We don't ask what system you need.<br>We read what you already pay for.</h2>
+    <p class="sub">Every subscription is a decision somebody already made. The live stack is the requirements document — nobody had to write it.</p>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="slide" data-time="1:05" data-note="Co dostaje klient: mapę pokrycia — co Open Mercato bierze od razu, co trzeba skonfigurować, co dokodować, co zostaje u dostawcy. Do tego policzone oszczędności i klikalny podgląd tej jednej rzeczy, która boli najbardziej. // Wszystko w kilkanaście minut zamiast w kilka tygodni.">
+  <div class="slide__inner">
+    <span class="kicker">What the client gets</span>
+    <h2 class="title">A coverage map, the money, and a working preview.</h2>
+    <div class="chain">
+      <b>their stack</b><i>→</i>
+      <b class="on">coverage map</b><i>→</i>
+      <b class="on">savings</b><i>→</i>
+      <b class="on">clickable preview</b><i>→</i>
+      <b class="human">quote</b>
+    </div>
+    <p class="sub" style="margin-top:34px;">One decision per capability: native, configure, build, integrate or keep. Each with evidence and a confidence band the client can challenge.</p>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="slide" data-time="1:25" data-note="TU IDZIE DEMO — 100 sekund, trzy uderzenia: (1) wchodzi stack klienta, (2) wychodzi mapa z werdyktami i kwotą, (3) klikamy podgląd. // Nie tłumaczymy w trakcie, jak to działa. Wyjaśnienie idzie po demie.">
+  <div class="slide__inner" style="text-align:center;">
+    <span class="kicker" style="margin-bottom:34px;">100 seconds</span>
+    <div class="demo-mark">DEMO</div>
+    <p class="sub" style="margin:34px auto 0;">Stack in. Map, money and preview out.</p>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="slide" data-time="3:05" data-note="Teraz trzy rzeczy, dzięki którym to nie jest zgadywanie modelu. Pierwsza: porównujemy funkcje, nie nazwy produktów. Każdy SaaS i każdy moduł Open Mercato opisujemy tym samym słownikiem — „multi-warehouse inventory", „RMA workflow". Wtedy porównanie to operacja na zbiorach, a nie esej konsultanta.">
+  <div class="slide__inner">
+    <span class="kicker">Why it isn't guesswork · 1 of 3</span>
+    <h2 class="title">Capabilities, not product names.</h2>
+    <div class="chain" style="margin-top:38px;">
+      <b>HubSpot</b><i>·</i><b>Jobber</b><i>·</i><b>Zendesk</b><i>·</i><b>Sortly</b>
+    </div>
+    <div class="chain" style="margin-top:14px;">
+      <b class="on">multi-warehouse inventory</b><b class="on">RMA workflow</b><b class="on">B2B price lists</b><b class="on">crew scheduling</b>
+    </div>
+    <p class="sub" style="margin-top:34px;">One vocabulary describes the SaaS tools and the platform. Comparison becomes set arithmetic instead of a consultant's essay.</p>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 07 -->
+<section class="slide" data-time="3:30" data-note="Druga i trzecia rzecz, i to są nasze żelazne zasady. Katalog jest źródłem prawdy — decyzje biorą się z kuratorowanej macierzy, nie z rozumowania modelu na żywo. Model nigdy nie liczy pieniędzy: wybiera dane wejściowe, a kwotę zwraca czysta funkcja, z faktur klienta. I pewność podajemy jako pasmo, nie jako procent — bo „87% dopasowania" to liczba, której nikt nie obroni.">
+  <div class="slide__inner">
+    <span class="kicker">Why it isn't guesswork · 2 and 3 of 3</span>
+    <h2 class="title">Three rules we don't break.</h2>
+    <div class="cols">
+      <div class="box"><span class="n">01</span><h3>The catalog decides</h3><p>Known tool to platform verdicts come from a curated matrix by lookup. The model narrates; it never rules on the critical path.</p></div>
+      <div class="box"><span class="n">02</span><h3>The model never computes money</h3><p>It selects inputs. A pure function returns the figure, from the client's own invoices. Every number is recomputable by hand.</p></div>
+      <div class="box"><span class="n">03</span><h3>Confidence is a band</h3><p>High, medium, low. A spurious "87% match" is a claim nobody can defend in a room full of people who know their own business.</p></div>
+    </div>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 08 -->
+<section class="slide" data-time="4:00" data-note="I teraz do tracku. To nie jest jeden prompt — to firma. Sześć wyspecjalizowanych agentów, każdy oddaje typowany, walidowany wynik następnemu. Agenci są propose-only: nigdy nie zapisują sami, tylko proponują, a człowiek dysponuje. To nie jest nasz wynalazek na weekend, tylko architektura orkiestratora Open Mercato — bieg, ślad, propozycja, akceptacja. // I dogfooding: Mercatify samo działa na Open Mercato. Każda sprawa i każdy artefakt to rekord w panelu produktu, który sprzedajemy.">
+  <div class="slide__inner">
+    <span class="kicker">The AI company</span>
+    <h2 class="title">Six agents, one human, nothing written without approval.</h2>
+    <div class="chain" style="margin-top:38px;">
+      <b>discovery</b><i>→</i>
+      <b>capability-mapper</b><i>→</i>
+      <b>decision-engine</b><i>→</i>
+      <b>finops</b><i>→</i>
+      <b>preview-builder</b><i>→</i>
+      <b>critic</b><i>→</i>
+      <b class="human">consultant approves</b>
+    </div>
+    <ul class="lines">
+      <li><strong>Propose, never write</strong><span>Every agent returns a typed, validated result. A human disposes. That boundary is the platform's own architecture, not something we bolted on.</span></li>
+      <li><strong>Mercatify runs on Open Mercato</strong><span>Every case, artifact and quote is a record in the product we are selling. We ask clients to trust it with their operations, so we run on it.</span></li>
+    </ul>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 09 -->
+<section class="slide" data-time="4:25" data-note="Dwie rzeczy, które sprawiają, że to się sprzedaje. Nigdy nie proponujemy wymiany całego stacku — wskazujemy jeden kawałek do odcięcia najpierw, z uzasadnieniem kosztowym. Rip-and-replace umiera na zarządzie. // I liczby: presales skraca się z tygodni do godzin, a wycena przestaje być efektem ubocznym rozmowy, tylko staje się produktem.">
+  <div class="slide__inner">
+    <span class="kicker">Why it sells</span>
+    <h2 class="title">One piece at a time — and presales in hours.</h2>
+    <div class="versus">
+      <div class="now"><h3>Traditional presales</h3><p class="big">2–6 weeks</p><p style="margin-top:14px;">Workshops billed by the day, coverage claims nobody can verify, a slide deck as the deliverable.</p></div>
+      <div class="then"><h3>Mercatify</h3><p class="big">Hours</p><p style="margin-top:14px;">Evidence per verdict, savings computed from invoices, and the client clicks their future system before deciding.</p></div>
+    </div>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide cover" data-time="4:45" data-note="Zamknięcie. Open Mercato potrzebuje tego do pracy z partnerami — każdy partner wdrożeniowy prowadzi dziś ten sam presales ręcznie. My go zautomatyzowaliśmy, zostawiając człowieka tam, gdzie musi być: na końcu, przy podpisie. // Dziękujemy, pytania.">
+  <div class="slide__inner">
+    <span class="kicker">Mercatify</span>
+    <h2 class="title">Tell us what you pay for.<br>We'll tell you what you own.</h2>
+    <p class="sub">Every implementation partner runs this presales by hand today. We automated it — and left the human exactly where the client wants one: at the end, signing.</p>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+<div class="clock" id="clock">T — start timer</div>
+<div class="help">← → slides · N notes · T timer · P print</div>
+<div class="count" id="count">1 / 10</div>
+
+<div class="notes" id="notes" hidden>
+  <h4>Speaker notes</h4>
+  <p id="noteBody"></p>
+</div>
+
+<script>
+  (function () {
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var bar = document.getElementById('bar');
+    var count = document.getElementById('count');
+    var notes = document.getElementById('notes');
+    var noteBody = document.getElementById('noteBody');
+    var clock = document.getElementById('clock');
+    var index = 0;
+
+    slides.forEach(function (slide) {
+      var note = slide.querySelector('.slide__note');
+      if (note) note.textContent = slide.getAttribute('data-note') || '';
+    });
+
+    function render() {
+      slides.forEach(function (slide, i) { slide.classList.toggle('is-active', i === index); });
+      bar.style.width = ((index + 1) / slides.length * 100) + '%';
+      count.textContent = (index + 1) + ' / ' + slides.length;
+      noteBody.textContent = slides[index].getAttribute('data-note') || '';
+    }
+
+    function go(step) {
+      index = Math.min(slides.length - 1, Math.max(0, index + step));
+      render();
+    }
+
+    var timerId = null;
+    var left = 300;
+
+    function paint() {
+      var m = Math.floor(Math.abs(left) / 60);
+      var s = Math.abs(left) % 60;
+      clock.textContent = (left < 0 ? '-' : '') + m + ':' + (s < 10 ? '0' : '') + s + '  ·  ' + (slides[index].getAttribute('data-time') || '');
+      clock.className = 'clock' + (left <= 0 ? ' over' : (left <= 60 ? ' warn' : ''));
+    }
+
+    function toggleTimer() {
+      if (timerId) { clearInterval(timerId); timerId = null; clock.textContent = 'timer paused'; return; }
+      timerId = setInterval(function () { left -= 1; paint(); }, 1000);
+      paint();
+    }
+
+    document.addEventListener('keydown', function (event) {
+      var key = event.key;
+      if (key === 'ArrowRight' || key === ' ' || key === 'PageDown') { event.preventDefault(); go(1); }
+      else if (key === 'ArrowLeft' || key === 'PageUp') { event.preventDefault(); go(-1); }
+      else if (key === 'Home') { index = 0; render(); }
+      else if (key === 'End') { index = slides.length - 1; render(); }
+      else if (key === 'n' || key === 'N') { notes.hidden = !notes.hidden; }
+      else if (key === 't' || key === 'T') { toggleTimer(); }
+      else if (key === 'p' || key === 'P') { window.print(); }
+    });
+
+    document.addEventListener('click', function (event) {
+      if (event.target.closest('#notes')) return;
+      go(event.clientX < window.innerWidth * 0.25 ? -1 : 1);
+    });
+
+    render();
+  })();
+</script>
+
+</body>
+</html>
