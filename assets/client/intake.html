@@ -191,6 +191,17 @@
     </div>
   </div>
 
+  <div class="card" id="map-ready" hidden style="margin-bottom:16px">
+    <div class="card__head">
+      <h2 id="ready-title">Your map is ready</h2>
+      <span class="badge badge--info" id="ready-badge">new</span>
+    </div>
+    <p id="ready-body" class="muted"></p>
+    <div class="row" style="margin-top:14px">
+      <a class="btn" href="offer.html" id="ready-cta">Read it</a>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card__head">
       <h2 id="r-company">—</h2>
@@ -247,6 +258,27 @@
       ' · ' + money(requestMonthly(req), req.currency) + '/mo on licences';
     document.getElementById('r-pains').textContent = req.pains || 'Not stated.';
     document.getElementById('r-keep').textContent = req.mustKeep || 'Not stated.';
+
+    /* The map only exists here once a consultant has actually sent it; the
+       earlier statuses are Mercatify's own and say nothing to her. */
+    if (req.report && req.sentAt) {
+      var ready = document.getElementById('map-ready');
+      var badge = document.getElementById('ready-badge');
+      ready.hidden = false;
+      badge.textContent = statusLabel(req, 'client');
+      badge.className = statusBadge(req);
+      if (req.clientResponse) {
+        document.getElementById('ready-title').textContent = 'Your map';
+        document.getElementById('ready-body').textContent = req.clientResponse.kind === 'accepted'
+          ? 'You accepted it on ' + req.clientResponse.at + '. It stays here for you to re-read.'
+          : 'You asked for a call on ' + req.clientResponse.at + '. Sales will be in touch.';
+        document.getElementById('ready-cta').textContent = 'Read it again';
+      } else {
+        document.getElementById('ready-body').textContent =
+          'A consultant has been through your stack and sent the map back on ' + req.sentAt +
+          '. Read it, then accept it or ask for a call — whichever suits.';
+      }
+    }
 
     var list = document.getElementById('r-tools');
     (req.tools || []).forEach(function (t) {

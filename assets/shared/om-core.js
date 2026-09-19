@@ -224,13 +224,40 @@ var SEED_REQUESTS = [
   }
 ];
 
+/* ─────────────── patches ───────────────
+   Seeded requests live in this file as constants, so a consultant's edits and
+   the client's answer cannot be written back into them. Patches are a separate
+   map keyed by ref, applied over both seeded and submitted requests, which
+   keeps every request editable by the same code path. */
+var PATCH_KEY = 'mercatify.patches.v1';
+function loadPatches() {
+  try { var raw = localStorage.getItem(PATCH_KEY); return raw ? (JSON.parse(raw) || {}) : {}; }
+  catch (e) { return {}; }
+}
+function patchRequest(ref, patch) {
+  var all = loadPatches();
+  var cur = all[ref] || {};
+  Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
+  all[ref] = cur;
+  try { localStorage.setItem(PATCH_KEY, JSON.stringify(all)); } catch (e) {}
+  return cur;
+}
+
 function loadRequests() {
   var stored = [];
   try {
     var raw = localStorage.getItem(REQUESTS_KEY);
     if (raw) stored = JSON.parse(raw) || [];
   } catch (e) { stored = []; }
-  return stored.concat(SEED_REQUESTS);
+  var patches = loadPatches();
+  return stored.concat(SEED_REQUESTS).map(function (r) {
+    var p = patches[r.ref];
+    if (!p) return r;
+    var merged = {};
+    Object.keys(r).forEach(function (k) { merged[k] = r[k]; });
+    Object.keys(p).forEach(function (k) { merged[k] = p[k]; });
+    return merged;
+  });
 }
 function saveRequest(req) {
   var stored = [];
@@ -270,6 +297,35 @@ function requestMonthly(req) {
 function requestSeats(req) {
   return (req.tools || []).reduce(function (s, t) { return s + (Number(t.seats) || 0); }, 0);
 }
+/* Where one capability lands. The automatic map is a first pass; a consultant
+   overriding a row wins, and the row is flagged so the screen can show which
+   verdicts a human stands behind and which are still the machine's. */
+function capTarget(req, cap) {
+  var ov = (req.overrides || {})[cap];
+  var auto = CAP_MAP[cap] || { module: '__build', status: 'build' };
+  if (!ov) return { module: auto.module, status: auto.status, edited: false, note: '' };
+  return {
+    module: ov.module || auto.module,
+    status: ov.status || auto.status,
+    edited: true,
+    note: ov.note || ''
+  };
+}
+function setCapOverride(req, cap, patch) {
+  var overrides = {};
+  Object.keys(req.overrides || {}).forEach(function (k) { overrides[k] = req.overrides[k]; });
+  if (patch === null) delete overrides[cap];
+  else {
+    var cur = overrides[cap] || {};
+    var next = { module: cur.module, status: cur.status, note: cur.note };
+    Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+    overrides[cap] = next;
+  }
+  req.overrides = overrides;
+  patchRequest(req.ref, { overrides: overrides });
+  return req;
+}
+
 /* One row per capability: which tools pay for it today, where it lands. */
 function requestCaps(req) {
   var map = {};
@@ -281,14 +337,16 @@ function requestCaps(req) {
     });
   });
   return Object.keys(map).map(function (c) {
-    var target = CAP_MAP[c] || { module: '__build', status: 'build' };
+    var target = capTarget(req, c);
     return {
       cap: c,
       label: (typeof capLabel === 'function' ? capLabel(c) : c),
       tools: map[c].tools,
       duplicate: map[c].tools.length > 1,
       module: target.module,
-      status: target.status
+      status: target.status,
+      edited: target.edited,
+      note: target.note
     };
   }).sort(function (a, b) { return a.label.localeCompare(b.label); });
 }
@@ -328,6 +386,189 @@ function fmtMoney(n, currency) {
   var sym = { EUR: '€', USD: '$', GBP: '£', PLN: 'zł' }[currency || 'EUR'] || '';
   var v = Math.round(Number(n) || 0).toLocaleString('en-US');
   return currency === 'PLN' ? v + ' ' + sym : sym + v;
+}
+
+/* ─────────────── request lifecycle ───────────────
+   One vocabulary for both apps, so a status never reads differently on the two
+   sides of the same request. */
+var REQUEST_STATUS = {
+  new:      { label: 'new',            client: 'received',        badge: 'badge--info' },
+  mapping:  { label: 'in mapping',     client: 'in review',       badge: 'badge--warning' },
+  mapped:   { label: 'mapped',         client: 'in review',       badge: 'badge--success' },
+  sent:     { label: 'report sent',    client: 'your map is ready', badge: 'badge--info' },
+  accepted: { label: 'accepted',       client: 'accepted',        badge: 'badge--success' },
+  consult:  { label: 'consult asked',  client: 'consultation asked', badge: 'badge--warning' }
+};
+function statusLabel(req, side) {
+  var m = REQUEST_STATUS[req.status];
+  if (!m) return req.status;
+  return side === 'client' ? m.client : m.label;
+}
+function statusBadge(req) {
+  var m = REQUEST_STATUS[req.status];
+  return 'badge ' + (m ? m.badge : '');
+}
+function today() { return new Date().toISOString().slice(0, 10); }
+
+/* ─────────────── the offer ───────────────
+   Derived from the mapping as it stands, overrides included, so a consultant's
+   edit shows up in the report without a separate "regenerate" step.
+
+   The money model is deliberately narrow: a tool is a candidate to retire only
+   when EVERY job it carries lands natively or by configuration. Anything with
+   a build/integrate/keep row still has a reason to exist, so counting its
+   licence as saved would be a lie. */
+function buildOffer(req) {
+  var caps = requestCaps(req);
+  var counts = statusCounts(caps);
+  var byCap = {};
+  caps.forEach(function (c) { byCap[c.cap] = c; });
+
+  var retire = [], stays = [];
+  (req.tools || []).forEach(function (t) {
+    var rows = (t.caps || []).map(function (c) { return byCap[c]; }).filter(Boolean);
+    var covered = rows.length > 0 && rows.every(function (r) {
+      return r.status === 'native' || r.status === 'configure';
+    });
+    var entry = {
+      name: t.name, monthly: Number(t.monthly) || 0, seats: t.seats,
+      reasons: rows.filter(function (r) { return r.status !== 'native' && r.status !== 'configure'; })
+    };
+    (covered ? retire : stays).push(entry);
+  });
+
+  var monthlyNow = requestMonthly(req);
+  var monthlyRetire = retire.reduce(function (s, t) { return s + t.monthly; }, 0);
+  var modules = requestModules(req).filter(function (m) { return m.module.id.indexOf('__') !== 0; });
+
+  return {
+    ref: req.ref,
+    company: req.company,
+    currency: req.currency,
+    generatedAt: (req.report && req.report.generatedAt) || today(),
+    headline: (req.report && req.report.headline) || '',
+    notes: (req.report && req.report.notes) || '',
+    caps: caps, counts: counts, modules: modules,
+    retire: retire, stays: stays,
+    monthlyNow: monthlyNow,
+    monthlySaving: monthlyRetire,
+    annualSaving: monthlyRetire * 12,
+    duplicates: caps.filter(function (c) { return c.duplicate; }).length,
+    covered: counts.native + counts.configure,
+    build: caps.filter(function (c) { return c.status === 'build'; }),
+    integrate: caps.filter(function (c) { return c.status === 'integrate'; }),
+    keep: caps.filter(function (c) { return c.status === 'keep'; })
+  };
+}
+
+/* Renders the offer body. The console preview and the client's page both call
+   this, so "what I am about to send" and "what she gets" cannot drift. */
+function renderOffer(offer) {
+  var wrap = node('div', { class: 'offer' });
+
+  if (offer.headline) wrap.appendChild(node('p', { class: 'offer__lede', text: offer.headline }));
+
+  var kpis = node('div', { class: 'grid grid--4', style: 'margin:16px 0' }, [
+    node('div', { class: 'stat' }, [
+      node('div', { class: 'stat__k', text: 'On licences today' }),
+      node('div', { class: 'stat__v', text: fmtMoney(offer.monthlyNow, offer.currency) }),
+      node('div', { class: 'stat__s', text: 'per month, as you declared it' })
+    ]),
+    node('div', { class: 'stat' }, [
+      node('div', { class: 'stat__k', text: 'Could stop paying' }),
+      node('div', { class: 'stat__v', text: fmtMoney(offer.monthlySaving, offer.currency) }),
+      node('div', { class: 'stat__s', text: offer.retire.length + ' tools fully covered' })
+    ]),
+    node('div', { class: 'stat' }, [
+      node('div', { class: 'stat__k', text: 'Over a year' }),
+      node('div', { class: 'stat__v', text: fmtMoney(offer.annualSaving, offer.currency) }),
+      node('div', { class: 'stat__s', text: 'before the build cost below' })
+    ]),
+    node('div', { class: 'stat' }, [
+      node('div', { class: 'stat__k', text: 'Jobs done twice' }),
+      node('div', { class: 'stat__v', text: String(offer.duplicates) }),
+      node('div', { class: 'stat__s', text: 'paid for in more than one tool' })
+    ])
+  ]);
+  wrap.appendChild(kpis);
+
+  function section(title, lead) {
+    var s = node('div', { class: 'section' }, [node('h2', { text: title })]);
+    if (lead) s.appendChild(node('p', { text: lead }));
+    wrap.appendChild(s);
+    return s;
+  }
+
+  section('What you could stop paying for',
+    'Every job these tools carry is already covered by the platform, natively or by setting it up.');
+  if (offer.retire.length) {
+    var list = node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
+      offer.retire.map(function (t) {
+        return node('li', {}, [
+          node('span', { class: 'offer__name', text: t.name }),
+          node('span', { class: 'muted small', text: t.monthly ? fmtMoney(t.monthly, offer.currency) + '/mo' : 'cost not given' })
+        ]);
+      })
+    )]);
+    wrap.appendChild(list);
+  } else {
+    wrap.appendChild(node('div', { class: 'empty', text: 'Nothing here yet — every tool still carries at least one job we would not take over.' }));
+  }
+
+  section('What stays where it is',
+    'These keep earning their licence: something they do is out of scope, stays external, or has to be built first.');
+  var staysCard = node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
+    offer.stays.map(function (t) {
+      var why = t.reasons.slice(0, 3).map(function (r) { return r.label; }).join(', ');
+      return node('li', {}, [
+        node('span', {}, [
+          node('span', { class: 'offer__name', text: t.name }),
+          node('span', { class: 'sub', text: why ? 'because of: ' + why : 'partly covered' })
+        ]),
+        node('span', { class: 'muted small', text: t.monthly ? fmtMoney(t.monthly, offer.currency) + '/mo' : '' })
+      ]);
+    })
+  )]);
+  wrap.appendChild(offer.stays.length ? staysCard : node('div', { class: 'empty', text: 'Nothing stays — the whole stack maps in.' }));
+
+  section('Where each job lands',
+    'One row per module of the platform, and the jobs it takes over from you.');
+  var modWrap = node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
+    offer.modules.map(function (m) {
+      var meta = STATUS_META[m.status];
+      return node('li', {}, [
+        node('span', {}, [
+          node('span', { class: 'offer__name', text: m.module.label }),
+          node('span', { class: 'sub', text: m.caps.map(function (c) { return c.label; }).join(', ') })
+        ]),
+        node('span', { class: 'badge ' + meta.badge, text: meta.label })
+      ]);
+    })
+  )]);
+  wrap.appendChild(modWrap);
+
+  if (offer.build.length) {
+    section('What we would have to build',
+      'Nothing in the platform covers these today. They are the honest cost of the move.');
+    wrap.appendChild(node('div', { class: 'card' }, [node('ul', { class: 'offer__list' },
+      offer.build.map(function (c) {
+        return node('li', {}, [
+          node('span', {}, [
+            node('span', { class: 'offer__name', text: c.label }),
+            node('span', { class: 'sub', text: 'you have it in: ' + c.tools.join(', ') })
+          ]),
+          node('span', { class: 'badge badge--warning', text: 'build' })
+        ]);
+      })
+    )]));
+  }
+
+  if (offer.notes) {
+    section('From the consultant who read this');
+    wrap.appendChild(node('div', { class: 'card' }, [node('p', { class: 'offer__notes', text: offer.notes })]));
+  }
+
+  return wrap;
 }
 
 /* ─────────────── shells ───────────────

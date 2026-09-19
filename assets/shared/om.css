@@ -348,6 +348,35 @@ td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: t
   padding: 40px 24px; text-align: center; color: var(--muted-foreground);
 }
 
+/* ─────────────── the offer ───────────────
+   Shared by the console preview and the client's page, so the consultant sees
+   exactly the document that gets sent. */
+.offer__lede { font-size: 1rem; color: var(--foreground); max-width: 70ch; }
+.offer__list { list-style: none; margin: 0; padding: 0; display: grid; }
+.offer__list li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.offer__list li:first-child { padding-top: 0; }
+.offer__list li:last-child { padding-bottom: 0; border-bottom: 0; }
+.offer__name { font-weight: 500; font-size: 0.875rem; }
+.offer__list .sub { display: block; color: var(--muted-foreground); font-size: 0.75rem; margin-top: 2px; }
+.offer__notes { white-space: pre-wrap; }
+
+/* A sticky bar for the action that leaves the screen — send, accept, ask. */
+.actionbar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 24px; padding: 12px 16px;
+  border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  backdrop-filter: blur(8px); box-shadow: var(--shadow-sm);
+}
+.actionbar__text { min-width: 0; flex: 1 1 260px; font-size: 0.875rem; color: var(--muted-foreground); }
+
+/* Edited-by-hand marker on a mapping row the consultant overrode. */
+.edited { box-shadow: inset 2px 0 0 var(--brand-violet); }
+
 .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
 .tab {
   padding: 0 0 8px; font-size: 0.875rem; font-weight: 500; text-decoration: none;
