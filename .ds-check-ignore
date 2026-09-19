@@ -2,12 +2,6 @@
   "version": 1,
   "entries": [
     {
-      "file": "src/app/start/page.tsx",
-      "rule": "arbitrary-tailwind",
-      "match": "max-h-[200px]",
-      "reason": "Existing scaffold styling retained as a bounded migration baseline."
-    },
-    {
       "file": "src/components/BackendHeaderChrome.tsx",
       "rule": "arbitrary-tailwind",
       "match": "w-[220px]",
@@ -1212,6 +1206,12 @@
       "rule": "hardcoded-palette",
       "match": "text-blue-500/70",
       "reason": "Existing scaffold styling retained as a bounded migration baseline."
+    },
+    {
+      "file": "src/modules/mercatify/components/OfferView.tsx",
+      "rule": "inline-style",
+      "match": "style=",
+      "reason": "Verdict-mix bar segment width is a continuous per-request percentage computed from live counts; no Tailwind scale step or shared meter/progress primitive can express it."
     }
   ]
 }

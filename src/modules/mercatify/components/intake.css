@@ -1,0 +1,264 @@
+/* Ported from assets/shared/om.css + the page-local <style> in
+   assets/client/intake.html — scoped under .mercatify-portal so it never
+   collides with the real OM backend chrome this page still renders inside
+   (sidebar/topbar stay OM's own; only the page content area uses this). */
+.mercatify-portal {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --muted: #f5f5f5;
+  --muted-foreground: #707070;
+  --accent: #f5f5f5;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #a1a1a1;
+  --destructive: #e7000b;
+
+  --radius: 0.625rem;
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / .05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --bg-disabled: #f7f7f7;
+  --text-disabled: #d1d1d1;
+  --border-disabled: #ebebeb;
+
+  --accent-indigo: #6366f1;
+
+  --status-error-bg: #fef2f2;   --status-error-text: #7f1d1d;   --status-error-border: #fecaca;
+  --status-success-bg: #f0fdf4; --status-success-text: #14532d; --status-success-border: #bbf7d0;
+  --status-warning-bg: #fffbeb; --status-warning-text: #78350f; --status-warning-border: #fde68a;
+  --status-info-bg: #eff6ff;    --status-info-text: #1e3a8a;    --status-info-border: #bfdbfe;
+  --status-neutral-bg: #f5f5f5; --status-neutral-text: #404040; --status-neutral-border: #e5e5e5;
+
+  font-family: var(--font-sans);
+  color: var(--foreground);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mercatify-portal:not([data-theme="light"]) {
+    --background: #0a0a0a;
+    --foreground: #fafafa;
+    --card: #171717;
+    --muted: #262626;
+    --muted-foreground: #a1a1a1;
+    --accent: #262626;
+    --primary: #e5e5e5;
+    --primary-foreground: #171717;
+    --border: rgb(255 255 255 / .10);
+    --input: rgb(255 255 255 / .15);
+    --ring: #737373;
+    --bg-disabled: #1a1a1a;
+    --text-disabled: #4d4d4d;
+    --border-disabled: rgb(255 255 255 / .07);
+    --status-error-bg: #2a1416;   --status-error-text: #fca5a5;   --status-error-border: #5b1d1d;
+    --status-success-bg: #10251a; --status-success-text: #86efac; --status-success-border: #1c4d31;
+    --status-warning-bg: #2a2010; --status-warning-text: #fcd34d; --status-warning-border: #5a4415;
+    --status-info-bg: #131f38;    --status-info-text: #93c5fd;    --status-info-border: #1e3a8a;
+    --status-neutral-bg: #262626; --status-neutral-text: #d4d4d4; --status-neutral-border: rgb(255 255 255 / .10);
+  }
+}
+
+.mercatify-portal h1, .mercatify-portal h2, .mercatify-portal h3, .mercatify-portal h4 { margin: 0; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+.mercatify-portal h1 { font-size: 1.5rem; }
+.mercatify-portal h2 { font-size: 1.125rem; }
+.mercatify-portal h3 { font-size: 0.875rem; }
+.mercatify-portal p { margin: 0; font-size: 0.875rem; }
+.mercatify-portal code, .mercatify-portal .mono, .mercatify-portal .num { font-family: var(--font-mono); }
+.mercatify-portal .sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.mercatify-portal .pagehead { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.mercatify-portal .pagehead__text { min-width: 0; flex: 1 1 320px; }
+.mercatify-portal .pagehead h1 { margin-bottom: 4px; }
+.mercatify-portal .pagehead p { color: var(--muted-foreground); max-width: 72ch; }
+.mercatify-portal .pagehead__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.mercatify-portal .card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-sm);
+}
+.mercatify-portal .card + .card { margin-top: 16px; }
+.mercatify-portal .card__head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.mercatify-portal .card__head p { color: var(--muted-foreground); }
+.mercatify-portal .section { margin: 28px 0 12px; }
+.mercatify-portal .section h2 { margin-bottom: 4px; }
+.mercatify-portal .section p { color: var(--muted-foreground); max-width: 76ch; }
+.mercatify-portal .muted { color: var(--muted-foreground); }
+.mercatify-portal .small { font-size: 0.75rem; }
+
+.mercatify-portal .grid { display: grid; gap: 12px; }
+.mercatify-portal .grid--2 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.mercatify-portal .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.mercatify-portal .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 36px; padding: 0 16px; border-radius: var(--radius-md);
+  border: 1px solid transparent; background: var(--primary); color: var(--primary-foreground);
+  font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; text-decoration: none;
+  white-space: nowrap; transition: all .15s;
+}
+.mercatify-portal .btn:hover { opacity: .9; }
+.mercatify-portal .btn:disabled { opacity: .5; cursor: not-allowed; }
+.mercatify-portal .btn--outline { background: var(--background); color: var(--foreground); border-color: var(--border); box-shadow: var(--shadow-xs); }
+.mercatify-portal .btn--outline:hover { background: var(--accent); opacity: 1; }
+.mercatify-portal .btn--ghost { background: transparent; color: var(--muted-foreground); border-color: transparent; }
+.mercatify-portal .btn--ghost:hover { background: var(--accent); color: var(--foreground); opacity: 1; }
+.mercatify-portal .btn--sm { height: 32px; padding: 0 12px; gap: 6px; }
+
+.mercatify-portal label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; }
+.mercatify-portal input[type="text"], .mercatify-portal input[type="number"], .mercatify-portal select, .mercatify-portal textarea {
+  width: 100%; height: 36px; padding: 0 12px; font: inherit; font-size: 0.875rem;
+  color: var(--foreground); background: var(--background);
+  border: 1px solid var(--input); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs); transition: border-color .15s;
+}
+.mercatify-portal input:focus, .mercatify-portal select:focus, .mercatify-portal textarea:focus { outline: none; border-color: var(--foreground); }
+.mercatify-portal textarea { height: auto; min-height: 76px; padding: 8px 12px; resize: vertical; line-height: 1.5; }
+.mercatify-portal input::placeholder, .mercatify-portal textarea::placeholder { color: var(--muted-foreground); }
+.mercatify-portal input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent-indigo); margin: 0; flex: none; }
+
+.mercatify-portal .badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+  border: 1px solid var(--status-neutral-border);
+  background: var(--status-neutral-bg); color: var(--status-neutral-text);
+  white-space: nowrap;
+}
+.mercatify-portal .badge--success { background: var(--status-success-bg); color: var(--status-success-text); border-color: var(--status-success-border); }
+.mercatify-portal .badge--warning { background: var(--status-warning-bg); color: var(--status-warning-text); border-color: var(--status-warning-border); }
+.mercatify-portal .badge--info    { background: var(--status-info-bg);    color: var(--status-info-text);    border-color: var(--status-info-border); }
+.mercatify-portal .badge--outline { background: transparent; color: var(--foreground); border-color: var(--border); }
+
+.mercatify-portal .alert {
+  display: flex; gap: 10px; padding: 8px 12px; border-radius: var(--radius-md);
+  border: 1px solid var(--status-info-border); background: var(--status-info-bg);
+  color: var(--status-info-text); font-size: 0.875rem;
+}
+.mercatify-portal .alert--success { border-color: var(--status-success-border); background: var(--status-success-bg); color: var(--status-success-text); }
+.mercatify-portal .alert strong { display: block; font-weight: 500; }
+
+.mercatify-portal .empty {
+  border: 1px dashed var(--border); border-radius: var(--radius-xl);
+  padding: 40px 24px; text-align: center; color: var(--muted-foreground);
+}
+
+.mercatify-portal .tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.mercatify-portal .tile {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background: var(--card); box-shadow: var(--shadow-sm); text-decoration: none; cursor: pointer;
+}
+.mercatify-portal .tile:hover { border-color: var(--foreground); }
+.mercatify-portal .tile--ready { border-color: var(--status-success-border); background: var(--status-success-bg); }
+.mercatify-portal .tile__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mercatify-portal .tile__ref { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted-foreground); }
+.mercatify-portal .tile__title { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.015em; }
+.mercatify-portal .tile__meta { font-size: 0.8125rem; color: var(--muted-foreground); }
+.mercatify-portal .tile__foot { margin-top: auto; padding-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.mercatify-portal .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 16px; box-shadow: var(--shadow-sm); }
+.mercatify-portal .stat__k { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-foreground); }
+.mercatify-portal .stat__v { font-size: 1.5rem; font-weight: 600; letter-spacing: -.03em; margin-top: 4px; }
+.mercatify-portal .stat__s { font-size: 0.75rem; color: var(--muted-foreground); margin-top: 2px; }
+
+/* ── page-local: the tool picker, from intake.html's own <style> ── */
+.mercatify-portal .layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
+.mercatify-portal .rail { position: sticky; top: 76px; display: grid; gap: 10px; }
+@media (max-width: 950px) { .mercatify-portal .layout { grid-template-columns: 1fr; } .mercatify-portal .rail { position: static; } }
+
+.mercatify-portal .tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.mercatify-portal .tool { border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); overflow: hidden; }
+.mercatify-portal .tool.is-on { border-color: var(--foreground); }
+.mercatify-portal .tool__head {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  padding: 12px 14px; background: transparent; border: 0; cursor: pointer;
+  text-align: left; color: inherit; font: inherit;
+}
+.mercatify-portal .tool__head:hover { background: var(--muted); }
+.mercatify-portal .tool__tick {
+  flex: none; width: 18px; height: 18px; border-radius: 5px; margin-top: 2px;
+  border: 1px solid var(--border); display: grid; place-items: center;
+  font-size: 11px; color: transparent;
+}
+.mercatify-portal .tool.is-on .tool__tick { background: var(--accent-indigo); border-color: var(--accent-indigo); color: #fff; }
+.mercatify-portal .tool__name { font-weight: 600; font-size: 0.875rem; }
+.mercatify-portal .tool__kind { font-size: 0.75rem; color: var(--muted-foreground); }
+.mercatify-portal .tool__count { margin-left: auto; font-size: 0.75rem; color: var(--muted-foreground); white-space: nowrap; }
+.mercatify-portal .tool__body { padding: 0 14px 14px; border-top: 1px solid var(--border); }
+
+.mercatify-portal .mods { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 1px; }
+.mercatify-portal .mods label {
+  display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start;
+  margin: 0; padding: 7px 8px; border-radius: var(--radius); cursor: pointer; font-weight: 400;
+}
+.mercatify-portal .mods label:hover { background: var(--muted); }
+.mercatify-portal .mods input[type="checkbox"] { margin-top: 2px; }
+.mercatify-portal .m-name { font-weight: 500; font-size: 0.875rem; }
+.mercatify-portal .m-desc { display: block; color: var(--muted-foreground); font-size: 0.75rem; }
+.mercatify-portal .m-dup { margin-left: 6px; vertical-align: 1px; }
+.mercatify-portal .tool__cost { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+
+.mercatify-portal .sent__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.mercatify-portal .sent__list li { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.mercatify-portal .sent__list li:last-child { border-bottom: 0; }
+.mercatify-portal .sent__tool { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.mercatify-portal .sent__tool b { font-size: 0.875rem; }
+.mercatify-portal .sent__caps { color: var(--muted-foreground); font-size: 0.875rem; margin-top: 2px; }
+
+/* ── request detail: content + "Where it is" progress rail ── */
+.mercatify-portal .split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .mercatify-portal .split { grid-template-columns: 1fr; } }
+
+.mercatify-portal .track { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.mercatify-portal .track li { position: relative; padding: 0 0 18px 30px; }
+.mercatify-portal .track li:last-child { padding-bottom: 0; }
+.mercatify-portal .track li::before {
+  content: ""; position: absolute; left: 4px; top: 4px;
+  width: 12px; height: 12px; border-radius: 999px;
+  border: 2px solid var(--border); background: var(--background);
+}
+.mercatify-portal .track li::after {
+  content: ""; position: absolute; left: 9px; top: 18px; bottom: 0;
+  width: 2px; background: var(--border);
+}
+.mercatify-portal .track li:last-child::after { display: none; }
+.mercatify-portal .track li.is-done::before { background: var(--status-success-text); border-color: var(--status-success-text); }
+.mercatify-portal .track li.is-done::after { background: var(--status-success-text); }
+.mercatify-portal .track li.is-current::before { border-color: var(--foreground); background: var(--background); box-shadow: 0 0 0 3px var(--muted); }
+.mercatify-portal .track__title { font-size: 0.875rem; font-weight: 500; }
+.mercatify-portal .track__when { font-size: 0.75rem; color: var(--muted-foreground); margin-left: 6px; font-weight: 400; }
+.mercatify-portal .track__body { font-size: 0.8125rem; color: var(--muted-foreground); margin-top: 2px; }
+.mercatify-portal .track li.is-pending .track__title { color: var(--muted-foreground); }
+
+/* small layout helpers, kept out of inline style="" per the design-system rule */
+.mercatify-portal .ml-auto { margin-left: auto; }
+.mercatify-portal .mb-4 { margin-bottom: 4px; }
+.mercatify-portal .mb-10 { margin-bottom: 10px; }
+.mercatify-portal .mb-16 { margin-bottom: 16px; }
+.mercatify-portal .mt-16 { margin-top: 16px; }
+.mercatify-portal .items-end { align-items: flex-end; }
+.mercatify-portal .flex-1 { flex: 1; }
+.mercatify-portal .block { display: block; }
+
+/* ── client report: accept / consult answer form ── */
+.mercatify-portal .answer { display: grid; gap: 12px; }
+.mercatify-portal .answer__choice {
+  display: grid; grid-template-columns: 18px 1fr; gap: 12px;
+  padding: 16px; cursor: pointer; align-items: start;
+}
+.mercatify-portal .answer__choice input[type="radio"] { margin-top: 2px; }
+.mercatify-portal .actionbar {
+  position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background: var(--card); padding: 12px 16px; box-shadow: var(--shadow-sm);
+}
+.mercatify-portal .actionbar__text { flex: 1; font-size: 0.8125rem; color: var(--muted-foreground); }

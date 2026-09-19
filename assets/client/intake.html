@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Your stack — Mercatify</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
 <link rel="stylesheet" href="../shared/om.css">
 <style>
   /* The tool picker exists on this one screen only; the shell is in om.css. */
@@ -14,7 +12,7 @@
   @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } .rail { position: static; } }
 
   .tools { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-  .tool { border: 1px solid var(--border); border-radius: calc(var(--radius) + 2px); background: var(--card); overflow: hidden; }
+  .tool { border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); overflow: hidden; }
   .tool.is-on { border-color: var(--foreground); }
   .tool__head {
     display: flex; align-items: flex-start; gap: 10px; width: 100%;
@@ -40,7 +38,7 @@
   }
   .mods label:hover { background: var(--muted); }
   .mods input[type="checkbox"] { margin-top: 2px; }
-  .m-name { font-weight: 500; font-size: 0.8125rem; }
+  .m-name { font-weight: 500; font-size: 0.875rem; }
   .m-desc { display: block; color: var(--muted-foreground); font-size: 0.75rem; }
   .m-dup { margin-left: 6px; vertical-align: 1px; }
   .tool__cost { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
@@ -51,7 +49,7 @@
   .sent__list li:last-child { border-bottom: 0; }
   .sent__tool { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .sent__tool b { font-size: 0.875rem; }
-  .sent__caps { color: var(--muted-foreground); font-size: 0.8125rem; margin-top: 2px; }
+  .sent__caps { color: var(--muted-foreground); font-size: 0.875rem; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -66,6 +64,9 @@
       <p>Tick the tools you have, then the modules you genuinely use — not the ones that came
          with the plan. Seats and monthly cost are optional, but without them we can only tell
          you what moves, not what it saves. It takes about four minutes.</p>
+    </div>
+    <div class="pagehead__actions" id="head-actions" hidden>
+      <a class="btn btn--ghost" href="requests.html">← Back to my requests</a>
     </div>
   </div>
 
@@ -168,59 +169,11 @@
         <div class="stat__s">per month, as entered</div>
       </div>
       <div class="stat">
-        <div class="stat__k">Jobs done twice</div>
+        <div class="stat__k">Paid for twice</div>
         <div class="stat__v" id="s-dups">0</div>
-        <div class="stat__s" id="s-dups-list">no duplicates yet</div>
+        <div class="stat__s" id="s-dups-list">nothing overlapping yet</div>
       </div>
     </aside>
-  </div>
-</template>
-
-<!-- ── what she sees after sending ─────────────────────────────── -->
-<template id="tpl-sent">
-  <div class="pagehead">
-    <div class="pagehead__text">
-      <h1>Your request is with us</h1>
-      <p>This is what you sent. A consultant reads it and comes back with the map and a
-         savings figure — you keep both whether or not you go ahead with us.</p>
-    </div>
-  </div>
-
-  <div class="alert alert--success" style="margin-bottom:16px">
-    <div>
-      <strong>Received as <span id="r-ref" class="mono"></span>.</strong>
-      <span id="r-when"></span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card__head">
-      <h2 id="r-company">—</h2>
-      <span class="badge badge--info">in review</span>
-      <p id="r-meta" style="margin-left:auto"></p>
-    </div>
-    <ul class="sent__list" id="r-tools"></ul>
-  </div>
-
-  <div class="card">
-    <div class="grid grid--2">
-      <div>
-        <div class="small muted" style="margin-bottom:4px">What hurts today</div>
-        <p id="r-pains" class="small">—</p>
-      </div>
-      <div>
-        <div class="small muted" style="margin-bottom:4px">Must not be touched</div>
-        <p id="r-keep" class="small">—</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card__head">
-      <h2>Something to change?</h2>
-      <p>Send a corrected list and we will use the newer one.</p>
-    </div>
-    <button class="btn btn--outline" type="button" id="again">Start a new request</button>
   </div>
 </template>
 
@@ -229,53 +182,9 @@
 <script>
 (function () {
   var content = mountPortalShell({});
-
-  /* She only ever sees her own ref — the queue is not reachable from here. */
-  var myRef = readClientRef();
-  var mine = myRef ? findRequest(myRef) : null;
-  if (mine) { showSent(mine); return; }
-  showForm();
-
-  /* ─────────────── submitted view ─────────────── */
-  function showSent(req) {
-    content.innerHTML = '';
-    content.appendChild(document.getElementById('tpl-sent').content.cloneNode(true));
-
-    document.getElementById('r-ref').textContent = req.ref;
-    document.getElementById('r-when').textContent = 'Sent on ' + req.received + '. We usually come back within two working days.';
-    document.getElementById('r-company').textContent = req.company;
-    document.getElementById('r-meta').textContent =
-      (req.industry || '') + (req.people ? ' · ' + req.people + ' people' : '') +
-      ' · ' + money(requestMonthly(req), req.currency) + '/mo on licences';
-    document.getElementById('r-pains').textContent = req.pains || 'Not stated.';
-    document.getElementById('r-keep').textContent = req.mustKeep || 'Not stated.';
-
-    var list = document.getElementById('r-tools');
-    (req.tools || []).forEach(function (t) {
-      var bits = [];
-      if (t.seats) bits.push(t.seats + ' seats');
-      if (t.monthly) bits.push(money(t.monthly, req.currency) + '/mo');
-      list.appendChild(node('li', {}, [
-        node('div', { class: 'sent__tool' }, [
-          node('b', { text: t.name }),
-          node('span', { class: 'small muted', text: bits.join(' · ') })
-        ]),
-        node('div', { class: 'sent__caps', text: (t.caps || []).map(capLabel).join(', ') || '—' })
-      ]));
-    });
-
-    document.getElementById('again').addEventListener('click', function () {
-      /* The sent request stays in Mercatify's queue — clearing only unlinks it
-         from this browser so she can fill the form again. */
-      clearClientRef();
-      window.location.reload();
-    });
-  }
-
-  /* ─────────────── the form ─────────────── */
-  function showForm() {
-  content.innerHTML = '';
   content.appendChild(document.getElementById('tpl-form').content.cloneNode(true));
+  /* Only offer a way back once there is something to go back to. */
+  if (readClientRefs().length) document.getElementById('head-actions').hidden = false;
 
   var state = {
     meta: { name: '', industry: '', people: '', currency: 'EUR', pains: '', mustKeep: '' },
@@ -370,7 +279,7 @@
   }
 
   function toggleTool(id) {
-    /* Nothing is pre-ticked. A module counts as used only when she says so — a
+    /* Nothing is pre-ticked. A module counts as used only when the client says so — a
        default here would put numbers in the mapping nobody confirmed. */
     if (state.sel[id]) delete state.sel[id];
     else state.sel[id] = { mods: {}, seats: '', monthly: '' };
@@ -468,7 +377,7 @@
     document.getElementById('s-dups').textContent = ov.length;
     document.getElementById('s-dups-list').textContent = ov.length
       ? ov.slice(0, 3).map(function (o) { return o.label.toLowerCase(); }).join(', ') + (ov.length > 3 ? '…' : '')
-      : 'no duplicates yet';
+      : 'nothing overlapping yet';
 
     saveCase({ v: 1, kind: 'mercatify-case', brief: b });
   }
@@ -500,9 +409,10 @@
       })
     };
     saveRequest(req);
-    writeClientRef(req.ref);
-    showSent(req);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    addClientRef(req.ref);
+    /* Straight to the request itself: the form has done its job, and what the
+       client wants next is confirmation that it landed and where it now sits. */
+    window.location.href = 'request.html?ref=' + encodeURIComponent(req.ref);
   }
 
   document.getElementById('send').addEventListener('click', send);
@@ -542,7 +452,6 @@
 
   renderCustom();
   sync(true);
-  }
 })();
 </script>
 </body>

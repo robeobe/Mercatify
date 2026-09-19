@@ -37,3 +37,5 @@ if (enterpriseModulesEnabled && enterpriseSsoEnabled) {
 if (enterpriseModulesEnabled && enterpriseSecurityEnabled) {
   enabledModules.push({ id: 'security', from: '@open-mercato/enterprise' })
 }
+
+enabledModules.push({ id: 'mercatify', from: '@app' })

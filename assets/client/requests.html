@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your requests — Mercatify</title>
+<link rel="stylesheet" href="../shared/om.css">
+</head>
+<body>
+
+<div id="shell"></div>
+
+<template id="tpl">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Your requests</h1>
+      <p>Everything you have sent us, and where each one got to. Open one to see what you
+         sent and to read the report when it comes back.</p>
+    </div>
+    <div class="pagehead__actions">
+      <a class="btn btn--outline" href="intake.html">Send another stack</a>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+</template>
+
+<template id="tpl-empty">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Your requests</h1>
+      <p>Nothing here yet.</p>
+    </div>
+  </div>
+  <div class="empty">
+    You have not sent us a stack yet. It takes about four minutes and you keep the map
+    whether or not you go ahead with us.
+    <div style="margin-top:14px"><a class="btn" href="intake.html">Map my stack</a></div>
+  </div>
+</template>
+
+<script src="../stack-tool/catalog.js"></script>
+<script src="../shared/om-core.js"></script>
+<script>
+(function () {
+  var content = mountPortalShell({ active: 'requests' });
+  var mine = clientRequests();
+
+  if (!mine.length) {
+    content.appendChild(document.getElementById('tpl-empty').content.cloneNode(true));
+    return;
+  }
+
+  content.appendChild(document.getElementById('tpl').content.cloneNode(true));
+  var host = document.getElementById('tiles');
+
+  mine.forEach(function (req) {
+    var ready = !!req.sentAt && !req.clientResponse;
+    var href = 'request.html?ref=' + encodeURIComponent(req.ref);
+
+    /* The tile says the one thing the client came back for: is the ball with
+       us or with them. The call to action changes with it. */
+    var cta = ready
+      ? node('a', { class: 'btn btn--sm', href: 'offer.html?ref=' + encodeURIComponent(req.ref), text: 'Read the report' })
+      : node('a', { class: 'btn btn--outline btn--sm', href: href, text: 'See what you sent' });
+
+    /* A div, not an anchor: the tile carries its own call-to-action link and
+       nesting one <a> inside another is invalid markup browsers take apart. */
+    var tile = node('div', { class: 'tile' + (ready ? ' tile--ready' : ''), style: 'cursor:pointer' }, [
+      node('div', { class: 'tile__top' }, [
+        node('span', { class: 'tile__ref', text: req.ref }),
+        node('span', { class: statusBadge(req), text: statusLabel(req, 'client') })
+      ]),
+      node('div', {}, [
+        node('div', { class: 'tile__title', text: req.company || 'Your stack' }),
+        node('div', { class: 'tile__meta', text:
+          (req.tools || []).length + ' tools · ' +
+          fmtMoney(requestMonthly(req), req.currency) + '/mo · sent ' + req.received })
+      ]),
+      node('div', { class: 'tile__meta', text: ready
+        ? 'Your report came back on ' + req.sentAt + '.'
+        : (req.clientResponse
+            ? (req.clientResponse.kind === 'accepted'
+                ? 'You accepted it on ' + req.clientResponse.at + '.'
+                : 'You asked for a call on ' + req.clientResponse.at + '.')
+            : 'With a consultant. We usually come back within two working days.') }),
+      node('div', { class: 'tile__foot' }, [cta])
+    ]);
+
+    /* Clicking anywhere on the tile follows it, but the real link inside stays
+       the keyboard path and must not fire twice. */
+    tile.addEventListener('click', function () { window.location.href = href; });
+    cta.addEventListener('click', function (e) { e.stopPropagation(); });
+    host.appendChild(tile);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+/* Ported from assets/landing/index.html — Mercatify's own brand tokens, scoped
+   under .mercatify-landing so they never leak into the OM backend design system. */
+.mercatify-landing {
+  --bg: #FFFFFF;
+  --surface: #FAFAFA;
+  --surface-2: #ECECEC;
+  --ink: #0C0C0C;
+  --ink-2: #6D6D6D;
+  --ink-3: #9E9E9E;
+  --rule: #ECECEC;
+  --rule-strong: #C8C8C8;
+  --accent: #B4F372;
+  --accent-ink: #0C0C0C;
+  --accent-text: #2F520B;
+  --accent-soft: #F6FEEE;
+  --violet: #BC9AFF;
+  --violet-soft: #EFE7FF;
+  --yellow: #EEFB63;
+  color-scheme: light;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Geist Sans", "Geist", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mercatify-landing:not([data-theme="light"]) {
+    --bg: #0C0C0C;
+    --surface: #111111;
+    --surface-2: #1F1F1F;
+    --ink: #FAFAFA;
+    --ink-2: #9E9E9E;
+    --ink-3: #6D6D6D;
+    --rule: #1F1F1F;
+    --rule-strong: #303030;
+    --accent-text: #B4F372;
+    --accent-soft: #16210D;
+    color-scheme: dark;
+  }
+}
+
+.mercatify-landing[data-theme="dark"] {
+  --bg: #0C0C0C;
+  --surface: #111111;
+  --surface-2: #1F1F1F;
+  --ink: #FAFAFA;
+  --ink-2: #9E9E9E;
+  --ink-3: #6D6D6D;
+  --rule: #1F1F1F;
+  --rule-strong: #303030;
+  --accent-text: #B4F372;
+  --accent-soft: #16210D;
+  color-scheme: dark;
+}
+
+.mercatify-landing *, .mercatify-landing *::before, .mercatify-landing *::after { box-sizing: border-box; }
+.mercatify-landing { scroll-behavior: smooth; }
+.mercatify-landing img { max-width: 100%; }
+.mercatify-landing a { color: var(--accent-text); }
+
+.mercatify-landing h1, .mercatify-landing h2, .mercatify-landing h3 { margin: 0; letter-spacing: -0.028em; line-height: 1.05; text-wrap: balance; font-weight: 600; }
+.mercatify-landing h1 { font-size: clamp(2.4rem, 6.2vw, 4.2rem); }
+.mercatify-landing h2 { font-size: clamp(1.7rem, 3.6vw, 2.6rem); }
+.mercatify-landing h3 { font-size: 1.05rem; letter-spacing: -0.012em; font-weight: 600; line-height: 1.3; }
+.mercatify-landing p { margin: 0; }
+
+.mercatify-landing .mono, .mercatify-landing code, .mercatify-landing .num {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.mercatify-landing .wrap { max-width: 74rem; margin: 0 auto; padding-inline: 20px; }
+
+.mercatify-landing .nav {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+}
+.mercatify-landing .nav__inner {
+  max-width: 74rem; margin: 0 auto; padding: 12px 20px;
+  display: flex; align-items: center; gap: 12px 28px; flex-wrap: wrap;
+}
+.mercatify-landing .brand {
+  font-weight: 700; font-size: 1.12rem; letter-spacing: -0.035em;
+  color: var(--ink); text-decoration: none; margin-right: auto;
+  display: flex; align-items: center; gap: 9px;
+}
+.mercatify-landing .brand__mark {
+  width: 22px; height: 22px; border-radius: 5px; background: var(--accent);
+  display: grid; place-items: center; color: var(--accent-ink);
+  font-size: .74rem; font-weight: 700; letter-spacing: 0;
+}
+.mercatify-landing .nav__links { display: flex; gap: 22px; flex-wrap: wrap; font-size: .9rem; }
+.mercatify-landing .nav__links a { color: var(--ink-2); text-decoration: none; }
+.mercatify-landing .nav__links a:hover { color: var(--ink); }
+
+.mercatify-landing .btn {
+  display: inline-block; padding: 10px 18px; border-radius: .5rem;
+  font-size: .92rem; font-weight: 600; text-decoration: none;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.mercatify-landing .btn--primary { background: var(--accent); color: var(--accent-ink); }
+.mercatify-landing .btn--primary:hover { filter: brightness(1.08); }
+.mercatify-landing .btn--ghost { border-color: var(--rule-strong); color: var(--ink); }
+.mercatify-landing .btn--ghost:hover { background: var(--surface-2); }
+
+.mercatify-landing section { padding-block: 84px; border-top: 1px solid var(--rule); }
+.mercatify-landing section:first-of-type { border-top: 0; }
+
+.mercatify-landing .eyebrow {
+  display: inline-block;
+  font-family: "Geist Mono", monospace;
+  font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.mercatify-landing .lede { font-size: clamp(1.05rem, 2vw, 1.3rem); color: var(--ink-2); max-width: 56ch; line-height: 1.5; }
+
+.mercatify-landing .hero {
+  position: relative;
+  padding-block: 84px 72px;
+  min-height: clamp(520px, 72vh, 720px);
+  display: flex; align-items: center;
+  background-color: #0C0C0C;
+  background-image:
+    linear-gradient(95deg,
+      #0C0C0C 0%, #0C0C0C 46%,
+      rgba(12, 12, 12, .88) 54%,
+      rgba(12, 12, 12, .3) 66%,
+      rgba(12, 12, 12, 0) 80%),
+    url("/mercatify/hero2.png");
+  background-size: 100% 100%, auto 74%;
+  background-position: center, right max(20px, calc((100vw - 74rem) / 2)) top 50%;
+  background-repeat: no-repeat, no-repeat;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  color: #FAFAFA;
+}
+.mercatify-landing .hero .eyebrow,
+.mercatify-landing .hero h1,
+.mercatify-landing .hero .lede,
+.mercatify-landing .hero .hero__cta,
+.mercatify-landing .hero .hero__meta { max-width: min(44rem, 58%); }
+
+@media (max-width: 1100px) {
+  .mercatify-landing .hero {
+    padding-block: 72px 60px;
+    min-height: 0;
+    background-image:
+      linear-gradient(180deg,
+        rgba(12, 12, 12, .96) 0%,
+        rgba(12, 12, 12, .9) 46%,
+        rgba(12, 12, 12, .66) 100%),
+      url("/mercatify/hero2.png");
+    background-size: 100% 100%, 150% auto;
+    background-position: center, 76% center;
+  }
+  .mercatify-landing .hero .eyebrow,
+  .mercatify-landing .hero h1,
+  .mercatify-landing .hero .lede,
+  .mercatify-landing .hero__cta,
+  .mercatify-landing .hero__meta { max-width: 100%; }
+}
+.mercatify-landing .hero .eyebrow { color: #B4F372; }
+.mercatify-landing .hero h1 { margin-top: 18px; font-size: clamp(2.1rem, 4.4vw, 3.5rem); color: #FFFFFF; }
+.mercatify-landing .hero .lede { margin-top: 20px; font-size: clamp(1rem, 1.5vw, 1.12rem); color: #C8C8C8; }
+.mercatify-landing .hero__cta { margin-top: 30px; display: flex; gap: 12px; flex-wrap: wrap; }
+.mercatify-landing .hero .btn--ghost { border-color: rgba(255, 255, 255, .3); color: #FAFAFA; }
+.mercatify-landing .hero .btn--ghost:hover { background: rgba(255, 255, 255, .09); }
+.mercatify-landing .hero__meta {
+  margin-top: 44px; padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 28px;
+}
+@media (min-width: 1400px) { .mercatify-landing .hero__meta { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.mercatify-landing .hero__meta dt { font-family: "Geist Mono", monospace; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: #9E9E9E; margin: 0 0 6px; }
+.mercatify-landing .hero__meta dd { margin: 0; font-weight: 600; font-size: .96rem; color: #FAFAFA; }
+
+.mercatify-landing .panel { border: 1px solid var(--rule); border-radius: .75rem; overflow: hidden; background: var(--surface); }
+.mercatify-landing .panel__bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 18px; border-bottom: 1px solid var(--rule); background: var(--bg);
+}
+.mercatify-landing .panel__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rule-strong); }
+.mercatify-landing .panel__title { font-size: .86rem; font-weight: 600; }
+.mercatify-landing .panel__meta { margin-left: auto; font-family: "Geist Mono", monospace; font-size: .74rem; color: var(--ink-3); }
+
+.mercatify-landing .tablewrap { overflow-x: auto; }
+.mercatify-landing table { border-collapse: collapse; width: 100%; min-width: 50rem; font-size: .89rem; }
+.mercatify-landing thead th {
+  text-align: left; padding: 11px 16px; white-space: nowrap;
+  font-family: "Geist Mono", monospace; font-weight: 500;
+  font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--rule-strong); background: var(--bg);
+}
+.mercatify-landing tbody td { padding: 12px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.mercatify-landing tbody tr:last-child td { border-bottom: 0; }
+.mercatify-landing td.num, .mercatify-landing th.num { font-family: "Geist Mono", monospace; white-space: nowrap; }
+.mercatify-landing .tool { font-weight: 600; }
+.mercatify-landing .sub { display: block; color: var(--ink-3); font-size: .8rem; margin-top: 2px; }
+
+.mercatify-landing .chip {
+  display: inline-block; padding: 3px 9px; border-radius: .25rem;
+  font-family: "Geist Mono", monospace; font-size: .68rem;
+  letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.mercatify-landing .chip--native { background: var(--accent); color: #0C0C0C; }
+.mercatify-landing .chip--configure { background: var(--violet); color: #0C0C0C; }
+.mercatify-landing .chip--build { background: var(--yellow); color: #0C0C0C; }
+.mercatify-landing .chip--integrate { background: transparent; border-color: var(--rule-strong); color: var(--ink-2); }
+.mercatify-landing .chip--keep { background: var(--surface-2); color: var(--ink-2); }
+
+.mercatify-landing .conf { font-family: "Geist Mono", monospace; font-size: .72rem; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+.mercatify-landing .conf__bars { display: inline-flex; gap: 2px; }
+.mercatify-landing .conf__bars i { width: 4px; height: 11px; border-radius: 1px; background: var(--rule-strong); display: block; }
+.mercatify-landing .conf--high i:nth-child(-n+3), .mercatify-landing .conf--medium i:nth-child(-n+2), .mercatify-landing .conf--low i:nth-child(1) { background: var(--ink-2); }
+
+.mercatify-landing .panel__foot {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  border-top: 1px solid var(--rule-strong); background: var(--bg);
+}
+.mercatify-landing .panel__foot > div { padding: 18px; border-right: 1px solid var(--rule); }
+.mercatify-landing .panel__foot > div:last-child { border-right: 0; }
+.mercatify-landing .stat__k { font-family: "Geist Mono", monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 7px; }
+.mercatify-landing .stat__v { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; display: block; line-height: 1.1; }
+.mercatify-landing .stat__v small { font-size: .82rem; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }
+.mercatify-landing .stat__note { display: block; font-size: .78rem; color: var(--ink-3); margin-top: 5px; }
+
+.mercatify-landing .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: .75rem; overflow: hidden; margin-top: 36px; }
+.mercatify-landing .step { background: var(--bg); padding: 24px 22px; display: flex; flex-direction: column; gap: 9px; }
+.mercatify-landing .step__n { font-family: "Geist Mono", monospace; font-size: .72rem; color: var(--accent-text); letter-spacing: .08em; }
+.mercatify-landing .step p { font-size: .92rem; color: var(--ink-2); }
+
+.mercatify-landing .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; margin-top: 36px; }
+.mercatify-landing .card { border: 1px solid var(--rule); border-radius: .75rem; padding: 26px 24px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; }
+.mercatify-landing .card p { font-size: .94rem; color: var(--ink-2); }
+.mercatify-landing .card__tag { font-family: "Geist Mono", monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+.mercatify-landing .rule-list { margin: 30px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.mercatify-landing .rule-list li { border-bottom: 1px solid var(--rule); padding: 18px 0; display: grid; grid-template-columns: 2.6rem 1fr; gap: 18px; align-items: start; }
+.mercatify-landing .rule-list .n { font-family: "Geist Mono", monospace; font-size: .8rem; color: var(--ink-3); padding-top: 3px; }
+.mercatify-landing .rule-list p { font-size: .94rem; color: var(--ink-2); margin-top: 5px; }
+
+.mercatify-landing .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 36px; }
+@media (max-width: 720px) { .mercatify-landing .split { grid-template-columns: 1fr; } }
+.mercatify-landing .col { border: 1px solid var(--rule); border-radius: .75rem; padding: 24px; }
+.mercatify-landing .col--bad { background: var(--surface); }
+.mercatify-landing .col--good { background: var(--accent-soft); border-color: var(--accent); }
+.mercatify-landing .col h3 { margin-bottom: 14px; }
+.mercatify-landing .col ul { margin: 0; padding-left: 1.1em; }
+.mercatify-landing .col li { margin-top: 9px; font-size: .93rem; color: var(--ink-2); }
+.mercatify-landing .col--good li { color: var(--ink); }
+
+.mercatify-landing .quote { margin-top: 36px; border-left: 3px solid var(--accent); padding: 4px 0 4px 22px; max-width: 54ch; }
+.mercatify-landing .quote p { font-size: 1.22rem; letter-spacing: -0.015em; line-height: 1.42; }
+.mercatify-landing .quote cite { display: block; margin-top: 12px; font-style: normal; font-size: .84rem; color: var(--ink-3); }
+
+.mercatify-landing .agents { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+.mercatify-landing .agents span { border: 1px solid var(--rule-strong); border-radius: .5rem; padding: 6px 13px; font-family: "Geist Mono", monospace; font-size: .74rem; color: var(--ink-2); }
+.mercatify-landing .agents .human { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); font-weight: 500; }
+
+.mercatify-landing .band {
+  background: #0C0C0C; color: #FAFAFA;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  padding-block: 0;
+}
+.mercatify-landing .band__inner {
+  max-width: 74rem; margin: 0 auto; padding: 72px 20px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 52px; align-items: center;
+}
+@media (max-width: 900px) { .mercatify-landing .band__inner { grid-template-columns: 1fr; gap: 36px; padding-block: 56px; } }
+.mercatify-landing .band .eyebrow { color: #B4F372; }
+.mercatify-landing .band h2 { margin-top: 16px; max-width: 15ch; color: #FFFFFF; }
+.mercatify-landing .band p { margin-top: 18px; color: #C8C8C8; font-size: 1.05rem; max-width: 46ch; }
+.mercatify-landing .band .btn--primary { margin-top: 28px; }
+.mercatify-landing .band__note { font-size: .84rem !important; color: #6D6D6D !important; margin-top: 16px !important; }
+.mercatify-landing .band__art {
+  aspect-ratio: 4 / 3; min-height: 260px;
+  background-image: url("/mercatify/stack-map.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.mercatify-landing .cta-band { text-align: center; padding-block: 84px; }
+.mercatify-landing .cta-band h2 { max-width: 18ch; margin-inline: auto; }
+.mercatify-landing .cta-band .lede { margin: 18px auto 0; }
+.mercatify-landing .cta-band .hero__cta { justify-content: center; }
+
+.mercatify-landing footer { border-top: 1px solid var(--rule); padding-block: 34px 44px; }
+.mercatify-landing .foot { display: flex; flex-wrap: wrap; gap: 10px 26px; justify-content: space-between; font-size: .82rem; color: var(--ink-3); }
+.mercatify-landing .foot a { color: var(--ink-2); text-decoration: none; }
+
+.mercatify-landing .disclaimer { margin-top: 14px; font-family: "Geist Mono", monospace; font-size: .72rem; color: var(--ink-3); }
+
+/* Section-heading and spacing helpers — replace the mock's inline style="" attributes. */
+.mercatify-landing .section-h2 { margin-top: 16px; }
+.mercatify-landing .section-h2--18 { max-width: 18ch; }
+.mercatify-landing .section-h2--20 { max-width: 20ch; }
+.mercatify-landing .section-h2--22 { max-width: 22ch; }
+.mercatify-landing .lede--spaced { margin-top: 18px; }
+.mercatify-landing .panel--spaced { margin-top: 34px; }
+
+@media (prefers-reduced-motion: reduce) { .mercatify-landing * { animation: none !important; transition: none !important; } }
