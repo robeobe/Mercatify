@@ -311,17 +311,21 @@
   .band p { margin-top: 18px; color: #C8C8C8; font-size: 1.05rem; max-width: 46ch; }
   .band .btn--primary { margin-top: 28px; }
   .band__note { font-size: .84rem !important; color: #6D6D6D !important; margin-top: 16px !important; }
+  /* Grafika bez ramki — krawędzie wygaszone maską, żeby wtopiła się w ciemny pas. */
   .band__art {
-    border-radius: .75rem; aspect-ratio: 4 / 3; min-height: 260px;
-    background-color: #0F0F0F;
-    background-image:
-      url("mapping.png"),
-      radial-gradient(120% 90% at 72% 32%, rgba(180, 243, 114, .22) 0%, rgba(180, 243, 114, 0) 58%),
-      radial-gradient(110% 80% at 34% 78%, rgba(188, 154, 255, .2) 0%, rgba(188, 154, 255, 0) 60%);
-    background-size: cover, auto, auto;
-    background-position: center, center, center;
+    aspect-ratio: 4 / 3; min-height: 260px;
+    background-image: url("stack-map.png");
+    background-size: contain;
+    background-position: center;
     background-repeat: no-repeat;
-    border: 1px solid rgba(255, 255, 255, .08);
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    mask-image:
+      linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
   }
 
   .cta-band { text-align: center; padding-block: 84px; }
