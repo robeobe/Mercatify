@@ -77,8 +77,19 @@ export function monthlyTotal(tools: ClientTool[] | null | undefined): number {
   return (tools ?? []).reduce((sum, tool) => sum + (Number(tool.monthlyCost) || 0), 0)
 }
 
+/** Whole units only, as `fmtMoney()` in the mockup does — licence costs never need cents. */
 export function money(value: number | null | undefined, currency: string | null | undefined): string {
-  return formatCurrency(value ?? 0, currency ?? 'EUR') ?? '—'
+  const amount = Math.round(Number(value) || 0)
+  const code = currency && currency.length === 3 ? currency.toUpperCase() : 'EUR'
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  } catch {
+    return formatCurrency(amount, code) ?? '—'
+  }
 }
 
 export function shortDate(value: string | null | undefined): string {
