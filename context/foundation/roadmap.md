@@ -203,10 +203,10 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Parallel with:** S-04, S-09
 - **Blockers:** —
 - **Unknowns:**
-  - Whether editing the table regenerates the `.md`, or the two are independent artifacts with the `.md` as the only document that travels (PRD Open Question 8). Owner: team. Block: yes.
+  - ~~Whether editing the table regenerates the `.md`, or the two are independent artifacts~~ — **Resolved 2026-09-19** (user decision, PRD Open Question 8): independent artifacts. Editing the table never touches the `.md`; the `.md` is the only document that travels to Lab.
   - Handling of pasted content that may carry sensitive data — no rule captured (PRD Open Question 9). Owner: team. Block: no.
-- **Risk:** Blocked on one cheap decision that nevertheless changes the slice's whole shape: a regenerated document needs a serializer and a conflict story for edits made on both sides, an independent document needs neither. Planning before that call would be planning two different slices at once.
-- **Status:** blocked
+- **Risk:** None from the regeneration question anymore (resolved as independent artifacts — no serializer, no cross-artifact conflict story needed). Remaining risk is ordinary UI risk for a plain textarea editor with paste-to-replace.
+- **Status:** done
 
 ### S-09: Admin builds and sends the report
 > **Added 2026-09-19** (gap found reviewing `assets/console/report.html`; distinct from `S-04`'s three saving lines and `S-05`'s `.md` editor — neither builds the report screen or its **Send to the client** action, and nothing currently flips a request's status to `sent`).
@@ -219,7 +219,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Parallel with:** S-05
 - **Blockers:** Inherits S-04's blockers for the money portions (Open Questions 1, 3, 4) — the table/verdict/backlog portions of the report do not depend on the saving formula and could be built first if S-04 stays blocked.
 - **Unknowns:**
-  - Whether this report screen and S-05's `.md` document are the same generated artifact viewed two ways, or genuinely independent (PRD Open Question 8 already asks this for the `.md`; this slice makes the question concrete, since both are "what the report/handoff is built from"). Owner: team. Block: no — either reading produces a demonstrable report.
+  - ~~Whether this report screen and S-05's `.md` document are the same generated artifact viewed two ways, or genuinely independent~~ — **Resolved 2026-09-19** alongside PRD Open Question 8: genuinely independent. This report screen renders from the mapping/report data; S-05's `.md` is a separate document that only travels to Lab. Neither regenerates the other.
 - **Risk:** The richest UI in the roadmap (headline, 4 KPIs, verdict bar, table, cash curve). Risk is under-scoping it to just the saving lines already covered by S-04 and calling that "the report" — the mockup's `stack-tool/report.html` is the shape to match.
 - **Status:** blocked (same money-formula blockers as S-04; the non-money portions are not blocked)
 
