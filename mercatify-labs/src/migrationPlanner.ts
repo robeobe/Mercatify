@@ -1,6 +1,7 @@
 import { getAgent, getAgentTools } from './agentLoader'
 import type { LlmClient, ToolExecutor } from './llmClient'
 import type { MercatoMappingResult } from './types'
+import { validateMigrationPlan } from './migration/validatePlan'
 
 export interface MigrationPlanItem {
   capability: string
@@ -38,5 +39,6 @@ export async function planMigration(
   input: MigrationPlannerInput,
 ): Promise<MigrationPlanResult> {
   const agent = getAgent('migration_planner')
-  return (await llmClient.runAgent(agent, input, getAgentTools(agent), toolExecutor)) as MigrationPlanResult
+  const raw = await llmClient.runAgent(agent, input, getAgentTools(agent), toolExecutor)
+  return validateMigrationPlan(raw)
 }
