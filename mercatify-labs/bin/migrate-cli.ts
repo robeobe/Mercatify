@@ -12,10 +12,16 @@ import { OpenAiCompatibleLlmClient } from '../src/llmClient'
 import { localToolExecutor } from '../src/toolExecutor'
 import { mapCapabilities } from '../src/mapCapabilities'
 import { computeScenario } from '../src/computeScenario'
-import { planMigration, type MigrationPlanItem } from '../src/migrationPlanner'
+import { planMigration, type MigrationPlanItem, type MigrationPlanResult } from '../src/migrationPlanner'
 import { attachEffortHours, totalEstimatedHours } from '../src/effortHours'
-import { findCatalogGaps } from '../src/catalogGaps'
-import type { SaaSCapabilityInput, SaaSProductInput } from '../src/types'
+import { findCatalogGaps, type CatalogGap } from '../src/catalogGaps'
+import { auditPlanCoverage, type PlanCoverage } from '../src/migration/validatePlan'
+import type {
+  ConsolidationScenarioResult,
+  MercatoMappingResult,
+  SaaSCapabilityInput,
+  SaaSProductInput,
+} from '../src/types'
 
 export interface MigrateCliArgs {
   requestPath: string
@@ -54,6 +60,28 @@ export function formatTable(items: MigrationPlanItem[]): string {
     .join('\n')
 }
 
+/**
+ * Czysty formatter - testówany jednostkowo. Zamienia `PlanCoverage`
+ * (`auditPlanCoverage`, SPEC.md R4) na linie do trybu table. Pusta lista,
+ * gdy wszystkie trzy kategorie są puste - to jest zwykły przypadek i nie ma
+ * co go zaśmiecać liniami w stylu "0 missing".
+ */
+export function formatCoverageLines(coverage: PlanCoverage): string[] {
+  const lines: string[] = []
+  if (coverage.missing.length > 0) {
+    lines.push(
+      `Coverage: ${coverage.missing.length} mapping(s) missing from the plan (unpriced build/configure work).`,
+    )
+  }
+  if (coverage.orphaned.length > 0) {
+    lines.push(`Coverage: ${coverage.orphaned.length} plan item(s) orphaned (no matching mapping).`)
+  }
+  if (coverage.duplicateSequences.length > 0) {
+    lines.push(`Coverage: duplicate rollout sequence number(s): ${coverage.duplicateSequences.join(', ')}.`)
+  }
+  return lines
+}
+
 export interface MigrateCliRequest {
   stack: SaaSProductInput[]
   capabilities: SaaSCapabilityInput[]
@@ -67,6 +95,14 @@ export interface MigrateCliRequest {
  * mają odpowiedni ogólny kształt. Bez tego zły plik wejściowy (np. brak
  * `stack`) rozbija się dopiero w `mapCapabilities` z nieczytelnym
  * `TypeError: Cannot read properties of undefined (reading 'map')`.
+ *
+ * Pieniądze dostają własną, jawną kontrolę: `costs.omOperatingCost`,
+ * `costs.implementationCost` i każdy `stack[].monthlyCost` muszą być
+ * skończonymi liczbami. Bez tego np. `"costs": {}` przechodziłoby dalej,
+ * `implementationCost` byłoby `undefined`, arytmetyka dawałaby `NaN`, a
+ * `JSON.stringify` po cichu zamieniłoby to na `null` w wyjściu CLI - dokładnie
+ * ta klasa cichego złego wyniku pieniężnego, przed którą chroni żelazna
+ * zasada 2.
  */
 export function validateRequestShape(request: unknown): MigrateCliRequest {
   if (typeof request !== 'object' || request === null || Array.isArray(request)) {
@@ -78,10 +114,53 @@ export function validateRequestShape(request: unknown): MigrateCliRequest {
   if (typeof req.costs !== 'object' || req.costs === null || Array.isArray(req.costs)) {
     throw new Error('Invalid request file: missing "costs"')
   }
+  const costs = req.costs as Record<string, unknown>
+  if (!Number.isFinite(costs.omOperatingCost)) {
+    throw new Error('Invalid request file: "costs.omOperatingCost" must be a finite number')
+  }
+  if (!Number.isFinite(costs.implementationCost)) {
+    throw new Error('Invalid request file: "costs.implementationCost" must be a finite number')
+  }
+  req.stack.forEach((entry: unknown, i: number) => {
+    const monthlyCost =
+      typeof entry === 'object' && entry !== null ? (entry as Record<string, unknown>).monthlyCost : undefined
+    if (!Number.isFinite(monthlyCost)) {
+      throw new Error(`Invalid request file: "stack[${i}].monthlyCost" must be a finite number`)
+    }
+  })
   return {
     stack: req.stack as SaaSProductInput[],
     capabilities: req.capabilities as SaaSCapabilityInput[],
-    costs: req.costs as { omOperatingCost: number; implementationCost: number },
+    costs: costs as { omOperatingCost: number; implementationCost: number },
+  }
+}
+
+export interface MigrateCliJsonOutput {
+  mappings: MercatoMappingResult[]
+  scenario: ConsolidationScenarioResult
+  migrationPlan: MigrationPlanResult
+  catalogGaps: CatalogGap[]
+  coverage: PlanCoverage
+}
+
+/**
+ * Czysty budowniczy wyjścia JSON - testówany jednostkowo, bez odpalania
+ * całego `main()` (plik, preflight LM Studio, agent). `coverage`
+ * (`auditPlanCoverage`, SPEC.md R4) jedzie obok `catalogGaps` - to ten sam
+ * gatunek sygnału: rozjazd, który dotąd ginął, teraz trafia na wyjście CLI.
+ */
+export function buildJsonOutput(
+  mappings: MercatoMappingResult[],
+  enrichedMappings: MercatoMappingResult[],
+  scenario: ConsolidationScenarioResult,
+  plan: MigrationPlanResult,
+): MigrateCliJsonOutput {
+  return {
+    mappings: enrichedMappings,
+    scenario,
+    migrationPlan: plan,
+    catalogGaps: findCatalogGaps(mappings),
+    coverage: auditPlanCoverage(mappings, plan),
   }
 }
 
@@ -129,16 +208,11 @@ async function main(): Promise<void> {
     console.log(`\nTotal estimated hours: ${totalEstimatedHours(plan)}`)
     console.log(`implementationCost (customer-provided, untouched): ${scenario.implementationCost}`)
     console.log(`netPaybackMonths: ${scenario.netPaybackMonths}`)
+    for (const line of formatCoverageLines(auditPlanCoverage(mappings, plan))) console.log(line)
     return
   }
 
-  console.log(
-    JSON.stringify(
-      { mappings: enriched, scenario, migrationPlan: plan, catalogGaps: findCatalogGaps(mappings) },
-      null,
-      2,
-    ),
-  )
+  console.log(JSON.stringify(buildJsonOutput(mappings, enriched, scenario, plan), null, 2))
 }
 
 if (require.main === module) {
