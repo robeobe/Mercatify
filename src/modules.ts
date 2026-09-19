@@ -17,6 +17,7 @@ export const enabledModules: ModuleEntry[] = [
   { id: 'dashboards', from: '@open-mercato/core' },
   { id: 'events', from: '@open-mercato/events' },
   { id: 'search', from: '@open-mercato/search' },
+  { id: 'mercatify', from: '@app' },
 ]
 
 const enterpriseModulesEnabled = parseBooleanWithDefault(process.env.OM_ENABLE_ENTERPRISE_MODULES, false)
