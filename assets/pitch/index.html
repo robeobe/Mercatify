@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="pl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mercatify pitch</title>
+<title>Mercatify — prezentacja</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
 <style>
@@ -70,6 +70,53 @@
   .chain b.human { border-color: var(--lime); background: var(--lime); color: #0C0C0C; }
   .chain i { color: var(--ink-3); font-style: normal; }
 
+  .orch { margin-top: 28px; border: 1px solid var(--rule); }
+  .orch__row { display: grid; grid-template-columns: .85fr 1.2fr 1fr .95fr; }
+  .orch__stage { padding: 18px 16px; border-left: 1px solid var(--rule); display: flex; flex-direction: column; gap: 12px; }
+  .orch__stage:first-child { border-left: 0; }
+  .orch__lbl { font-family: var(--mono); font-size: .64rem; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; gap: 10px; }
+  .orch__lbl b { font-weight: 400; color: var(--lime); }
+  .orch__nodes { display: flex; flex-direction: column; gap: 6px; }
+  .orch__node { font-family: var(--mono); font-size: clamp(.7rem, 1.05vw, .84rem); border: 1px solid var(--rule); padding: 8px 11px; }
+  .orch__node--critic { border-color: var(--violet); color: var(--violet); }
+  .orch__node--human { border-color: var(--lime); background: var(--lime); color: #0C0C0C; }
+  .orch__stage p { font-size: clamp(.78rem, 1.1vw, .9rem); color: var(--ink-2); }
+  .orch__loop { border-top: 1px solid var(--rule); padding: 13px 16px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; font-size: clamp(.78rem, 1.1vw, .9rem); color: var(--ink-2); line-height: 1.45; }
+  .orch__loop b { font-family: var(--mono); font-weight: 400; font-size: .84em; letter-spacing: .06em; text-transform: uppercase; color: var(--violet); white-space: nowrap; }
+  @media (max-width: 860px) { .orch__row { grid-template-columns: 1fr 1fr; } .orch__stage:nth-child(3) { border-left: 0; } .orch__stage:nth-child(n+3) { border-top: 1px solid var(--rule); } }
+
+  /* ---------- animated orchestration diagram ---------- */
+  .orbit { display: block; width: 100%; height: auto; max-height: 52vh; margin-top: 20px; }
+  .orbit text { font-family: var(--mono); fill: var(--ink); }
+  .orbit .ln { fill: none; stroke: var(--rule); stroke-width: 1; }
+  .orbit .nd { fill: var(--bg); stroke: var(--rule); }
+  .orbit .nd--hub { stroke: var(--ink-2); }
+  .orbit .nd--critic { stroke: var(--violet); }
+  .orbit .nd--human { fill: var(--lime); stroke: var(--lime); }
+  .orbit .t { font-size: 16px; }
+  .orbit .t--hub { font-size: 18px; }
+  .orbit .t--code { font-size: 15px; fill: var(--lime); }
+  .orbit .t--critic { fill: var(--violet); font-size: 17px; }
+  .orbit .t--human { fill: #0C0C0C; font-size: 13px; }
+  .orbit .t--sm { font-size: 11.5px; fill: var(--ink-3); letter-spacing: .08em; }
+  .orbit .phase { font-size: 11.5px; fill: var(--ink-3); letter-spacing: .12em; }
+  .orbit .tick { fill: var(--violet); }
+  .orbit .trail { fill: none; stroke-width: 11; stroke-dasharray: 45 100; opacity: 0; }
+  .orbit .nyan { opacity: 0; offset-rotate: 0deg; offset-anchor: center; transform-box: fill-box; transform-origin: 50% 50%; image-rendering: pixelated; }
+  .orbit .nyan--flip { transform: scaleX(-1); }
+  .orbit-cap { margin-top: 16px; font-family: var(--mono); font-size: clamp(.68rem, 1vw, .8rem); color: var(--ink-2); }
+
+  /* Stan spoczynku to stan koncowy - dzieki temu druk i pominiety slajd wygladaja poprawnie. */
+  .is-playing .orbit .g { animation: wake .5s var(--d, 0s) both; }
+  .is-playing .orbit .tick { animation: wake .3s var(--d, 0s) both; }
+  .is-playing .orbit .trail { animation: comet .75s var(--d, 0s) both linear; }
+  .is-playing .orbit .nyan { animation: fly .75s var(--d, 0s) both linear; }
+  .is-playing .orbit-cap { animation: wake .6s 10s both; }
+  @keyframes wake { from { opacity: .1; } to { opacity: 1; } }
+  /* ogon konczy sie tam, gdzie jest kot: dash [p-14, p] przy p od 0 do 100 */
+  @keyframes comet { from { opacity: 0; stroke-dashoffset: 45; } 2% { opacity: 1; } 86% { opacity: 1; } to { opacity: 0; stroke-dashoffset: -55; } }
+  @keyframes fly { from { opacity: 0; offset-distance: 0%; } 2% { opacity: 1; } 86% { opacity: 1; } to { opacity: 0; offset-distance: 100%; } }
+
   .lines { margin: 40px 0 0; padding: 0; list-style: none; }
   .lines li { border-top: 1px solid var(--rule); padding: 18px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 28px; align-items: baseline; }
   .lines li:last-child { border-bottom: 1px solid var(--rule); }
@@ -94,6 +141,17 @@
       url("hero2.png");
     background-size: cover; background-position: right center;
   }
+
+  .photo { position: relative; justify-content: flex-end; }
+  .photo::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background-image:
+      linear-gradient(to top, rgba(12,12,12,.96) 0%, rgba(12,12,12,.88) 20%, rgba(12,12,12,.45) 46%, rgba(12,12,12,.2) 70%, rgba(12,12,12,.35) 100%),
+      url("team.png");
+    background-size: cover; background-position: center 38%;
+  }
+  .photo .slide__inner { padding-bottom: 8px; }
+  .photo .sub { color: var(--ink); max-width: 52ch; }
 
   .demo-mark { font-family: var(--mono); font-size: clamp(3rem, 12vw, 9rem); letter-spacing: -0.04em; color: var(--lime); line-height: 1; }
 
@@ -121,10 +179,16 @@
     body { overflow: visible; background: #fff; }
     .slide { display: flex !important; height: auto; min-height: 60vh; page-break-after: always; border-bottom: 1px solid #ddd; }
     .bar, .count, .clock, .help, .notes { display: none !important; }
+    .orbit .trail, .orbit .nyan { display: none; }
+    .orbit { max-height: none; }
     .slide__note { display: block; margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--ink-2); font-size: .9rem; max-width: 80ch; }
   }
 
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+    .is-playing .orbit .g, .is-playing .orbit .tick, .is-playing .orbit-cap { animation: none !important; }
+    .is-playing .orbit .trail, .is-playing .orbit .nyan { animation: none !important; display: none; }
+  }
 </style>
 </head>
 <body>
@@ -135,8 +199,8 @@
 <section class="slide cover is-active" data-time="0:00" data-note="Cześć, jesteśmy Mercatify. Jedno zdanie na start: firma, do której przychodzisz z listą swoich SaaS-ów, a wychodzisz z mapą, wyceną i działającym podglądem własnego systemu. // Nie mówimy jeszcze nic o agentach — najpierw problem.">
   <div class="slide__inner">
     <span class="kicker">Mercatify</span>
-    <h1 class="title">Your SaaS stack is already your specification.</h1>
-    <p class="sub">An AI company that turns the tools you rent into software you own.</p>
+    <h1 class="title">Twój stack SaaS to już gotowa specyfikacja.</h1>
+    <p class="sub">Firma AI, która zamienia narzędzia wynajmowane co miesiąc w system należący do ciebie.</p>
     <p class="slide__note"></p>
   </div>
 </section>
@@ -144,13 +208,13 @@
 <!-- 02 -->
 <section class="slide" data-time="0:15" data-note="Typowa firma na 30 osób płaci za siedem narzędzi. Nikt w tej firmie nie umie powiedzieć, co dokładnie robi połowa z nich. Rachunek rośnie co roku, a dane leżą w siedmiu miejscach. // To nie jest problem techniczny, tylko problem pieniędzy i kontroli.">
   <div class="slide__inner">
-    <span class="kicker">The problem</span>
-    <h2 class="title">Nobody knows what half these tools actually do.</h2>
+    <span class="kicker">Problem</span>
+    <h2 class="title">Nikt nie wie, co naprawdę robi połowa tych narzędzi.</h2>
     <div class="stat-row">
-      <div><span class="k">Tools in a typical SME stack</span><span class="v">7</span></div>
-      <div><span class="k">Monthly licences</span><span class="v">$2,320</span></div>
-      <div><span class="k">Per year, rented</span><span class="v">$27,840</span></div>
-      <div><span class="k">Owned by the client</span><span class="v">$0</span></div>
+      <div><span class="k">Narzędzia w typowym stacku MŚP</span><span class="v">7</span></div>
+      <div><span class="k">Licencje miesięcznie</span><span class="v">$2,320</span></div>
+      <div><span class="k">Rocznie, w najmie</span><span class="v">$27,840</span></div>
+      <div><span class="k">Na własność klienta</span><span class="v">$0</span></div>
     </div>
     <p class="slide__note"></p>
   </div>
@@ -159,9 +223,9 @@
 <!-- 03 -->
 <section class="slide" data-time="0:45" data-note="I tu jest nasza teza. Nikt nie pyta klienta „jakiego ERP potrzebujesz", bo on tego nie wie. Ale on już podjął wszystkie decyzje — one są w jego stacku. Za co płaci co miesiąc, to jest opis tego, jak jego firma działa. // Stack jest specyfikacją. Wystarczy umieć ją przeczytać.">
   <div class="slide__inner">
-    <span class="kicker">The insight</span>
-    <h2 class="title">We don't ask what system you need.<br>We read what you already pay for.</h2>
-    <p class="sub">Every subscription is a decision somebody already made. The live stack is the requirements document — nobody had to write it.</p>
+    <span class="kicker">Teza</span>
+    <h2 class="title">Nie pytamy, jakiego systemu potrzebujesz.<br>Czytamy to, za co już płacisz.</h2>
+    <p class="sub">Każda subskrypcja to decyzja, którą ktoś już podjął. Działający stack jest dokumentem wymagań — tylko nikt nie musiał go pisać.</p>
     <p class="slide__note"></p>
   </div>
 </section>
@@ -169,16 +233,16 @@
 <!-- 04 -->
 <section class="slide" data-time="1:05" data-note="Co dostaje klient: mapę pokrycia — co Open Mercato bierze od razu, co trzeba skonfigurować, co dokodować, co zostaje u dostawcy. Do tego policzone oszczędności i klikalny podgląd tej jednej rzeczy, która boli najbardziej. // Wszystko w kilkanaście minut zamiast w kilka tygodni.">
   <div class="slide__inner">
-    <span class="kicker">What the client gets</span>
-    <h2 class="title">A coverage map, the money, and a working preview.</h2>
+    <span class="kicker">Co dostaje klient</span>
+    <h2 class="title">Mapa pokrycia, pieniądze i działający podgląd.</h2>
     <div class="chain">
-      <b>their stack</b><i>→</i>
-      <b class="on">coverage map</b><i>→</i>
-      <b class="on">savings</b><i>→</i>
-      <b class="on">clickable preview</b><i>→</i>
-      <b class="human">quote</b>
+      <b>jego stack</b><i>→</i>
+      <b class="on">mapa pokrycia</b><i>→</i>
+      <b class="on">oszczędności</b><i>→</i>
+      <b class="on">klikalny podgląd</b><i>→</i>
+      <b class="human">wycena</b>
     </div>
-    <p class="sub" style="margin-top:34px;">One decision per capability: native, configure, build, integrate or keep. Each with evidence and a confidence band the client can challenge.</p>
+    <p class="sub" style="margin-top:34px;">Jedna decyzja na zdolność: natywnie, konfiguracja, dokodowanie, integracja albo zostaje u dostawcy. Każda z dowodem i pasmem pewności, które klient może podważyć.</p>
     <p class="slide__note"></p>
   </div>
 </section>
@@ -186,9 +250,9 @@
 <!-- 05 -->
 <section class="slide" data-time="1:25" data-note="TU IDZIE DEMO — 100 sekund, trzy uderzenia: (1) wchodzi stack klienta, (2) wychodzi mapa z werdyktami i kwotą, (3) klikamy podgląd. // Nie tłumaczymy w trakcie, jak to działa. Wyjaśnienie idzie po demie.">
   <div class="slide__inner" style="text-align:center;">
-    <span class="kicker" style="margin-bottom:34px;">100 seconds</span>
+    <span class="kicker" style="margin-bottom:34px;">100 sekund</span>
     <div class="demo-mark">DEMO</div>
-    <p class="sub" style="margin:34px auto 0;">Stack in. Map, money and preview out.</p>
+    <p class="sub" style="margin:34px auto 0;">Wchodzi stack. Wychodzi mapa, kwota i podgląd.</p>
     <p class="slide__note"></p>
   </div>
 </section>
@@ -196,15 +260,15 @@
 <!-- 06 -->
 <section class="slide" data-time="3:05" data-note="Teraz trzy rzeczy, dzięki którym to nie jest zgadywanie modelu. Pierwsza: porównujemy funkcje, nie nazwy produktów. Każdy SaaS i każdy moduł Open Mercato opisujemy tym samym słownikiem — „multi-warehouse inventory", „RMA workflow". Wtedy porównanie to operacja na zbiorach, a nie esej konsultanta.">
   <div class="slide__inner">
-    <span class="kicker">Why it isn't guesswork · 1 of 3</span>
-    <h2 class="title">Capabilities, not product names.</h2>
+    <span class="kicker">Dlaczego to nie zgadywanie · 1 z 3</span>
+    <h2 class="title">Zdolności, nie nazwy produktów.</h2>
     <div class="chain" style="margin-top:38px;">
       <b>HubSpot</b><i>·</i><b>Jobber</b><i>·</i><b>Zendesk</b><i>·</i><b>Sortly</b>
     </div>
     <div class="chain" style="margin-top:14px;">
       <b class="on">multi-warehouse inventory</b><b class="on">RMA workflow</b><b class="on">B2B price lists</b><b class="on">crew scheduling</b>
     </div>
-    <p class="sub" style="margin-top:34px;">One vocabulary describes the SaaS tools and the platform. Comparison becomes set arithmetic instead of a consultant's essay.</p>
+    <p class="sub" style="margin-top:34px;">Jeden słownik opisuje narzędzia SaaS i platformę. Porównanie staje się działaniem na zbiorach zamiast esejem konsultanta.</p>
     <p class="slide__note"></p>
   </div>
 </section>
@@ -212,35 +276,117 @@
 <!-- 07 -->
 <section class="slide" data-time="3:30" data-note="Druga i trzecia rzecz, i to są nasze żelazne zasady. Katalog jest źródłem prawdy — decyzje biorą się z kuratorowanej macierzy, nie z rozumowania modelu na żywo. Model nigdy nie liczy pieniędzy: wybiera dane wejściowe, a kwotę zwraca czysta funkcja, z faktur klienta. I pewność podajemy jako pasmo, nie jako procent — bo „87% dopasowania" to liczba, której nikt nie obroni.">
   <div class="slide__inner">
-    <span class="kicker">Why it isn't guesswork · 2 and 3 of 3</span>
-    <h2 class="title">Three rules we don't break.</h2>
+    <span class="kicker">Dlaczego to nie zgadywanie · 2 i 3 z 3</span>
+    <h2 class="title">Trzy zasady, których nie łamiemy.</h2>
     <div class="cols">
-      <div class="box"><span class="n">01</span><h3>The catalog decides</h3><p>Known tool to platform verdicts come from a curated matrix by lookup. The model narrates; it never rules on the critical path.</p></div>
-      <div class="box"><span class="n">02</span><h3>The model never computes money</h3><p>It selects inputs. A pure function returns the figure, from the client's own invoices. Every number is recomputable by hand.</p></div>
-      <div class="box"><span class="n">03</span><h3>Confidence is a band</h3><p>High, medium, low. A spurious "87% match" is a claim nobody can defend in a room full of people who know their own business.</p></div>
+      <div class="box"><span class="n">01</span><h3>Decyduje katalog</h3><p>Werdykty dla znanych narzędzi biorą się z kuratorowanej macierzy, przez odpytanie. Model opowiada; na ścieżce krytycznej nie orzeka.</p></div>
+      <div class="box"><span class="n">02</span><h3>Model nigdy nie liczy pieniędzy</h3><p>Wybiera dane wejściowe. Kwotę zwraca czysta funkcja, z faktur klienta. Każdą liczbę da się przeliczyć ręcznie.</p></div>
+      <div class="box"><span class="n">03</span><h3>Pewność to pasmo</h3><p>Wysoka, średnia, niska. Wyssane „87% dopasowania” to liczba, której nikt nie obroni w sali pełnej ludzi znających własną firmę.</p></div>
     </div>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 08 -->
-<section class="slide" data-time="4:00" data-note="I teraz do tracku. To nie jest jeden prompt — to firma. Sześć wyspecjalizowanych agentów, każdy oddaje typowany, walidowany wynik następnemu. Agenci są propose-only: nigdy nie zapisują sami, tylko proponują, a człowiek dysponuje. To nie jest nasz wynalazek na weekend, tylko architektura orkiestratora Open Mercato — bieg, ślad, propozycja, akceptacja. // I dogfooding: Mercatify samo działa na Open Mercato. Każda sprawa i każdy artefakt to rekord w panelu produktu, który sprzedajemy.">
+<section class="slide" data-anim data-time="4:00" data-note="To nie jest łańcuch, tylko gwiazda — i animacja pokazuje dokładnie to: każda linia dotyka środka. W środku siedzi zwykły kod i to on buduje wejście każdego agenta: prompt systemowy plus jeden obiekt JSON. Żaden agent nie widzi odpowiedzi innego, nie ma wspólnej pamięci ani przekazywanej rozmowy. // Na początku policzcie razem ze mną siedem przebiegów w lewo i z powrotem: audytor leci raz na każde narzędzie, więc siedem SaaS-ów to siedem osobnych wywołań. // Potem zapala się rdzeń pod spodem i tu jest sedno: werdykty i pieniądze nie pochodzą od modelu. Mapowanie to odpytanie katalogu, kwota to czysta funkcja z faktur klienta. Finops dostaje liczby, ale jego własne wyliczenie jest odczytane i wyrzucone — w prawdziwym przebiegu napisał w narracji „oszczędność 6000, zwrot 24 miesiące”, a wysłaliśmy 21000 i 6,9 miesiąca. // Na końcu krytyk: ocenia każdy artefakt osobno, każdy według własnej zamkniętej listy reguł — to te siedem znaczników. Nie poprawia, tylko zgłasza obiekcję, która musi wskazać regułę po identyfikatorze i przytoczyć dowód. W jego schemacie nie ma ani jednego pola liczbowego. Werdykt jest doradczy, a podpisuje człowiek. // Awarie: agent, który padnie albo zacznie zmyślać, kosztuje zdanie narracji, nigdy decyzji i nigdy liczby. Krytyk, który padnie, zostawia etap oznaczony jako niesprawdzony, nigdy jako zaakceptowany. // R odtwarza animację od nowa.">
   <div class="slide__inner">
-    <span class="kicker">The AI company</span>
-    <h2 class="title">Six agents, one human, nothing written without approval.</h2>
-    <div class="chain" style="margin-top:38px;">
-      <b>discovery</b><i>→</i>
-      <b>capability-mapper</b><i>→</i>
-      <b>decision-engine</b><i>→</i>
-      <b>finops</b><i>→</i>
-      <b>preview-builder</b><i>→</i>
-      <b>critic</b><i>→</i>
-      <b class="human">consultant approves</b>
-    </div>
-    <ul class="lines">
-      <li><strong>Propose, never write</strong><span>Every agent returns a typed, validated result. A human disposes. That boundary is the platform's own architecture, not something we bolted on.</span></li>
-      <li><strong>Mercatify runs on Open Mercato</strong><span>Every case, artifact and quote is a record in the product we are selling. We ask clients to trust it with their operations, so we run on it.</span></li>
-    </ul>
+    <span class="kicker">Orkiestracja</span>
+    <h2 class="title" style="font-size: clamp(1.7rem, 3.7vw, 2.7rem);">Żaden agent nie rozmawia z innym agentem.</h2>
+    <svg class="orbit" viewBox="0 0 1120 402" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Każde wywołanie agenta idzie przez orkiestrator; żaden agent nie woła innego agenta.">
+  <defs><linearGradient id="rb0" gradientUnits="userSpaceOnUse" x1="270.96" y1="138.88" x2="276.04" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb1" gradientUnits="userSpaceOnUse" x1="276.04" y1="129.12" x2="270.96" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb2" gradientUnits="userSpaceOnUse" x1="270.96" y1="138.88" x2="276.04" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb3" gradientUnits="userSpaceOnUse" x1="276.04" y1="129.12" x2="270.96" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb4" gradientUnits="userSpaceOnUse" x1="270.96" y1="138.88" x2="276.04" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb5" gradientUnits="userSpaceOnUse" x1="276.04" y1="129.12" x2="270.96" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb6" gradientUnits="userSpaceOnUse" x1="270.96" y1="138.88" x2="276.04" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb7" gradientUnits="userSpaceOnUse" x1="276.04" y1="129.12" x2="270.96" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb8" gradientUnits="userSpaceOnUse" x1="270.96" y1="138.88" x2="276.04" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb9" gradientUnits="userSpaceOnUse" x1="276.04" y1="129.12" x2="270.96" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb10" gradientUnits="userSpaceOnUse" x1="270.96" y1="138.88" x2="276.04" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb11" gradientUnits="userSpaceOnUse" x1="276.04" y1="129.12" x2="270.96" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb12" gradientUnits="userSpaceOnUse" x1="270.96" y1="138.88" x2="276.04" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb13" gradientUnits="userSpaceOnUse" x1="276.04" y1="129.12" x2="270.96" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb14" gradientUnits="userSpaceOnUse" x1="394.50" y1="114.00" x2="405.50" y2="114.00"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb15" gradientUnits="userSpaceOnUse" x1="405.50" y1="114.00" x2="394.50" y2="114.00"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb16" gradientUnits="userSpaceOnUse" x1="523.96" y1="129.12" x2="529.04" y2="138.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb17" gradientUnits="userSpaceOnUse" x1="529.04" y1="138.88" x2="523.96" y2="129.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb18" gradientUnits="userSpaceOnUse" x1="284.00" y1="205.50" x2="284.00" y2="194.50"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb19" gradientUnits="userSpaceOnUse" x1="284.00" y1="194.50" x2="284.00" y2="205.50"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb20" gradientUnits="userSpaceOnUse" x1="276.04" y1="270.88" x2="270.96" y2="261.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb21" gradientUnits="userSpaceOnUse" x1="270.96" y1="261.12" x2="276.04" y2="270.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb22" gradientUnits="userSpaceOnUse" x1="529.04" y1="261.12" x2="523.96" y2="270.88"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb23" gradientUnits="userSpaceOnUse" x1="523.96" y1="270.88" x2="529.04" y2="261.12"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb24" gradientUnits="userSpaceOnUse" x1="405.50" y1="264.50" x2="394.50" y2="264.50"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb25" gradientUnits="userSpaceOnUse" x1="620.00" y1="194.50" x2="620.00" y2="205.50"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient><linearGradient id="rb26" gradientUnits="userSpaceOnUse" x1="928.00" y1="194.50" x2="928.00" y2="205.50"><stop offset="0.000%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF1E1E"/><stop offset="16.667%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FF8A00"/><stop offset="33.333%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#FFE800"/><stop offset="50.000%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#37E82F"/><stop offset="66.667%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#2BB9FF"/><stop offset="83.333%" stop-color="#8A5BFF"/><stop offset="100.000%" stop-color="#8A5BFF"/></linearGradient></defs>
+  <g><path class="ln" d="M400 200 L170 80"/><path class="ln" d="M400 200 L400 40"/><path class="ln" d="M400 200 L630 80"/><path class="ln" d="M400 200 L170 200"/><path class="ln" d="M400 200 L170 320"/><path class="ln" d="M400 200 L630 320"/><path class="ln" d="M400 200 L400 322"/><path class="ln" d="M400 200 L820 200"/><path class="ln" d="M820 200 L1038 200"/></g>
+  <path class="trail" pathLength="100" d="M326.71 161.76 L220.29 106.24" stroke="url(#rb0)" style="--d:0.50s"/>
+  <path class="trail" pathLength="100" d="M220.29 106.24 L326.71 161.76" stroke="url(#rb1)" style="--d:0.88s"/>
+  <path class="trail" pathLength="100" d="M326.71 161.76 L220.29 106.24" stroke="url(#rb2)" style="--d:0.78s"/>
+  <path class="trail" pathLength="100" d="M220.29 106.24 L326.71 161.76" stroke="url(#rb3)" style="--d:1.16s"/>
+  <path class="trail" pathLength="100" d="M326.71 161.76 L220.29 106.24" stroke="url(#rb4)" style="--d:1.06s"/>
+  <path class="trail" pathLength="100" d="M220.29 106.24 L326.71 161.76" stroke="url(#rb5)" style="--d:1.44s"/>
+  <path class="trail" pathLength="100" d="M326.71 161.76 L220.29 106.24" stroke="url(#rb6)" style="--d:1.34s"/>
+  <path class="trail" pathLength="100" d="M220.29 106.24 L326.71 161.76" stroke="url(#rb7)" style="--d:1.72s"/>
+  <path class="trail" pathLength="100" d="M326.71 161.76 L220.29 106.24" stroke="url(#rb8)" style="--d:1.62s"/>
+  <path class="trail" pathLength="100" d="M220.29 106.24 L326.71 161.76" stroke="url(#rb9)" style="--d:2.00s"/>
+  <path class="trail" pathLength="100" d="M326.71 161.76 L220.29 106.24" stroke="url(#rb10)" style="--d:1.90s"/>
+  <path class="trail" pathLength="100" d="M220.29 106.24 L326.71 161.76" stroke="url(#rb11)" style="--d:2.28s"/>
+  <path class="trail" pathLength="100" d="M326.71 161.76 L220.29 106.24" stroke="url(#rb12)" style="--d:2.18s"/>
+  <path class="trail" pathLength="100" d="M220.29 106.24 L326.71 161.76" stroke="url(#rb13)" style="--d:2.56s"/>
+  <path class="trail" pathLength="100" d="M400 158 L400 70" stroke="url(#rb14)" style="--d:3.50s"/>
+  <path class="trail" pathLength="100" d="M400 70 L400 158" stroke="url(#rb15)" style="--d:3.95s"/>
+  <path class="trail" pathLength="100" d="M473.29 161.76 L579.71 106.24" stroke="url(#rb16)" style="--d:3.90s"/>
+  <path class="trail" pathLength="100" d="M579.71 106.24 L473.29 161.76" stroke="url(#rb17)" style="--d:4.35s"/>
+  <path class="trail" pathLength="100" d="M293 200 L275 200" stroke="url(#rb18)" style="--d:4.30s"/>
+  <path class="trail" pathLength="100" d="M275 200 L293 200" stroke="url(#rb19)" style="--d:4.75s"/>
+  <path class="trail" pathLength="100" d="M326.71 238.24 L220.29 293.76" stroke="url(#rb20)" style="--d:4.70s"/>
+  <path class="trail" pathLength="100" d="M220.29 293.76 L326.71 238.24" stroke="url(#rb21)" style="--d:5.15s"/>
+  <path class="trail" pathLength="100" d="M473.29 238.24 L579.71 293.76" stroke="url(#rb22)" style="--d:5.10s"/>
+  <path class="trail" pathLength="100" d="M579.71 293.76 L473.29 238.24" stroke="url(#rb23)" style="--d:5.55s"/>
+  <path class="trail" pathLength="100" d="M400 242 L400 287" stroke="url(#rb24)" style="--d:6.40s"/>
+  <path class="trail" pathLength="100" d="M507 200 L733 200" stroke="url(#rb25)" style="--d:7.10s"/>
+  <path class="trail" pathLength="100" d="M907 200 L949 200" stroke="url(#rb26)" style="--d:9.30s"/>
+  <g class="g" style="--d:0s">
+    <rect class="nd nd--hub" x="300" y="165" width="200" height="70" rx="3"/>
+    <text class="t t--hub" x="400" y="194" text-anchor="middle">orchestrator</text>
+    <text class="t t--sm" x="400" y="216" text-anchor="middle">zwykły kod</text>
+  </g>
+  <g class="g" style="--d:6.5s">
+    <rect class="nd" x="280" y="294" width="240" height="56" rx="3"/>
+    <text class="t t--code" x="400" y="316" text-anchor="middle">mapCapabilities()</text>
+    <text class="t t--code" x="400" y="337" text-anchor="middle">computeScenario()</text>
+  </g>
+  <g class="g" style="--d:0.45s"><rect class="nd" x="78" y="57" width="184" height="46" rx="3"/><text class="t" x="170" y="86" text-anchor="middle">saas_auditor ×7</text></g>
+  <g class="g" style="--d:3.45s"><rect class="nd" x="308" y="17" width="184" height="46" rx="3"/><text class="t" x="400" y="46" text-anchor="middle">process_analyst</text></g>
+  <g class="g" style="--d:3.85s"><rect class="nd" x="538" y="57" width="184" height="46" rx="3"/><text class="t" x="630" y="86" text-anchor="middle">om_architect</text></g>
+  <g class="g" style="--d:4.25s"><rect class="nd" x="72" y="177" width="196" height="46" rx="3"/><text class="t" x="170" y="206" text-anchor="middle">strategist</text></g>
+  <g class="g" style="--d:4.65s"><rect class="nd" x="78" y="297" width="184" height="46" rx="3"/><text class="t" x="170" y="326" text-anchor="middle">sandbox · qa</text></g>
+  <g class="g" style="--d:5.05s"><rect class="nd" x="538" y="297" width="184" height="46" rx="3"/><text class="t" x="630" y="326" text-anchor="middle">finops</text></g>
+  <g class="g" style="--d:7.5s">
+    <rect class="nd nd--critic" x="740" y="165" width="160" height="70" rx="3"/>
+    <text class="t t--critic" x="820" y="194" text-anchor="middle">critic</text>
+    <text class="t t--sm" x="820" y="216" text-anchor="middle">7 kontraktów</text>
+  </g>
+  <rect class="tick" x="740" y="246" width="15" height="5" style="--d:7.90s"/>
+  <rect class="tick" x="763" y="246" width="15" height="5" style="--d:8.08s"/>
+  <rect class="tick" x="786" y="246" width="15" height="5" style="--d:8.26s"/>
+  <rect class="tick" x="809" y="246" width="15" height="5" style="--d:8.44s"/>
+  <rect class="tick" x="832" y="246" width="15" height="5" style="--d:8.62s"/>
+  <rect class="tick" x="855" y="246" width="15" height="5" style="--d:8.80s"/>
+  <rect class="tick" x="878" y="246" width="15" height="5" style="--d:8.98s"/>
+  <g class="g" style="--d:9.5s">
+    <rect class="nd nd--human" x="956" y="165" width="164" height="70" rx="3"/>
+    <text class="t t--human" x="1038" y="206" text-anchor="middle">konsultant podpisuje</text>
+  </g>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 161.76 L220.29 106.24&quot;);--d:0.50s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 106.24 L326.71 161.76&quot;);--d:0.88s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 161.76 L220.29 106.24&quot;);--d:0.78s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 106.24 L326.71 161.76&quot;);--d:1.16s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 161.76 L220.29 106.24&quot;);--d:1.06s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 106.24 L326.71 161.76&quot;);--d:1.44s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 161.76 L220.29 106.24&quot;);--d:1.34s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 106.24 L326.71 161.76&quot;);--d:1.72s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 161.76 L220.29 106.24&quot;);--d:1.62s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 106.24 L326.71 161.76&quot;);--d:2.00s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 161.76 L220.29 106.24&quot;);--d:1.90s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 106.24 L326.71 161.76&quot;);--d:2.28s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 161.76 L220.29 106.24&quot;);--d:2.18s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 106.24 L326.71 161.76&quot;);--d:2.56s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M400 158 L400 70&quot;);--d:3.50s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M400 70 L400 158&quot;);--d:3.95s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M473.29 161.76 L579.71 106.24&quot;);--d:3.90s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M579.71 106.24 L473.29 161.76&quot;);--d:4.35s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M293 200 L275 200&quot;);--d:4.30s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M275 200 L293 200&quot;);--d:4.75s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M326.71 238.24 L220.29 293.76&quot;);--d:4.70s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M220.29 293.76 L326.71 238.24&quot;);--d:5.15s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M473.29 238.24 L579.71 293.76&quot;);--d:5.10s"/>
+  <image class="nyan nyan--flip" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M579.71 293.76 L473.29 238.24&quot;);--d:5.55s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M400 242 L400 287&quot;);--d:6.40s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M507 200 L733 200&quot;);--d:7.10s"/>
+  <image class="nyan" href="nyan.png" width="24" height="23" x="0" y="0" style="offset-path:path(&quot;M907 200 L949 200&quot;);--d:9.30s"/>
+  <text class="phase" x="78" y="392">01 agenci · proponują</text>
+  <text class="phase" x="280" y="392">02 kod · decyduje</text>
+  <text class="phase" x="740" y="392">03 krytyk · sprawdza</text>
+  <text class="phase" x="1120" y="392" text-anchor="end">04 człowiek · podpisuje</text>
+</svg>
+    <p class="orbit-cap">Każda linia dotyka środka. Między dwoma agentami nie ma żadnej — i żadna liczba nie pochodzi od agenta.</p>
     <p class="slide__note"></p>
   </div>
 </section>
@@ -248,32 +394,43 @@
 <!-- 09 -->
 <section class="slide" data-time="4:25" data-note="Dwie rzeczy, które sprawiają, że to się sprzedaje. Nigdy nie proponujemy wymiany całego stacku — wskazujemy jeden kawałek do odcięcia najpierw, z uzasadnieniem kosztowym. Rip-and-replace umiera na zarządzie. // I liczby: presales skraca się z tygodni do godzin, a wycena przestaje być efektem ubocznym rozmowy, tylko staje się produktem.">
   <div class="slide__inner">
-    <span class="kicker">Why it sells</span>
-    <h2 class="title">One piece at a time — and presales in hours.</h2>
+    <span class="kicker">Dlaczego to się sprzedaje</span>
+    <h2 class="title">Jeden kawałek naraz — i presales w godzinach.</h2>
     <div class="versus">
-      <div class="now"><h3>Traditional presales</h3><p class="big">2–6 weeks</p><p style="margin-top:14px;">Workshops billed by the day, coverage claims nobody can verify, a slide deck as the deliverable.</p></div>
-      <div class="then"><h3>Mercatify</h3><p class="big">Hours</p><p style="margin-top:14px;">Evidence per verdict, savings computed from invoices, and the client clicks their future system before deciding.</p></div>
+      <div class="now"><h3>Klasyczny presales</h3><p class="big">2–6 tygodni</p><p style="margin-top:14px;">Warsztaty rozliczane dniówką, deklaracje pokrycia, których nikt nie zweryfikuje, i prezentacja jako produkt końcowy.</p></div>
+      <div class="then"><h3>Mercatify</h3><p class="big">Godziny</p><p style="margin-top:14px;">Dowód przy każdym werdykcie, oszczędności policzone z faktur i klient klika swój przyszły system, zanim zdecyduje.</p></div>
     </div>
     <p class="slide__note"></p>
   </div>
 </section>
 
 <!-- 10 -->
-<section class="slide cover" data-time="4:45" data-note="Zamknięcie. Open Mercato potrzebuje tego do pracy z partnerami — każdy partner wdrożeniowy prowadzi dziś ten sam presales ręcznie. My go zautomatyzowaliśmy, zostawiając człowieka tam, gdzie musi być: na końcu, przy podpisie. // Dziękujemy, pytania.">
+<section class="slide cover" data-time="4:45" data-note="Zamknięcie. Open Mercato potrzebuje tego do pracy z partnerami — każdy partner wdrożeniowy prowadzi dziś ten sam presales ręcznie. My go zautomatyzowaliśmy, zostawiając człowieka tam, gdzie musi być: na końcu, przy podpisie. // I dogfooding, gdyby padło pytanie: Mercatify samo działa na Open Mercato — każda sprawa, artefakt i wycena to rekord w produkcie, który sprzedajemy. // Dziękujemy, pytania.">
   <div class="slide__inner">
     <span class="kicker">Mercatify</span>
-    <h2 class="title">Tell us what you pay for.<br>We'll tell you what you own.</h2>
-    <p class="sub">Every implementation partner runs this presales by hand today. We automated it — and left the human exactly where the client wants one: at the end, signing.</p>
+    <h2 class="title">Powiedz, za co płacisz.<br>Powiemy, co możesz mieć na własność.</h2>
+    <p class="sub">Każdy partner wdrożeniowy prowadzi dziś ten presales ręcznie. My go zautomatyzowaliśmy — i zostawiliśmy człowieka dokładnie tam, gdzie klient go chce: na końcu, przy podpisie.</p>
     <p class="slide__note"></p>
   </div>
 </section>
 
-<div class="clock" id="clock">T — start timer</div>
-<div class="help">← → slides · N notes · T timer · P print</div>
+<!-- 11 -->
+<section class="slide photo" data-time="4:55" aria-label="Zespół Side Quest przy wspólnym stole z laptopami" data-note="Ostatni slajd: my. Nazywamy się Side Quest. Dzięki za najlepszą imprezę informatyków — spędziliśmy ją przy jednym stole, budując to, co właśnie zobaczyliście.">
+  <div class="slide__inner">
+    <span class="kicker">Zespół</span>
+    <h2 class="title">Nazywamy się Side Quest.</h2>
+    <p class="sub">Dzięki za najlepszą imprezę informatyków — spędziliśmy ją przy jednym stole, budując to, co przed chwilą zobaczyliście.</p>
+    <p class="slide__note"></p>
+  </div>
+</section>
+
+
+<div class="clock" id="clock">T — włącz stoper</div>
+<div class="help">← → slajdy · N notatki · T stoper · R powtórka · P druk</div>
 <div class="count" id="count">1 / 10</div>
 
 <div class="notes" id="notes" hidden>
-  <h4>Speaker notes</h4>
+  <h4>Notatki prelegenta</h4>
   <p id="noteBody"></p>
 </div>
 
@@ -292,8 +449,20 @@
       if (note) note.textContent = slide.getAttribute('data-note') || '';
     });
 
+    function play() {
+      var slide = slides[index];
+      slide.classList.remove('is-playing');
+      if (!slide.hasAttribute('data-anim')) return;
+      void slide.offsetWidth; // wymus reflow, inaczej przegladarka nie wznowi animacji
+      slide.classList.add('is-playing');
+    }
+
     function render() {
-      slides.forEach(function (slide, i) { slide.classList.toggle('is-active', i === index); });
+      slides.forEach(function (slide, i) {
+        slide.classList.toggle('is-active', i === index);
+        if (i !== index) slide.classList.remove('is-playing');
+      });
+      play();
       bar.style.width = ((index + 1) / slides.length * 100) + '%';
       count.textContent = (index + 1) + ' / ' + slides.length;
       noteBody.textContent = slides[index].getAttribute('data-note') || '';
@@ -315,7 +484,7 @@
     }
 
     function toggleTimer() {
-      if (timerId) { clearInterval(timerId); timerId = null; clock.textContent = 'timer paused'; return; }
+      if (timerId) { clearInterval(timerId); timerId = null; clock.textContent = 'stoper wstrzymany'; return; }
       timerId = setInterval(function () { left -= 1; paint(); }, 1000);
       paint();
     }
@@ -328,6 +497,7 @@
       else if (key === 'End') { index = slides.length - 1; render(); }
       else if (key === 'n' || key === 'N') { notes.hidden = !notes.hidden; }
       else if (key === 't' || key === 'T') { toggleTimer(); }
+      else if (key === 'r' || key === 'R') { play(); }
       else if (key === 'p' || key === 'P') { window.print(); }
     });
 
