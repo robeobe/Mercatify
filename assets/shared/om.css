@@ -19,6 +19,7 @@
   --muted-foreground: #707070;  /* oklch(0.545 0 0) */
   --accent: #f5f5f5;            /* oklch(0.97 0 0)  */
   --primary: #171717;           /* oklch(0.205 0 0) */
+  --primary-hover: #0a0a0a;     /* oklch(0.145 0 0) */
   --primary-foreground: #fafafa;/* oklch(0.985 0 0) */
   --border: #e5e5e5;            /* oklch(0.922 0 0) */
   --input: #e5e5e5;             /* oklch(0.922 0 0) */
@@ -72,6 +73,7 @@
   --muted-foreground: #a1a1a1;  /* oklch(0.708 0 0) */
   --accent: #262626;            /* oklch(0.269 0 0) */
   --primary: #e5e5e5;           /* oklch(0.922 0 0) */
+  --primary-hover: #d4d4d4;     /* oklch(0.85 0 0)  */
   --primary-foreground: #171717;
   --border: rgb(255 255 255 / .10);  /* oklch(1 0 0 / 10%) */
   --input: rgb(255 255 255 / .15);   /* oklch(1 0 0 / 15%) */
@@ -315,8 +317,12 @@ code, .mono, .num { font-family: var(--font-mono); }
 .grid--4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-/* Button: default h-9 px-4 gap-2 rounded-md text-sm font-medium;
-   sm h-8 px-3; lg h-10 px-6 (primitives/button.tsx). */
+/* Button variants, from primitives/button.tsx. The default is a FILLED near-black
+   button (bg-primary), not a white one — white-with-a-border is `outline`. The
+   backend leans on the quiet variants (36 ghost, 15 outline, 7 muted across
+   @open-mercato/ui/src/backend) and keeps the filled one for the single primary
+   action on a screen, which is the restraint this mock copies.
+   Sizes: default h-9 px-4 gap-2 rounded-md text-sm; sm h-8 px-3; lg h-10 px-6. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 36px; padding: 0 16px; border-radius: var(--radius-md);
@@ -324,12 +330,18 @@ code, .mono, .num { font-family: var(--font-mono); }
   font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; text-decoration: none;
   white-space: nowrap; transition: all .15s;
 }
-.btn:hover { opacity: .9; }
+/* The platform darkens on hover (hover:bg-primary-hover) rather than fading. */
+.btn:hover { background: var(--primary-hover); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn--outline { background: var(--background); color: var(--foreground); border-color: var(--border); box-shadow: var(--shadow-xs); }
-.btn--outline:hover { background: var(--accent); opacity: 1; }
-.btn--ghost { background: transparent; color: var(--muted-foreground); border-color: transparent; }
-.btn--ghost:hover { background: var(--accent); color: var(--foreground); opacity: 1; }
+.btn--outline:hover { background: var(--accent); }
+.btn--ghost { background: transparent; color: var(--foreground); border-color: transparent; box-shadow: none; }
+.btn--ghost:hover { background: var(--accent); color: var(--foreground); }
+/* `muted` is the one that greys the label — chrome that should not compete. */
+.btn--muted { background: transparent; color: var(--muted-foreground); border-color: transparent; box-shadow: none; }
+.btn--muted:hover { background: var(--accent); color: var(--foreground); }
+.btn--secondary { background: var(--muted); color: var(--foreground); border-color: transparent; box-shadow: var(--shadow-xs); }
+.btn--secondary:hover { background: var(--accent); }
 .btn--sm { height: 32px; padding: 0 12px; gap: 6px; }
 .btn--block { width: 100%; }
 .btn--tall { height: 40px; padding: 0 24px; }
