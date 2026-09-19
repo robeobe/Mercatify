@@ -19,4 +19,24 @@ describe('agents/migration_planner.json', () => {
       'source',
     ])
   })
+
+  it('enforces strict-mode schema compliance for result shape', () => {
+    const agent = getAgent('migration_planner')
+    const schema = agent.resultSchema as any
+
+    // Root schema strict-mode checks
+    expect(schema.additionalProperties).toBe(false)
+    expect(schema.required.sort()).toEqual(['items', 'summary'])
+
+    // Item schema strict-mode checks
+    const itemSchema = schema.properties.items.items
+    expect(itemSchema.additionalProperties).toBe(false)
+    expect(itemSchema.required.sort()).toEqual([
+      'capability',
+      'estimatedHours',
+      'rationale',
+      'sequence',
+      'source',
+    ])
+  })
 })
