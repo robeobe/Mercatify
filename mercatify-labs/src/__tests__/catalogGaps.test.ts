@@ -38,7 +38,7 @@ describe('findCatalogGaps', () => {
     expect(findCatalogGaps([])).toEqual([])
   })
 
-  it('picks up the real gap mapCapabilities produces for an unknown tool', () => {
+  it('S10: picks up the real gap mapCapabilities produces for an unknown tool', () => {
     const mappings = mapCapabilities(
       [{ id: 'p1', name: 'Notion', category: 'docs', monthlyCost: 100 }],
       [{ id: 'c1', saasProductId: 'p1', capability: 'knowledge_base', importance: 'core' }],
