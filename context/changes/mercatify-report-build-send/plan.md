@@ -663,23 +663,23 @@ applied** by this change.
 
 #### Automated
 
-- [x] 2.1 Discovery regenerates cleanly: `yarn generate`
-- [x] 2.2 Types compile: `yarn typecheck`
-- [x] 2.3 Lint passes: `yarn lint`
-- [x] 2.4 Module tests pass: `yarn test src/modules/mercatify`
+- [x] 2.1 Discovery regenerates cleanly: `yarn generate` — 2cf4bf9
+- [x] 2.2 Types compile: `yarn typecheck` — 2cf4bf9
+- [x] 2.3 Lint passes: `yarn lint` — 2cf4bf9
+- [x] 2.4 Module tests pass: `yarn test src/modules/mercatify` — 2cf4bf9
 
 #### Manual
 
-- [x] 2.5 New features appear in the role editor under the Mercatify module
+- [x] 2.5 New features appear in the role editor under the Mercatify module — 2cf4bf9
 
 ### Phase 3: API routes
 
 #### Automated
 
-- [ ] 3.1 Discovery regenerates cleanly: `yarn generate`
-- [ ] 3.2 Types compile: `yarn typecheck`
-- [ ] 3.3 Lint passes: `yarn lint`
-- [ ] 3.4 Full unit suite passes: `yarn test`
+- [x] 3.1 Discovery regenerates cleanly: `yarn generate`
+- [x] 3.2 Types compile: `yarn typecheck`
+- [x] 3.3 Lint passes: `yarn lint`
+- [x] 3.4 Full unit suite passes: `yarn test`
 
 #### Manual
 
