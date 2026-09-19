@@ -683,8 +683,8 @@ applied** by this change.
 
 #### Manual
 
-- [x] 3.5 GET returns the model for a confirmed case and 403s for a client-role session
-- [x] 3.6 POST send moves the case to `sent` exactly once
+- [x] 3.5 GET returns the model for a confirmed case and 403s for a client-role session — 086f83e
+- [x] 3.6 POST send moves the case to `sent` exactly once — 086f83e
 
 ### Phase 4: The report screen
 
@@ -700,8 +700,8 @@ applied** by this change.
 
 #### Manual
 
-- [x] 4.8 Every section from issue #20's acceptance criteria renders on a confirmed case
-- [x] 4.9 Compose edits update the preview live and persist across a reload
-- [x] 4.10 Send moves the case to `sent`, and nothing else can produce that status
-- [x] 4.11 An unconfirmed case shows the "finish the mapping first" state
-- [x] 4.12 Keyboard-only pass; the cash curve is announced by its label
+- [x] 4.8 Every section from issue #20's acceptance criteria renders on a confirmed case — 086f83e
+- [x] 4.9 Compose edits update the preview live and persist across a reload — 086f83e
+- [x] 4.10 Send moves the case to `sent`, and nothing else can produce that status — 086f83e
+- [x] 4.11 An unconfirmed case shows the "finish the mapping first" state — 086f83e
+- [x] 4.12 Keyboard-only pass; the cash curve is announced by its label — 086f83e

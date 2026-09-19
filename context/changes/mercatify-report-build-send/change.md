@@ -1,7 +1,7 @@
 ---
 change_id: mercatify-report-build-send
 title: Admin builds and sends the client-facing report from a confirmed mapping
-status: planned
+status: implemented
 created: 2026-09-19
 updated: 2026-09-19
 archived_at: null
