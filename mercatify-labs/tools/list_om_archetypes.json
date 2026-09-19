@@ -1,0 +1,21 @@
+{
+  "name": "list_om_archetypes",
+  "kind": "pure",
+  "backedBy": "src/om/platform.ts",
+  "description": "List the curated Open Mercato backend screen archetypes with their required states and anatomy notes. This is the only source of Open Mercato facts an agent may use.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "archetypes": { "type": "array", "items": { "type": "object" } },
+      "requiredInventoryStates": { "type": "array", "items": { "type": "string" } },
+      "tokenRules": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["archetypes", "requiredInventoryStates", "tokenRules"]
+  }
+}

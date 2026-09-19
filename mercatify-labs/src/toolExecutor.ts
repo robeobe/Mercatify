@@ -2,6 +2,7 @@ import { mapCapabilities } from './mapCapabilities'
 import { computeScenario } from './computeScenario'
 import { getCatalogTool } from './catalog'
 import { firecrawlSearch } from './webSearch'
+import { listArchetypes, REQUIRED_INVENTORY_STATES, TOKEN_RULES } from './om/platform'
 import type { ToolExecutor } from './llmClient'
 import type { CapabilityImportance } from './types'
 
@@ -71,6 +72,12 @@ export const localToolExecutor: ToolExecutor = async (toolName, args) => {
         found: false,
         error:
           'get_case_data is host-only and not implemented by the standalone Orchestrator — pass data inline instead of a caseId.',
+      }
+    case 'list_om_archetypes':
+      return {
+        archetypes: listArchetypes(),
+        requiredInventoryStates: REQUIRED_INVENTORY_STATES,
+        tokenRules: TOKEN_RULES,
       }
     default:
       throw new Error(`[mercatify-labs] No local executor for tool "${toolName}"`)

@@ -1,0 +1,79 @@
+{
+  "id": "om_prototyper",
+  "label": "OM Prototyper",
+  "role": "Open Mercato backend analyst",
+  "description": "Turns a ConsolidationResult into the input the om-mockup-prototype skill requires: journey-oriented epics, role-goal-outcome user stories with acceptance criteria, and a screen inventory bound to Open Mercato backend archetypes. It does not build the prototype - the skill does that in the Open Mercato checkout.",
+  "resultKind": "research",
+  "tools": ["list_om_archetypes"],
+  "instructions": "You prepare the requirements that the `om-mockup-prototype` skill consumes. Input has `company`, `blueprint`, `mappings` and `businessProcess`. FIRST call `list_om_archetypes` and use ONLY the archetypes, required states and token rules it returns - you have no other knowledge of Open Mercato and must not describe its screens from memory. Produce three things. (1) `epics`: journey-oriented, named after what a person is trying to get done, never an entity list - 'Take a lead to a signed quote', not 'Leads CRUD'. (2) `stories`: for each epic, role-goal-outcome statements with stable ids like US-A1, each carrying `acceptanceCriteria` that cover the empty, permission, error, optimistic, undo, keyboard and default-value states. (3) `screens`: an inventory where every screen names one `archetype` from the tool's list, cites at least one `storyIds` entry and at least one `sectionRefs` entry pointing at the blueprint or a mapping it comes from, and declares `states` drawn from that archetype's required states. The inventory must include the first-run, empty, no-access and no-results states, plus every role and permission variant the stories imply; a drawer and a dialog are each their own screen, not a variant of a list. Every sample value you write is fictional - never a real tenant, customer, credential or production identifier. You decide nothing about business policy: where the input leaves a question open, put it in `openQuestions` with the decision that is missing, rather than inventing an answer. You write no HTML, no CSS and no token values.",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "epics": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "title": { "type": "string", "minLength": 1 },
+            "outcome": { "type": "string", "minLength": 1 }
+          },
+          "required": ["id", "title", "outcome"],
+          "additionalProperties": false
+        }
+      },
+      "stories": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "epicId": { "type": "string", "minLength": 1 },
+            "role": { "type": "string", "minLength": 1 },
+            "goal": { "type": "string", "minLength": 1 },
+            "outcome": { "type": "string", "minLength": 1 },
+            "acceptanceCriteria": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["id", "epicId", "role", "goal", "outcome", "acceptanceCriteria"],
+          "additionalProperties": false
+        }
+      },
+      "screens": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "name": { "type": "string", "minLength": 1 },
+            "task": { "type": "string", "minLength": 1 },
+            "archetype": {
+              "type": "string",
+              "enum": ["data-table", "crud-form", "kanban", "detail-drawer"]
+            },
+            "states": { "type": "array", "items": { "type": "string" } },
+            "storyIds": { "type": "array", "items": { "type": "string" } },
+            "sectionRefs": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["id", "name", "task", "archetype", "states", "storyIds", "sectionRefs"],
+          "additionalProperties": false
+        }
+      },
+      "openQuestions": { "type": "array", "items": { "type": "string" } },
+      "summary": { "type": "string", "minLength": 1 }
+    },
+    "required": ["epics", "stories", "screens", "openQuestions", "summary"],
+    "additionalProperties": false
+  },
+  "sampleInput": {
+    "company": { "name": "Voltix", "industry": "solar installation", "employees": 45, "currency": "EUR" },
+    "blueprint": {
+      "entities": ["Lead", "Customer", "Deal", "Quote"],
+      "workflows": ["lead to quote"],
+      "modules": ["CRM", "Sales Quotes"],
+      "customScreens": ["Site survey planner"],
+      "integrations": ["Slack"]
+    },
+    "mappings": [],
+    "businessProcess": { "name": "lead to quote", "steps": ["Lead", "Site survey", "Quote", "Approval"] }
+  }
+}
