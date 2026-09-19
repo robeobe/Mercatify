@@ -10,8 +10,10 @@
   "mercatify.cases.table.column.title": "Tytuł",
   "mercatify.cases.table.column.updatedAt": "Zaktualizowano",
   "mercatify.cases.table.empty": "Brak przypadków wywiadu.",
+  "mercatify.cases.table.emptyDescription": "Przypadki pojawią się tutaj po utworzeniu wywiadu.",
   "mercatify.cases.table.error.forbidden": "Nie masz uprawnień do przeglądania przypadków wywiadu.",
   "mercatify.cases.table.error.generic": "Nie udało się wczytać przypadków wywiadu. Spróbuj ponownie.",
   "mercatify.cases.table.loading": "Wczytywanie przypadków wywiadu...",
+  "mercatify.cases.table.title": "Przypadki wywiadu",
   "mercatify.nav.group": "Mercatify"
 }

@@ -10,8 +10,10 @@
   "mercatify.cases.table.column.title": "Title",
   "mercatify.cases.table.column.updatedAt": "Updated",
   "mercatify.cases.table.empty": "No interview cases yet.",
+  "mercatify.cases.table.emptyDescription": "Cases appear here once an interview run is created.",
   "mercatify.cases.table.error.forbidden": "You do not have permission to view interview cases.",
   "mercatify.cases.table.error.generic": "Unable to load interview cases. Please try again.",
   "mercatify.cases.table.loading": "Loading interview cases...",
+  "mercatify.cases.table.title": "Interview cases",
   "mercatify.nav.group": "Mercatify"
 }

@@ -10,8 +10,10 @@
   "mercatify.cases.table.column.title": "Título",
   "mercatify.cases.table.column.updatedAt": "Actualizado",
   "mercatify.cases.table.empty": "Todavía no hay casos de entrevista.",
+  "mercatify.cases.table.emptyDescription": "Los casos aparecen aquí cuando se crea una entrevista.",
   "mercatify.cases.table.error.forbidden": "No tiene permiso para ver los casos de entrevista.",
   "mercatify.cases.table.error.generic": "No se pudieron cargar los casos de entrevista. Inténtelo de nuevo.",
   "mercatify.cases.table.loading": "Cargando casos de entrevista...",
+  "mercatify.cases.table.title": "Casos de entrevista",
   "mercatify.nav.group": "Mercatify"
 }

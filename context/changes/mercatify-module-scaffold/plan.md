@@ -405,11 +405,11 @@ No existing data is moved or transformed — the module introduces one new table
 ### Phase 3: Commands and the CRUD API contract
 
 #### Automated
-- [x] 3.1 `yarn generate` completes and the generated route metadata lists `/api/mercatify/cases`
-- [x] 3.2 `yarn typecheck` passes
-- [x] 3.3 `yarn lint` passes
-- [x] 3.4 `yarn test` passes and reports the new command tests actually ran
-- [x] 3.5 The route file contains no flat `create:`/`update:`/`del:` factory keys and no top-level `requireAuth`
+- [x] 3.1 `yarn generate` completes and the generated route metadata lists `/api/mercatify/cases` — ec1d8f2
+- [x] 3.2 `yarn typecheck` passes — ec1d8f2
+- [x] 3.3 `yarn lint` passes — ec1d8f2
+- [x] 3.4 `yarn test` passes and reports the new command tests actually ran — ec1d8f2
+- [x] 3.5 The route file contains no flat `create:`/`update:`/`del:` factory keys and no top-level `requireAuth` — ec1d8f2
 
 #### Manual
 - [ ] 3.6 The OpenAPI document includes the four `/api/mercatify/cases` methods with their feature gates
@@ -418,15 +418,15 @@ No existing data is moved or transformed — the module introduces one new table
 ### Phase 4: Backend page and the seeded demo case
 
 #### Automated
-- [ ] 4.1 `yarn generate` completes and the generated backend-route manifest lists `/backend/cases`
-- [ ] 4.2 `yarn typecheck` passes
-- [ ] 4.3 `yarn lint` passes
-- [ ] 4.4 `yarn ds:check` passes
+- [x] 4.1 `yarn generate` completes and the generated backend-route manifest lists `/backend/cases`
+- [x] 4.2 `yarn typecheck` passes
+- [x] 4.3 `yarn lint` passes
+- [x] 4.4 `yarn ds:check` passes
 - [ ] 4.5 `yarn test` passes
 - [ ] 4.6 `yarn build` completes
-- [ ] 4.7 `yarn i18n:check-hardcoded` reports no hard-coded strings in the module
-- [ ] 4.8 `node scripts/check-lessons.mjs` passes
-- [ ] 4.9 `git status` shows changes only under `src/modules/mercatify/`, `src/modules.ts`, and `.ai/lessons*`
+- [x] 4.7 `yarn i18n:check-hardcoded` reports no hard-coded strings in the module
+- [x] 4.8 `node scripts/check-lessons.mjs` passes
+- [x] 4.9 `git status` shows changes only under `src/modules/mercatify/`, `src/modules.ts`, and `.ai/lessons*`
 
 #### Manual
 - [ ] 4.10 A user holding `mercatify.cases.view` opens `/backend/cases` and sees the nav entry and the seeded case
