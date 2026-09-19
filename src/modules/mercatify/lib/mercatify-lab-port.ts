@@ -41,6 +41,8 @@ export const MercatifyEvaluationResultSchema = z.discriminatedUnion('status', [
 
 export type MercatifyEvaluationRequest = z.infer<typeof MercatifyEvaluationRequestSchema>
 export type MercatifyEvaluationResult = z.infer<typeof MercatifyEvaluationResultSchema>
+export type MercatifyMappingRow = z.infer<typeof MercatifyMappingRowSchema>
+export type MercatifyMappingTarget = z.infer<typeof MercatifyMappingTargetSchema>
 
 export interface MercatifyLabPort {
   evaluate(request: MercatifyEvaluationRequest): Promise<MercatifyEvaluationResult>

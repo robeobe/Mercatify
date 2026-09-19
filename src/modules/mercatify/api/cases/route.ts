@@ -27,9 +27,10 @@ type BaseFields = {
   organization_id: string | null
   created_at: Date
   updated_at: Date | string | null
+  mapping_confirmed_at: Date | string | null
 }
 
-const baseListFields = ['id', 'title', 'status', 'tenant_id', 'organization_id', 'created_at', 'updated_at']
+const baseListFields = ['id', 'title', 'status', 'tenant_id', 'organization_id', 'created_at', 'updated_at', 'mapping_confirmed_at']
 
 const sortFieldMap: Record<string, string> = {
   id: 'id',
@@ -84,6 +85,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       tenant_id: item.tenant_id ?? null,
       organization_id: item.organization_id ?? null,
       updatedAt: toIsoTimestamp(item.updated_at),
+      mappingConfirmedAt: toIsoTimestamp(item.mapping_confirmed_at),
     }),
   },
   actions: {
