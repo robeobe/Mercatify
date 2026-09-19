@@ -1,7 +1,7 @@
 ---
 change_id: mercatify-mapping-summary
 title: Show the analysis-filled mapping table with flagged unmapped items
-status: new
+status: implemented
 created: 2026-09-19
 updated: 2026-09-19
 archived_at: null

@@ -89,6 +89,7 @@ Everything below is **new** except FR-014, which is **preserved** (a defensive r
 ### Intake
 - [new] FR-001: Client can open Mercatify in the OM admin of their tenant and see the interview starting point: the company profile and the set of SaaS tools in use with their monthly costs. Priority: must-have
   > Socratic: Counter-arguments offered: "costs up front scare a trial client — ask at the end"; "company profile is a redundant screen"; "a ready dataset masks that the product cannot start from scratch." Resolution: no counter-argument accepted; stands as written.
+  > **Amended 2026-09-19** (decision owner: user; change id `mercatify-intake-start`): the mockup is the source of truth for this slice. The client **builds and sends** the starting point — a searchable tool/module picker with duplicate-capability detection, optional off-catalog tools, a company profile, draft save, and a one-way Send that locks the case — rather than only viewing a read-only seeded stack.
 
 ### Wizard (interview loop)
 - [new] FR-002: Client can answer discovery questions step by step (wizard) by clicking chips. Priority: must-have
@@ -153,6 +154,7 @@ No access control changes — current model preserved.
 - **Current model:** existing OM sessions; feature-based access control (per-role and per-user feature flags); strict tenant/organization scoping on every entity and API.
 - **How the persona reaches Mercatify:** as a logged-in OM admin user of their (trial) tenant. The module gates its pages and APIs with its own feature flags, per the existing convention — no new access mechanism, no access without an OM account.
 - **Roles inside the module:** flat. Anyone holding the Mercatify feature in their tenant can run the interview, see and edit the summary, and hand off to Lab. Explicitly not chosen: a split between "fills the interview" and "sees the savings"; a dedicated role that maintains the SaaS→OM-module map in the UI.
+  > **Amended 2026-09-19** (decision owner: user; change id `mercatify-intake-start`): the "flat roles" stance above is struck for the interview vs mapping/report split. The `employee` role fills and sends the interview (granted `mercatify.cases.view` + `mercatify.cases.manage`). A separate `admin` role owns the mapping/report/savings flow (S-03+). A dedicated catalog-maintenance role in the UI remains out of scope.
 
 ## Non-Goals
 
@@ -165,6 +167,7 @@ Derived from decisions the user made in the shaping session:
 - **No time-limit target** — the spec's "< 5 minutes" was dropped; the Primary criterion is "runs with no manual fixing".
 - **No live analysis on the demo path** — the demo runs on scripted questions and analysis; live analysis is the first stretch (Secondary).
 - **No free-form entry of the client's own SaaS stack in the MVP** — the demo starts from a ready dataset (offered as a counter-argument to FR-001; user kept FR-001 as written).
+  > **Superseded 2026-09-19** (change id `mercatify-intake-start`): clients pick from the static catalog **and** may add off-catalog custom tools. The original non-goal is kept for history; it no longer constrains S-01.
 - **No hardcoded example company or industry-specific steps** baked into the module — Mercatify is a general solution.
 
 ## Open Questions
@@ -176,7 +179,7 @@ Derived from decisions the user made in the shaping session:
 5. **Who maintains the SaaS-capability → OM-module map** (from the seed) — narrowed: not a separate role in v1, no editor in the UI. Owner: team.
 6. **Interview depth** (from the seed) — partly shaped as a wizard loop bounded to a few questions; how deep the questions go per tool is open. Owner: team.
 7. **Question cap in the wizard loop (FR-003)** — user said "a few"; exact number to be fixed in planning. Owner: team.
-8. **Table ↔ `.md` file** — does editing the table regenerate the `.md`, or are they independent artifacts (with the `.md` as the only handoff document)? Owner: team.
+8. ~~**Table ↔ `.md` file**~~ — **Resolved 2026-09-19** (user decision): the two are independent artifacts. Editing the mapping table never regenerates or touches the `.md`; the `.md` is the only document that travels to Mercatify Lab. No serializer, no cross-artifact conflict story needed.
 9. **Non-functional requirements not captured** — response-time expectations for the wizard and the analysis round-trip, handling of free-text answers and pasted `.md` content (sensitive data), browser support, retention. Consequence: the PRD has no measurable quality targets beyond the two guardrails. Owner: team.
 10. **Product framing not captured** — `target_scale` (how many tenants / trialing clients), `hard_deadline` (HackOn 2026 date), `after_hours_only`. Consequence: frontmatter carries TODO placeholders. Owner: user.
 11. **Socratic round for FR-004…FR-015** — ended by the user after FR-003; those FRs stand as drafted without a recorded counter-argument. Owner: user (optional).
