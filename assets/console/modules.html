@@ -132,6 +132,8 @@
               <th>Paid for in</th>
               <th>Lands in</th>
               <th>Verdict</th>
+              <th>Confidence</th>
+              <th class="num">Hours</th>
               <th>Note for the report</th>
               <th></th>
             </tr>
@@ -193,7 +195,12 @@
     var locked = !mappingOpen(current);
     Array.prototype.forEach.call(
       document.querySelectorAll('#caprows select, #caprows input, #caprows button'),
-      function (el) { el.disabled = locked; }
+      function (el) {
+        /* Some controls are off for their own reason — hours on a row nobody
+           would build, Reset on a row nobody edited. Unlocking the mapping must
+           not switch those back on. */
+        el.disabled = locked || el.hasAttribute('data-off');
+      }
     );
     document.getElementById('edit-hint').hidden = locked;
     document.getElementById('locked-hint').hidden = !locked;
@@ -350,6 +357,17 @@
     return sel;
   }
 
+  /* How sure the verdict is. It prints in the report, and anything low shows up
+     in "what we are not sure about" rather than being smoothed over. */
+  function confidenceOptions(selected) {
+    var sel = node('select', { class: 'cap-conf' });
+    CONFIDENCE_BANDS.forEach(function (k) {
+      sel.appendChild(node('option', { value: k, text: k }));
+    });
+    sel.value = selected;
+    return sel;
+  }
+
   /* An edit writes straight through to the stored override and re-renders the
      whole screen: the module view, the counters and the report all read the
      same numbers, so they cannot disagree with the row you just changed. */
@@ -375,18 +393,48 @@
 
       var modSel = moduleOptions(c.module);
       modSel.addEventListener('change', function () {
-        editRow(req, c.cap, { module: modSel.value, status: c.status });
+        editRow(req, c.cap, { module: modSel.value, status: c.status,
+                              note: c.note, conf: c.conf, hours: c.hours });
       });
       var verSel = verdictOptions(c.status);
       verSel.addEventListener('change', function () {
-        editRow(req, c.cap, { module: c.module, status: verSel.value });
+        /* Changing the verdict changes what confidence is plausible, so the
+           band follows unless it was set by hand on this row. */
+        editRow(req, c.cap, { module: c.module, status: verSel.value, note: c.note,
+                              hours: c.hours,
+                              conf: DEFAULT_CONFIDENCE[verSel.value] });
       });
+      var confSel = confidenceOptions(c.conf);
+      confSel.addEventListener('change', function () {
+        editRow(req, c.cap, { module: c.module, status: c.status, note: c.note,
+                              hours: c.hours, conf: confSel.value });
+      });
+
+      /* Hours only mean anything for something we would build; for the rest the
+         field is off, so nobody estimates work that is not there. */
+      var hoursInput = node('input', {
+        type: 'number', min: '0', step: '1', placeholder: 'h',
+        class: 'cap-hours', style: 'width:78px;text-align:right'
+      });
+      hoursInput.value = c.hours === null ? '' : c.hours;
+      if (c.status !== 'build') {
+        hoursInput.disabled = true;
+        hoursInput.setAttribute('data-off', '1');
+      }
+      hoursInput.addEventListener('change', function () {
+        setCapOverride(req, c.cap, { module: c.module, status: c.status, note: c.note,
+                                     conf: c.conf, hours: hoursInput.value });
+        renderCaps(req); setLock(); setMapState('Saved.');
+        setTimeout(function () { setMapState(); }, 1400);
+      });
+
       var noteInput = node('input', { type: 'text', placeholder: 'why, in one line' });
       noteInput.value = c.note || '';
       /* Notes save on blur rather than per keystroke — a re-render on every
          letter would steal focus from the field being typed into. */
       noteInput.addEventListener('change', function () {
-        setCapOverride(req, c.cap, { module: c.module, status: c.status, note: noteInput.value });
+        setCapOverride(req, c.cap, { module: c.module, status: c.status, note: noteInput.value,
+                                     conf: c.conf, hours: c.hours });
         renderCaps(req);
         setLock();
         setMapState('Saved.');
@@ -398,7 +446,7 @@
         title: 'Drop the manual edit and go back to what the agent proposed',
         onclick: function () { editRow(req, c.cap, null); }
       });
-      if (!c.edited) { reset.disabled = true; }
+      if (!c.edited) { reset.disabled = true; reset.setAttribute('data-off', '1'); }
 
       body.appendChild(node('tr', { class: c.edited ? 'edited' : '', 'data-cap': c.cap }, [
         node('td', {}, [
@@ -420,6 +468,13 @@
           c.edited
             ? node('span', { class: 'sub' }, [node('span', { class: 'badge badge--outline', text: 'edited by hand' })])
             : node('span', { class: 'sub', text: 'from the agent' })
+        ]),
+        node('td', {}, [confSel]),
+        node('td', { class: 'num' }, [
+          hoursInput,
+          c.status === 'build'
+            ? node('span', { class: 'sub', text: c.hours === null ? 'not estimated' : '' })
+            : node('span', { class: 'sub', text: 'n/a' })
         ]),
         node('td', {}, [noteInput]),
         node('td', {}, [reset])

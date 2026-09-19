@@ -34,12 +34,12 @@
 
   <div class="card" id="map-ready" hidden style="margin-bottom:16px">
     <div class="card__head">
-      <h2 id="ready-title">Your map is ready</h2>
+      <h2 id="ready-title">Your report is ready</h2>
       <span class="badge badge--info" id="ready-badge"></span>
     </div>
     <p id="ready-body" class="muted"></p>
     <div class="row" style="margin-top:14px">
-      <a class="btn" id="ready-cta">Read your map</a>
+      <a class="btn" id="ready-cta">Read the report</a>
     </div>
   </div>
 
@@ -162,14 +162,14 @@
     badge.className = statusBadge(req);
     document.getElementById('ready-cta').href = 'offer.html?ref=' + encodeURIComponent(req.ref);
     if (req.clientResponse) {
-      document.getElementById('ready-title').textContent = 'Your map';
+      document.getElementById('ready-title').textContent = 'Your report';
       document.getElementById('ready-body').textContent = req.clientResponse.kind === 'accepted'
         ? 'You accepted it on ' + req.clientResponse.at + '. It stays here for you to re-read.'
         : 'You asked for a call on ' + req.clientResponse.at + '. Sales will be in touch.';
       document.getElementById('ready-cta').textContent = 'Read it again';
     } else {
       document.getElementById('ready-body').textContent =
-        'A consultant has been through your stack and sent the map back on ' + req.sentAt +
+        'A consultant has been through your stack and sent the report back on ' + req.sentAt +
         '. Read it, then accept it or ask for a call — whichever suits.';
     }
   }

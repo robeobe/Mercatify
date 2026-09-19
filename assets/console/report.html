@@ -59,6 +59,33 @@
           placeholder="Where you would start, what you would not touch yet, anything the numbers do not show."></textarea>
         <p class="field__hint">Appears at the end of the report, under your name.</p>
       </div>
+      <div class="grid grid--3">
+        <div>
+          <label for="f-analyst">Reviewed by</label>
+          <input type="text" id="f-analyst" placeholder="Joanna">
+          <p class="field__hint">Printed on the report.</p>
+        </div>
+        <div>
+          <label for="f-rate">Hourly rate</label>
+          <input type="number" id="f-rate" min="0" step="1" placeholder="90">
+          <p class="field__hint">Turns the build hours into a number. Leave blank for hours only.</p>
+        </div>
+        <div>
+          <label for="f-hosting">Hosting &amp; ops, monthly</label>
+          <input type="number" id="f-hosting" min="0" step="1" placeholder="240">
+          <p class="field__hint">Counted against the saving, so it is not overstated.</p>
+        </div>
+        <div>
+          <label for="f-months">Implementation months</label>
+          <input type="number" id="f-months" min="1" max="24" step="1" placeholder="3">
+          <p class="field__hint">How long before the old licences start dropping off. Shapes the cash curve.</p>
+        </div>
+      </div>
+      <div>
+        <label for="f-open">Open questions, one per line</label>
+        <textarea id="f-open" placeholder="Their e-signature contract runs to March — worth checking the notice period."></textarea>
+        <p class="field__hint">Printed under <em>What we are not sure about</em>, above the low-confidence rows.</p>
+      </div>
       <div class="row">
         <span class="small muted" id="edit-count">—</span>
       </div>
@@ -75,10 +102,10 @@
       <span class="preview__dot" aria-hidden="true"></span>
       <span class="preview__dot" aria-hidden="true"></span>
       <span class="preview__dot" aria-hidden="true"></span>
-      <span id="preview-url">client portal · your stack map</span>
+      <span id="preview-url">client portal · your consolidation report</span>
     </div>
     <div class="preview__body">
-      <h1 id="p-title">Your stack map</h1>
+      <h1 id="p-title">Your consolidation report</h1>
       <p class="muted" id="p-sub" style="margin-top:4px"></p>
       <div id="p-offer"></div>
     </div>
@@ -134,8 +161,19 @@
 
   var headlineEl = document.getElementById('f-headline');
   var notesEl = document.getElementById('f-notes');
+  var analystEl = document.getElementById('f-analyst');
+  var rateEl = document.getElementById('f-rate');
+  var hostingEl = document.getElementById('f-hosting');
+  var monthsEl = document.getElementById('f-months');
+  var openEl = document.getElementById('f-open');
+  var prevA = (req.report && req.report.assumptions) || {};
   headlineEl.value = (req.report && req.report.headline) || '';
   notesEl.value = (req.report && req.report.notes) || '';
+  analystEl.value = prevA.analyst || '';
+  rateEl.value = prevA.rate || '';
+  hostingEl.value = prevA.hosting || '';
+  monthsEl.value = prevA.months || '';
+  openEl.value = prevA.notes || '';
 
   document.getElementById('to-mapping').href = 'modules.html?ref=' + encodeURIComponent(req.ref);
   document.getElementById('c-company').textContent = req.company;
@@ -149,7 +187,14 @@
     return {
       headline: headlineEl.value.trim(),
       notes: notesEl.value.trim(),
-      generatedAt: (req.report && req.report.generatedAt) || today()
+      generatedAt: (req.report && req.report.generatedAt) || today(),
+      assumptions: {
+        analyst: analystEl.value.trim(),
+        rate: rateEl.value,
+        hosting: hostingEl.value,
+        months: monthsEl.value,
+        notes: openEl.value.trim()
+      }
     };
   }
 
@@ -159,7 +204,7 @@
 
     document.getElementById('c-status').textContent = statusLabel(req);
     document.getElementById('c-status').className = statusBadge(req);
-    document.getElementById('p-title').textContent = 'Your stack map';
+    document.getElementById('p-title').textContent = 'Your consolidation report';
     document.getElementById('p-sub').textContent =
       req.company + ' · ' + offer.caps.length + ' jobs across ' + (req.tools || []).length +
       ' tools · prepared ' + offer.generatedAt;
@@ -186,8 +231,9 @@
     }
   }
 
-  headlineEl.addEventListener('input', render);
-  notesEl.addEventListener('input', render);
+  [headlineEl, notesEl, analystEl, rateEl, hostingEl, monthsEl, openEl].forEach(function (el) {
+    el.addEventListener('input', render);
+  });
 
   document.getElementById('save').addEventListener('click', function () {
     patchRequest(req.ref, { report: draft(), status: req.status === 'new' ? 'mapping' : req.status });

@@ -71,13 +71,29 @@ is sent on purpose.
 4. **Send** → status **report sent**, and only now can the client see anything.
 5. She sees it on her tile and on the request's track, reads it in `client/offer.html`, and either **accepts** or **asks for a call with Sales** → status **accepted** or **consult asked**, visible back in the queue.
 
-### The money in the report
+### The report
 
-A tool counts as a candidate to retire only when *every* job it carries lands
-natively or by configuration. Anything with a build, integrate or keep row still
-has a reason to exist, so counting its licence as saved would be a lie. On the
-seeded Voltix case that comes out as €1,510/mo from three fully-covered tools,
-with HubSpot staying because its marketing side is not ours to take.
+Modelled on `stack-tool/report.html`, which is where the shape of this document
+came from. It carries a computed headline, a summary paragraph, four KPIs, a
+verdict bar over every job in the stack, a tool-by-tool table with confidence
+bands, the duplicates, the build backlog with hours and cost, the arithmetic
+line by line with a basis for each, the client's own words, what we are not sure
+about, and the first piece worth cutting.
+
+**The cash curve** is the one picture: cumulative position against doing nothing,
+month by month. Money goes out while the work happens, the curve turns when the
+licences drop off, and it crosses zero the month the move has paid for itself.
+Three shapes, three different stories, and the caption says which one it is:
+nothing to pay back, pays back in month N, or does not pay back inside two years.
+Implementation length is a consultant's assumption on the report screen, not
+something the mock invents.
+
+**The money.** A tool counts as a candidate to retire only when *every* job it
+carries lands natively or by configuration. Anything with a build, integrate or
+keep row still has a reason to exist, so counting its licence as saved would be
+a lie; a tool that stays keeps costing what it costs, which is what *licences
+after* is made of. Hours are never guessed — a build row with no estimate prints
+as "to estimate" and the total says it is a floor, not a quote.
 
 ## Writing
 

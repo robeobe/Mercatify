@@ -39,6 +39,12 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 
+  /* Chart ink. The brand lime is a fill, not a line — it fails contrast as a
+     2px stroke on white — so the curve uses a darkened relative of it. */
+  --chart-line: #3f7d20;
+  --chart-grid: #e4e4e4;
+  --chart-shade: #f5f5f5;
+
   /* Figma disabled tokens, same values the platform uses */
   --bg-disabled: #f7f7f7;
   --text-disabled: #d1d1d1;
@@ -73,6 +79,10 @@
   --sidebar: #0a0a0a;
   --sidebar-border: rgb(255 255 255 / .10);
   --sidebar-accent: #262626;
+  --chart-line: #a3e635;
+  --chart-grid: rgb(255 255 255 / .08);
+  --chart-shade: rgb(255 255 255 / .04);
+
   --bg-disabled: #1a1a1a;
   --text-disabled: #4d4d4d;
   --border-disabled: rgb(255 255 255 / .07);
@@ -413,17 +423,73 @@ td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: t
 /* ─────────────── the offer ───────────────
    Shared by the console preview and the client's page, so the consultant sees
    exactly the document that gets sent. */
-.offer__lede { font-size: 1rem; color: var(--foreground); max-width: 70ch; }
-.offer__list { list-style: none; margin: 0; padding: 0; display: grid; }
-.offer__list li {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
-  padding: 10px 0; border-bottom: 1px solid var(--border);
+.offer__headline {
+  font-size: clamp(1.375rem, 3vw, 1.875rem); font-weight: 600;
+  letter-spacing: -0.028em; line-height: 1.15; text-wrap: balance; max-width: 24ch;
 }
-.offer__list li:first-child { padding-top: 0; }
-.offer__list li:last-child { padding-bottom: 0; border-bottom: 0; }
-.offer__name { font-weight: 500; font-size: 0.875rem; }
-.offer__list .sub { display: block; color: var(--muted-foreground); font-size: 0.75rem; margin-top: 2px; }
-.offer__notes { white-space: pre-wrap; }
+.offer__lede { font-size: 1rem; color: var(--muted-foreground); max-width: 68ch; margin-top: 12px; }
+.offer__meta {
+  display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px;
+  font-size: 0.75rem; color: var(--muted-foreground);
+}
+.offer__meta span:not(:last-child)::after { content: " ·"; }
+.offer__quote {
+  border-left: 2px solid var(--border); padding: 2px 0 2px 14px;
+  color: var(--muted-foreground); white-space: pre-wrap;
+}
+.offer__notes { white-space: pre-wrap; color: var(--muted-foreground); }
+.offer__unsure { margin: 0; padding-left: 18px; color: var(--muted-foreground); font-size: 0.875rem; }
+.offer__unsure li { margin-bottom: 4px; }
+.offer .section:first-of-type { margin-top: 32px; }
+.offer .tablewrap + p { margin-bottom: 4px; }
+.offer .lines .tot td { font-weight: 600; border-top: 1px solid var(--ring); }
+.stat--accent {
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+}
+.stat--accent .stat__k, .stat--accent .stat__s { color: var(--status-success-text); opacity: .8; }
+.stat--accent .stat__v { color: var(--status-success-text); }
+
+/* ─────────────── verdict bar ───────────────
+   Every job in the stack as one line, by verdict. It is the only picture in
+   the report, and it answers the first question a reader has: how much of this
+   is already ours? Colours are the brand's, so the bar reads as the product. */
+.vbar {
+  display: flex; height: 12px; border-radius: 999px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--muted);
+}
+.vbar__seg { display: block; min-width: 2px; }
+.vbar__seg--native    { background: var(--brand-lime); }
+.vbar__seg--configure { background: var(--brand-violet); }
+.vbar__seg--build     { background: var(--brand-yellow); }
+.vbar__seg--integrate { background: var(--ring); }
+.vbar__seg--keep      { background: var(--muted-foreground); opacity: .35; }
+.vlegend {
+  display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px;
+  font-size: 0.75rem; color: var(--muted-foreground);
+}
+.vlegend__item { display: inline-flex; align-items: center; gap: 6px; }
+.vlegend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+
+/* ─────────────── cash curve ───────────────
+   The one question a decision-maker actually has: when does this pay for
+   itself. Everything on it is computed from the table above it. */
+.figure {
+  margin-top: 18px; border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: 16px 18px 12px; background: var(--card);
+}
+.figure__title { font-size: 0.875rem; font-weight: 600; }
+.figure__sub { font-size: 0.75rem; color: var(--muted-foreground); margin-top: 2px; }
+.figure svg { display: block; width: 100%; height: auto; margin-top: 10px; overflow: visible; }
+.g-axis text { font-family: var(--font-mono); font-size: 10px; fill: var(--muted-foreground); }
+.g-grid line { stroke: var(--chart-grid); stroke-width: 1; }
+.g-zero { stroke: var(--ring); stroke-width: 1; stroke-dasharray: 4 3; }
+.g-line { fill: none; stroke: var(--chart-line); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.g-area { fill: var(--chart-line); opacity: .08; }
+.g-dot { fill: var(--chart-line); stroke: var(--card); stroke-width: 2; }
+.g-note { font-family: var(--font-mono); font-size: 10px; fill: var(--foreground); font-weight: 600; }
+.g-shade { fill: var(--chart-shade); }
+.g-shade-label { font-family: var(--font-mono); font-size: 10px; fill: var(--muted-foreground); }
 
 /* A sticky bar for the action that leaves the screen — send, accept, ask. */
 .actionbar {

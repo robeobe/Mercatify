@@ -15,7 +15,7 @@
     <div class="pagehead__text">
       <h1>Your requests</h1>
       <p>Everything you have sent us, and where each one got to. Open one to see what you
-         sent and to read the map when it comes back.</p>
+         sent and to read the report when it comes back.</p>
     </div>
     <div class="pagehead__actions">
       <a class="btn btn--outline" href="intake.html">Send another stack</a>
@@ -61,7 +61,7 @@
     /* The tile says the one thing the client came back for: is the ball with
        us or with them. The call to action changes with it. */
     var cta = ready
-      ? node('a', { class: 'btn btn--sm', href: 'offer.html?ref=' + encodeURIComponent(req.ref), text: 'Read your map' })
+      ? node('a', { class: 'btn btn--sm', href: 'offer.html?ref=' + encodeURIComponent(req.ref), text: 'Read the report' })
       : node('a', { class: 'btn btn--outline btn--sm', href: href, text: 'See what you sent' });
 
     /* A div, not an anchor: the tile carries its own call-to-action link and
@@ -78,7 +78,7 @@
           fmtMoney(requestMonthly(req), req.currency) + '/mo · sent ' + req.received })
       ]),
       node('div', { class: 'tile__meta', text: ready
-        ? 'Your map came back on ' + req.sentAt + '.'
+        ? 'Your report came back on ' + req.sentAt + '.'
         : (req.clientResponse
             ? (req.clientResponse.kind === 'accepted'
                 ? 'You accepted it on ' + req.clientResponse.at + '.'
