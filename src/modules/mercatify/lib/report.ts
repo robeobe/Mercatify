@@ -224,6 +224,11 @@ function normalizeCapability(capability: string): string {
   return capability.trim().toLowerCase()
 }
 
+/** Shared with `lib/savings.ts` so a row groups and saves under the same tool. */
+export function normalizeToolName(name: string): string {
+  return name.trim().toLowerCase()
+}
+
 function buildHeadline(authored: string | null, removed: number, total: number): ReportHeadline {
   const override = authored?.trim()
   if (override) return { kind: 'override', text: override }
@@ -267,11 +272,15 @@ function buildToolGroups(
 ): ReportToolGroup[] {
   const removed = new Set(removedSaaS)
   const groups: ReportToolGroup[] = []
+  // The analysis echoes the tool name back as free text, so "HubSpot" and
+  // "Hubspot" are the same subscription. Matched case- and space-insensitively,
+  // or every row falls into the unattributed bucket.
   const bySource = new Map<string, ReportMappingRowInput[]>()
   for (const row of rows) {
-    const list = bySource.get(row.source) ?? []
+    const key = normalizeToolName(row.source)
+    const list = bySource.get(key) ?? []
     list.push(row)
-    bySource.set(row.source, list)
+    bySource.set(key, list)
   }
 
   const toReportRow = (row: ReportMappingRowInput): ReportToolRow => ({
@@ -291,14 +300,14 @@ function buildToolGroups(
       toolName: tool.name,
       monthlyCost: tool.monthlyCost,
       switchedOff: removed.has(tool.name),
-      rows: (bySource.get(tool.name) ?? []).map(toReportRow),
+      rows: (bySource.get(normalizeToolName(tool.name)) ?? []).map(toReportRow),
     })
   }
 
   // FR-006's "flagged, never dropped" spirit: a capability whose `source`
   // names no tool in the stack still belongs in the document.
-  const stackNames = new Set(stack.map((tool) => tool.name))
-  const unattributed = rows.filter((row) => !stackNames.has(row.source))
+  const stackNames = new Set(stack.map((tool) => normalizeToolName(tool.name)))
+  const unattributed = rows.filter((row) => !stackNames.has(normalizeToolName(row.source)))
   if (unattributed.length > 0) {
     groups.push({
       toolName: null,

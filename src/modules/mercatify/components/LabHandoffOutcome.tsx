@@ -30,24 +30,27 @@ export default function LabHandoffOutcome({ status, document, at }: LabHandoffOu
   return (
     <Alert status={alertStatus} className="mb-6" data-testid="mercatify-lab-handoff-outcome">
       <AlertTitle>{t(`mercatify.labHandoff.${status}.title`)}</AlertTitle>
-      <AlertDescription>
-        <p>{t(`mercatify.labHandoff.${status}.body`)}</p>
-        {handedOverAt ? (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t('mercatify.labHandoff.at')} {handedOverAt}
-          </p>
-        ) : null}
-        {document ? (
-          <details className="mt-3" open={status !== 'delivered'}>
-            <summary className="cursor-pointer text-sm font-medium">
-              {t('mercatify.labHandoff.contentLabel')}
-            </summary>
-            <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-xs">
-              {document}
-            </pre>
-          </details>
-        ) : null}
-      </AlertDescription>
+      {/* AlertDescription renders a <p>, so the date and the document block
+          are siblings of it, not children — block elements inside <p> break
+          hydration. */}
+      <AlertDescription>{t(`mercatify.labHandoff.${status}.body`)}</AlertDescription>
+      {handedOverAt ? (
+        <div className="mt-1 text-xs text-muted-foreground">
+          {t('mercatify.labHandoff.at')} {handedOverAt}
+        </div>
+      ) : null}
+      {/* Open on every outcome: the document IS the result, including the
+          one the demo runs on. Nothing here is worth a second click. */}
+      {document ? (
+        <details className="mt-3" open>
+          <summary className="cursor-pointer text-sm font-medium">
+            {t('mercatify.labHandoff.contentLabel')}
+          </summary>
+          <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-xs">
+            {document}
+          </pre>
+        </details>
+      ) : null}
     </Alert>
   )
 }

@@ -7,8 +7,9 @@ export default function MercatifyMappingPage({ params }: { params?: { id?: strin
   return (
     <Page>
       <PageBody>
-        <MappingTable caseId={caseId} />
-        <SavingsBreakdown caseId={caseId} />
+        <MappingTable caseId={caseId}>
+          <SavingsBreakdown caseId={caseId} />
+        </MappingTable>
       </PageBody>
     </Page>
   )

@@ -1,11 +1,11 @@
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
-import CasesTable from '../../components/CasesTable'
+import StackRequestsQueue from '../../components/queue/StackRequestsQueue'
 
 export default function MercatifyCasesPage() {
   return (
     <Page>
       <PageBody>
-        <CasesTable />
+        <StackRequestsQueue />
       </PageBody>
     </Page>
   )
