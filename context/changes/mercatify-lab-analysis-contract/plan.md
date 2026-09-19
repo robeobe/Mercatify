@@ -232,32 +232,32 @@ None — no database entities or schema changes in this plan.
 
 #### Automated
 
-- [x] 1.1 `yarn generate` completes without error and the module is discoverable
-- [x] 1.2 `yarn typecheck` passes
-- [x] 1.3 `yarn lint` passes
+- [x] 1.1 `yarn generate` completes without error and the module is discoverable — b4ce7ca
+- [x] 1.2 `yarn typecheck` passes — b4ce7ca
+- [x] 1.3 `yarn lint` passes — b4ce7ca
 
 #### Manual
 
-- [x] 1.4 Module shell exists, no collision with F-01, FR-014 spot check passes
+- [x] 1.4 Module shell exists, no collision with F-01, FR-014 spot check passes — b4ce7ca
 
 ### Phase 2: Scripted deterministic adapter
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: needs_more_info → complete loop, schema-valid, all variants covered
-- [x] 2.2 `yarn typecheck` passes
+- [x] 2.1 Unit tests pass: needs_more_info → complete loop, schema-valid, all variants covered — b4ce7ca
+- [x] 2.2 `yarn typecheck` passes — b4ce7ca
 
 #### Manual
 
-- [x] 2.3 Scratch-script run of the adapter produces a plausible question and mapping table
+- [x] 2.3 Scratch-script run of the adapter produces a plausible question and mapping table — b4ce7ca
 
 ### Phase 3: Prove the contract is swappable
 
 #### Automated
 
-- [x] 3.1 Swap test passes
-- [x] 3.2 Broad gate passes: `yarn generate && yarn typecheck && yarn lint && yarn ds:check && yarn test && yarn build`
+- [x] 3.1 Swap test passes — b4ce7ca
+- [x] 3.2 Broad gate passes: `yarn generate && yarn typecheck && yarn lint && yarn ds:check && yarn test && yarn build` — b4ce7ca
 
 #### Manual
 
-- [x] 3.3 Full scripted loop walkthrough matches the PRD's demo-path narrative
+- [x] 3.3 Full scripted loop walkthrough matches the PRD's demo-path narrative — b4ce7ca
