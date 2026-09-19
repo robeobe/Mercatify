@@ -11,6 +11,7 @@ export type StageName =
   | 'preview'
   | 'migration-plan'
   | 'om-requirements'
+  | 'report'
 
 export interface ContractRule {
   id: string
@@ -30,6 +31,7 @@ export const STAGE_NAMES: readonly StageName[] = Object.freeze([
   'preview',
   'migration-plan',
   'om-requirements',
+  'report',
 ] as StageName[])
 
 const CONTRACTS: Record<StageName, ContractRule[]> = {
@@ -71,6 +73,28 @@ const CONTRACTS: Record<StageName, ContractRule[]> = {
     { id: 'OMR-4', text: 'Every screen in the inventory maps to at least one story id and one requirement section.' },
     { id: 'OMR-5', text: 'The inventory includes first-run, empty, no-access and no-results states, plus role and permission variants.' },
     { id: 'OMR-6', text: 'Every sample value is fictional; no tenant, customer, credential or production identifier appears.' },
+  ],
+  /*
+   * Ósmy etap - cały `ReportModel`, nie pojedynczy artefakt agenta.
+   *
+   * Te pięć reguł to zapisane wprost obietnice warstwy raportu: podział
+   * `facts` / `prose` (REP-1, REP-2), derywacja fal zamiast propozycji
+   * (REP-3), dwa modele zwrotu, które muszą wskazywać ten sam miesiąc
+   * (REP-4), i uczciwość luki katalogowej (REP-5). Werdykt jest DORADCZY jak
+   * każdy inny - `buildReport` niczego z niego nie stosuje i żaden kod
+   * wyjścia od niego nie zależy.
+   *
+   * REP-2 nie powtarza allowlisty `assertNoFigures`, tylko każe krytykowi
+   * czytać zdania: strażnik łapie CYFRĘ, a "roughly two thousand dollars a
+   * month" cyfry nie ma i przechodzi. Człowiek czytający prozę jest jedyną
+   * bramą na tę formę.
+   */
+  report: [
+    { id: 'REP-1', text: 'Every number in the model comes from facts; no number comes from prose.' },
+    { id: 'REP-2', text: 'No prose field states an amount, a percentage or a duration - only a slot.' },
+    { id: 'REP-3', text: 'Every wave points at least one scope item at a real mapping.' },
+    { id: 'REP-4', text: 'kpis.breakEvenMonth agrees with cash.breakEvenMonth.' },
+    { id: 'REP-5', text: 'A capability outside the catalog enters no amount.' },
   ],
 }
 

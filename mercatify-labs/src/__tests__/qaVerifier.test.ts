@@ -77,7 +77,7 @@ describe('agents/qa.json', () => {
 })
 
 describe('verifyGoldenPath', () => {
-  it('passes the manifest and golden path to the qa agent and returns its verdict', async () => {
+  it('S16: passes the manifest and golden path to the qa agent and returns its verdict', async () => {
     const seen: SeenCall[] = []
     const client = fakeClient(
       { verdict: 'blocked', blockedAtStep: 'Quote', notes: 'No quote screen in the manifest.' },

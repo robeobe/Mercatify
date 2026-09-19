@@ -1,6 +1,6 @@
 import { mapCapabilities } from './mapCapabilities'
 import { computeScenario } from './computeScenario'
-import { getCatalogTool } from './catalog'
+import { getCatalogTool, listCatalogCapabilityKeys } from './catalog'
 import { firecrawlSearch } from './webSearch'
 import { listArchetypes, REQUIRED_INVENTORY_STATES, TOKEN_RULES } from './om/platform'
 import type { ToolExecutor } from './llmClient'
@@ -44,8 +44,11 @@ export const localToolExecutor: ToolExecutor = async (toolName, args) => {
   switch (toolName) {
     case 'list_catalog_capabilities': {
       const { toolName: name } = args as { toolName: string }
-      const entry = getCatalogTool(name)
-      return { toolName: name, capabilities: entry ? Object.keys(entry.capabilities) : [], inCatalog: !!entry }
+      // Slugi kanoniczne PLUS stare klucze, które katalog nadal rozwiązuje
+      // (src/catalogAliases.ts). Narzędzie odpowiada na pytanie "czym mogę
+      // otagować użycie, żeby trafić w katalog", więc pominięcie aliasów
+      // kazałoby modelowi przeoczyć wejście, które i tak zadziała.
+      return { toolName: name, capabilities: listCatalogCapabilityKeys(name), inCatalog: getCatalogTool(name) !== undefined }
     }
     case 'map_capabilities': {
       const { products } = args as { products: ProductWithCapabilities[] }

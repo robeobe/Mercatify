@@ -1,3 +1,4 @@
+import { OFF_CATALOG_EVIDENCE } from './toolVerdict'
 import type { MercatoMappingResult } from './types'
 
 /** Jedna nieznana katalogowi para narzędzie plus zdolność, gotowa dla kuratora. */
@@ -17,7 +18,7 @@ export function findCatalogGaps(mappings: MercatoMappingResult[]): CatalogGap[] 
   const seen = new Set<string>()
   const gaps: CatalogGap[] = []
   for (const mapping of mappings) {
-    if (mapping.evidence !== 'not in catalog') continue
+    if (mapping.evidence !== OFF_CATALOG_EVIDENCE) continue
     const key = `${mapping.source}::${mapping.capability}`
     if (seen.has(key)) continue
     seen.add(key)

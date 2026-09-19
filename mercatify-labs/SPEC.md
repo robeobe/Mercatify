@@ -6,6 +6,9 @@ package has zero dependency on it. **Live-verified** end to end against a
 local LM Studio server via `npm run example:voltix`, and the Catalog Curator
 verified against real Firecrawl web search via `npm run example:curate`
 (both 2026-09-19) — see §10. Looking to extend this? Start at §11.
+The reporting layer added on top of the pipeline is §12; it is numbered last
+rather than slotted in next to the core because dozens of source comments cite
+these section numbers and renumbering would silently falsify all of them.
 
 ## 1. What this is
 
@@ -70,20 +73,44 @@ mercatify-labs/
 │   ├── contract.ts            the INPUT/OUTPUT contract (§4) — start here
 │   ├── catalogData.json       the curated SaaS -> platform knowledge base
 │   ├── catalog.ts             loader/lookup helpers over catalogData.json
+│   ├── catalogAliases.ts      pre-merge capability keys -> canonical CAPS slugs (§6.1)
+│   ├── catalogToolAliases.ts  the tool name a client writes -> the name the catalog stores
+│   ├── catalogGaps.ts         `findCatalogGaps` — which capabilities fell off the catalog
+│   ├── catalogCurator.ts      `proposeCatalogEntry` — runs the Catalog Curator (§8, §11.3)
 │   ├── mapCapabilities.ts     pure mapping engine (§6.2)
 │   ├── computeScenario.ts     pure ROI engine (§6.3)
+│   ├── toolVerdict.ts         the ONE "does this subscription go dark" rule (§6.3)
 │   ├── agentLoader.ts         typed loader for agents/*.json + tools/*.json
 │   ├── toolExecutor.ts        executes the pure tools + web_search (§8) against the core above
 │   ├── webSearch.ts           Firecrawl `/v1/search` wrapper — the only network call in src/
 │   ├── llmClient.ts           `LlmClient` interface + a dependency-free
 │   │                          OpenAI-compatible reference implementation
 │   ├── orchestrator.ts        `Orchestrator` — runs the 5-agent pipeline (§8)
-│   ├── catalogCurator.ts      `proposeCatalogEntry` — runs the Catalog Curator (§8, §11)
+│   ├── sandboxEngineer.ts     §11.1, BUILT — agent picks and fills templates
+│   ├── qaVerifier.ts          §11.1, BUILT — golden-path verdict over the preview
+│   ├── preview/               templates, pure renderer, safe write, screen-name rule
+│   ├── migrationPlanner.ts    §11.2, BUILT — hours and rollout order
+│   ├── effortHours.ts         §11.2, BUILT — injects hours WITHOUT touching cost
+│   ├── migration/             validator for the plan an agent returns
+│   ├── critic.ts + critic/    adversarial review of one stage; contracts as data
+│   ├── omPrototyper.ts + om/  requirements hand-off for the Open Mercato mock-up skill
+│   ├── intake/fromBrief.ts    §12 — the only gate between a client file and a prompt
+│   ├── report/                §12 — ReportModel, the money-in-time engine, the renderer
+│   ├── reportProse.ts         §12 — the three prose agents; outside report/ on purpose
 │   ├── index.ts               public exports
-│   └── __tests__/             unit tests (core engines + orchestrator + curator)
+│   └── __tests__/             unit tests + fixtures (incl. the golden report)
+├── bin/
+│   ├── preview-cli.ts         Sandbox Engineer + QA end to end
+│   ├── migrate-cli.ts         deterministic mapping + Migration Planner
+│   └── critic-cli.ts          one stage artifact -> an advisory verdict
 ├── examples/
 │   ├── run-voltix.ts          runs the full Voltix case against a real LLM
-│   └── curate-catalog.ts      runs the Catalog Curator against a real LLM + Firecrawl
+│   ├── curate-catalog.ts      runs the Catalog Curator against a real LLM + Firecrawl
+│   ├── curate-gaps.ts         the same, driven by `findCatalogGaps` over a real run
+│   ├── run-migration.ts       the Migration Planner against a real LLM
+│   └── run-preview.ts         the Sandbox Engineer + QA against a real LLM
+├── scripts/
+│   └── generate-browser-catalog.mjs   emits the browser's COPY of the catalog
 ├── .env.example                FIRECRAWL_API_KEY / LLM_* — copy to .env, never commit .env
 ├── tools/                     portable tool descriptors (JSON Schema) —
 │                              one file per tool, consumed by agents
@@ -93,11 +120,16 @@ mercatify-labs/
 ```
 
 `src/` is a real, runnable, tested TypeScript package (`npm test` runs
-the Jest suite — 17 tests, all pure/unit, no network; `npm run
-typecheck` type-checks it; `npm run example:voltix` / `npm run
-example:curate` make real calls to a local LLM (and, for the latter,
-Firecrawl), see §10). `tools/` and `agents/` are plain JSON data — no
-code, no framework dependency — read by `agentLoader.ts` and by
+the Jest suite — 664 tests across 33 files at the last count on
+2026-09-19; the reporting layer is still growing, so read the number as
+"a few hundred and rising", not as a constant — all pure/unit, no
+network; `npm run typecheck` type-checks it; `npm run
+example:voltix` / `npm run example:curate` make real calls to a local
+LLM (and, for the latter, Firecrawl), see §10). The three CLIs and the
+three newer examples are run with `npx ts-node` — only `test`,
+`typecheck`, `catalog:generate`, `example:voltix` and `example:curate`
+have `package.json` scripts. `tools/` and `agents/` are plain JSON data
+— no code, no framework dependency — read by `agentLoader.ts` and by
 `llmClient.ts`'s tool-call loop, or by whatever agent runtime you plug
 into a *different* host app.
 
@@ -183,11 +215,21 @@ interface ConsolidationCase {
 ### 6.1 Catalog (`src/catalogData.json`)
 
 Curated knowledge base: `{ [toolName]: { capabilities: { [capabilityKey]:
-{ target, decision, confidence } } } }`. The shipped catalog covers 7
-tools (HubSpot, Typeform, Airtable, Zapier, PandaDoc, Calendly, Slack)
-as a worked example — extend it with your own tools/capabilities.
-`src/catalog.ts` exposes `getCatalogTool(name)` and
-`getCatalogCapability(toolName, capability)`.
+{ target, decision, confidence, reportVerdict? } } } }`. The shipped
+catalog covers 18 tools and 128 capability entries — extend it with your own.
+
+`capabilityKey` is a slug from the canonical `CAPS` vocabulary in
+`assets/stack-tool/catalog.js`; `target` is an entry of `OM_TARGETS` from
+the same file. `src/catalogAliases.ts` keeps the pre-merge capability
+keys (`contacts`, `quote_documents`, `e_signature`, …) resolving, as an
+explicit finite table — never a fuzzy match, so §6.2's honest
+"not in catalog" fallback still means what it says.
+`src/catalog.ts` exposes `getCatalogTool(name)`,
+`getCatalogCapability(toolName, capability)` (literal key first, then the
+alias table) and `listCatalogCapabilityKeys(name)`.
+`src/__tests__/catalogIntegrity.test.ts` holds the two files to each
+other; `npm run catalog:generate` refreshes the browser's copy at
+`assets/shared/catalog.generated.js`.
 
 ### 6.2 Mapping engine (`src/mapCapabilities.ts`)
 
@@ -216,7 +258,13 @@ netPaybackMonths  = implementationCost / (netAnnualSaving / 12)   // Infinity if
 A tool is "removed" only when **every** one of its mapped capabilities
 resolved to `native`/`configure`/`build` — a single `integrate` or
 `keep` capability keeps the whole subscription (you don't half-cancel
-a SaaS contract). Reference numbers from the original Voltix demo
+a SaaS contract). Inside this package that rule lives in exactly one
+place, `src/toolVerdict.ts`, which `computeScenario` imports — it was
+extracted rather than restated because a rule that decides a client's
+money should not be readable in two files that can disagree. One copy
+outside the package is still outstanding: `assets/stack-tool/mapping.html`
+carries its own, and it is on the list to switch over, not to keep.
+Reference numbers from the original Voltix demo
 case: gross €29,400 − platform cost €8,400 = net €21,000/yr,
 implementation €12,000 → ~6.9 months net payback. Exposed as the
 `compute_scenario` tool.
@@ -235,11 +283,14 @@ Every capability gets exactly one.
 
 ## 8. Agents (the "departments") and how they talk to each other
 
-Six agents, one per `agents/*.json`. Each declares: `id`, `label`,
+Fourteen agents, one per `agents/*.json`. Each declares: `id`, `label`,
 `role` (who it behaves like), `description`, `resultKind`
 (`research` | `proposal`), `tools` (names from `tools/*.json` it may
 call), `instructions` (its system prompt), `resultSchema` (JSON
 Schema for its output), and `sampleInput` (a runnable example).
+
+**Five of them are the pipeline** — the ones `Orchestrator.run()`
+sequences, in this order:
 
 | Agent | Behaves like | Calls | Result |
 |---|---|---|---|
@@ -248,7 +299,31 @@ Schema for its output), and `sampleInput` (a runnable example).
 | `om_architect` | Solution architect | `map_capabilities`, `get_case_data` | proposal: `MercatoMapping[]` + rationale |
 | `consolidation_strategist` | Transformation lead | `get_case_data` | research: target-architecture blueprint |
 | `finops` | CFO / FinOps | `compute_scenario`, `get_case_data` | research: `ConsolidationScenario` + summary |
-| `catalog_curator` | Vendor researcher | `web_search` | research: a suggested `catalogData.json` entry, for a human to review — see below, it is NOT part of the pipeline these five form |
+
+**Nine stand outside it**, each called directly by its own typed
+wrapper (and, for three of them, by a CLI). None of them is reachable
+from `Orchestrator.run()`, and that is deliberate in every case — a
+step that grades, proposes, prices, narrates or hands off is a step a
+caller should be able to skip, repeat, or show to a human first:
+
+| Agent | Behaves like | Calls | Result | Entry point |
+|---|---|---|---|---|
+| `catalog_curator` | Vendor researcher | `web_search` | research: a suggested `catalogData.json` entry, for a human to review | `proposeCatalogEntry()`, `examples/curate-catalog.ts` |
+| `sandbox_engineer` | Solution engineer building a clickable proof | — | research: `ScreenSpec[]` — template choices and cell values, never HTML (§11.1) | `generatePreview()`, `bin/preview-cli.ts` |
+| `qa` | Quality reviewer of the generated preview | — | research: `ready` \| `blocked` plus the golden-path step that blocks (§11.1) | `verifyGoldenPath()`, `bin/preview-cli.ts` |
+| `migration_planner` | Delivery lead sequencing the rollout | — | research: hours and rollout order per `build`/`configure` mapping (§11.2) | `planMigration()`, `bin/migrate-cli.ts` |
+| `critic` | Adversarial reviewer of one pipeline stage | — | research: objections against that stage's written contract | `critique()`, `bin/critic-cli.ts` |
+| `om_prototyper` | Open Mercato backend analyst | `list_om_archetypes` | research: epics, stories and a screen inventory for the mock-up skill | `prepareOmRequirements()` |
+| `report_editor` | Consultant writing the executive half of a report | — | research: the one-sentence recommendation, the numbered findings, the section 02 lede (§12) | `writeExecutiveProse()` |
+| `report_risk_analyst` | Consultant stating what would change the numbers | — | research: section 08 risks and section 09 next steps (§12) | `writeRiskProse()` |
+| `report_curator_reader` | Consultant explaining one off-catalog item | — | research: "why unmapped" and "our read" for one Appendix B gap (§12) | `writeGapProse()` |
+
+The Critic never talks to the agent it reviews — the caller hands it
+the artifact in `input`, like every other input (iron rule #5) — and
+its verdict is advisory: `validateCritique` rebuilds the result field
+by field and `resultSchema` has no numeric field at all, so an amount
+from the model has nowhere to flow. A `reject` is a successful run of
+the tool, not a failure of it, and no exit code depends on it.
 
 `Orchestrator.run()` (`src/orchestrator.ts`) is the thing that makes
 them talk to each other — it is the Orchestrator role from the
@@ -285,12 +360,14 @@ request.stack (usageNotes)
                                           ConsolidationResult (§4)
 ```
 
-Two more agents existed in the original spec but depend on a
-not-yet-built HTML preview generator, so they aren't included here:
-**Sandbox Engineer** (`artifact`-kind — renders the target-platform
-preview from the blueprint + seed data) and **QA** (`research`-kind —
-verifies the golden path in that preview and returns a Ready/blocked
-verdict). §11 has the contract each needs to follow if you build them.
+The two agents this section once listed as missing — **Sandbox
+Engineer** and **QA** — are built (§11.1). They are not steps of
+`Orchestrator.run()`: `generatePreview()` and `verifyGoldenPath()` run
+them, `bin/preview-cli.ts` chains the two, and the HTML itself comes
+out of a pure function, not out of either agent. The reason they stayed
+out of the pipeline is the reason the pipeline exists — a preview is a
+side effect a host writes to disk and a human looks at, and §2 rule #4
+says an agent never writes state directly.
 
 ### The Catalog Curator is deliberately outside the pipeline
 
@@ -324,6 +401,7 @@ no `businessProcess`, `blueprint`, or `narrative`. `mappings` and
 | `list_catalog_capabilities` | pure | `src/catalog.ts` |
 | `map_capabilities` | pure | `src/mapCapabilities.ts` |
 | `compute_scenario` | pure | `src/computeScenario.ts` |
+| `list_om_archetypes` | pure | `src/om/platform.ts` — the Open Mercato backend archetypes the OM Prototyper may name, so it cannot invent one |
 | `get_case_data` | **host** | your database — `src/toolExecutor.ts` errors if called; the standalone `Orchestrator` always passes data inline, never a `caseId` |
 | `web_search` | **external** | `src/webSearch.ts` (Firecrawl `/v1/search`) — only `catalog_curator` may call it; needs `FIRECRAWL_API_KEY` (`.env.example`) |
 
@@ -350,7 +428,7 @@ a cloud provider's native SDK wired into your app):
 3. **Tools**: implement the `LlmClient` interface (`src/llmClient.ts`)
    so its tool-call loop calls into *your* runtime instead of
    `fetch`-ing an OpenAI-compatible endpoint; keep using
-   `localToolExecutor` (`src/toolExecutor.ts`) for the 3 pure tools, and
+   `localToolExecutor` (`src/toolExecutor.ts`) for the 4 pure tools, and
    implement `get_case_data` against your own store using §5's shapes.
 4. **Orchestration**: reuse `Orchestrator` as-is — it only depends on
    `LlmClient`, not on any specific provider — or copy `orchestrator.ts`
@@ -418,12 +496,30 @@ like this one.
 
 ## 11. Roadmap for contributors
 
-This package is meant to be picked up and extended. Three concrete
-next agents, in priority order, each with the contract it needs to
-follow to slot into the existing architecture without breaking §2's
-iron rules.
+This package is meant to be picked up and extended. The three items
+below were written as the next steps; **11.1 and 11.2 are now built.**
+Their contracts stay here verbatim, because they are what the shipped
+code follows and what a dozen source comments cite by number — each one
+now opens with what actually landed and where it differs from the
+original sketch. 11.3 is not a task at all; it is the pattern every one
+of these followed, and the one to copy next. §11.4 is what is genuinely
+still open.
 
 ### 11.1 Sandbox Engineer + QA (highest value — do these together)
+
+> **Built.** `agents/sandbox_engineer.json` + `src/sandboxEngineer.ts`,
+> `agents/qa.json` + `src/qaVerifier.ts`, the pure renderer in
+> `src/preview/`, and `bin/preview-cli.ts` chaining the two. One thing
+> changed from the contract below, and it changed for the better:
+> `resultKind: "artifact"` was never introduced. The agent returns
+> ordinary `research` — a `ScreenSpec[]` of template choices and cell
+> values — and `writePreview` turns that into files. A new result kind
+> would have been a new way for a model to hand back a document; this
+> way the model hands back data and a pure function writes the document,
+> which is the same shape §12's report renderer later copied. The screen
+> manifest and the QA verdict reach a caller through the functions'
+> return values rather than through a new field on
+> `ConsolidationResult`, so `src/contract.ts` was left alone.
 
 The biggest gap today: the pipeline produces a correct JSON, but
 nothing a non-technical stakeholder can *look at*. These two agents
@@ -458,6 +554,16 @@ verdict.
 
 ### 11.2 Migration Planner
 
+> **Built.** `agents/migration_planner.json` + `src/migrationPlanner.ts`,
+> the result validator in `src/migration/validatePlan.ts`,
+> `src/effortHours.ts`, and `bin/migrate-cli.ts`. The discipline below
+> held: `attachEffortHours` returns new mappings rather than mutating
+> them, a plan item that matches no real mapping is dropped instead of
+> creating a row, and no hour ever reaches `implementationCost` — which
+> stays the customer's number. Nothing was added to
+> `ConsolidationResult`; the plan is a separate return value, so a
+> caller who does not want an estimate never sees one.
+
 Today `MappingResult.customEffortHours` exists in the type (§4) but
 nothing ever populates it. This agent closes that gap: for every
 mapping with `decision: "build"` or `"configure"`, estimate effort in
@@ -479,7 +585,38 @@ test with a fake `LlmClient` (no network) → a real example script
 (`examples/curate-catalog.ts`) that hits a live LLM. Copying that
 shape (descriptor, wrapper, fake-client test, live example) is the
 fastest path to a working PR for any new agent, including the two
-above.
+above. Two agents that were never on this roadmap arrived by exactly
+that route and are worth reading as further examples: `critic`
+(contracts as frozen data, a result schema with no numeric field at
+all) and `om_prototyper` (a tool whose only job is to stop the model
+inventing an archetype name).
+
+### 11.4 What is actually still open
+
+The reporting layer (§12) is the current work and it is unfinished.
+In rough dependency order:
+
+- **`buildReport.ts` and `bin/report-cli.ts`.** Everything either side
+  of them exists; nothing wires brief to document in one call yet. The
+  orchestration is deliberately code, not an agent, and the CLI follows
+  `bin/preview-cli.ts` exactly: a pure exported `parseArgs`, every input
+  gate exported and tested, a preflight against the LLM endpoint, and
+  exit codes 0/1/2/3. It needs a `--no-llm` flag, because a run with no
+  agents at all must still produce a correct report (§8).
+- **The `report` stage for the Critic.** An eighth entry in
+  `src/critic/stageContracts.ts`, advisory like the other seven: every
+  number in the model came from `facts`; no prose carries an amount;
+  every wave points at a real mapping; `breakEvenMonth` agrees with the
+  series; nothing off-catalog entered any total.
+- **The browser copies.** `assets/stack-tool/` pages still read their
+  own catalog rather than the generated one, and
+  `assets/stack-tool/report.html` still has its own `build()` instead of
+  calling `renderReport`. The duplication is documented and tested
+  against drift (§6.1), which is not the same as removed.
+- **`src/index.ts`.** The report and intake layers are deliberately not
+  exported yet. Exporting them is a public-contract change and is worth
+  doing once, when the path from brief to document is complete, rather
+  than a symbol at a time.
 
 ### On web search generally
 
@@ -494,3 +631,221 @@ reasonable, safe addition on the same principle (it enriches
 whether this SaaS tool is really worth replacing" agent called mid-run
 is not — that's iron rule #1 in different clothes, and it would make
 every run's mapping non-reproducible.
+
+## 12. The reporting layer (`src/report/`, `src/intake/`)
+
+Everything above turns a stack into JSON with savings in it. This
+section turns that JSON into the document a client actually reads: one
+self-contained HTML file, of the quality frozen as
+`src/__tests__/fixtures/voltix.golden.html`. It is the newest layer in
+the package and the one still under construction (§11.4), but its
+contracts are settled and they are the reason the rest of this spec's
+iron rules survive contact with a document a human will quote from.
+
+### 12.1 `ReportModel` — the seam
+
+`src/report/model.ts` defines one type, and the type is §2 rule #2
+written as a shape:
+
+```ts
+interface ReportModel {
+  facts: ReportFacts   // everything a pure function computed
+  prose?: ReportProse  // everything an agent wrote — optional in its entirety
+}
+```
+
+Nothing crosses. The renderer formats `facts` and never recomputes
+them — not even a multiplication by twelve, and not a column total:
+`MoneyTable.recurringTotal` is an explicit optional field precisely
+because a sum is a *new* number and the renderer has no licence to make
+one. Conversely nothing under `prose` is load-bearing: `prose` and
+every field inside it is optional, because §8's "running with no LLM at
+all" has to yield a *correct* report — every table, every number, both
+figures — with the sentence-only sections omitted rather than rendered
+empty.
+
+Three smaller conventions inside `facts` are worth copying, because
+each one started as a bug:
+
+- Money fields are `null`, never `0`, when the client did not give
+  costs. A zero says the stack is free; a `null` says nobody asked.
+- `breakEvenMonth` is `number | null`, never `Infinity` —
+  `JSON.stringify(Infinity)` is a silent `null`, so the type says out
+  loud what serialization would have said behind your back.
+- The horizon the series *computes* (36 months) and the horizon the
+  chart *draws* (24) are two fields, not one constant in the renderer.
+  That is a presentation decision, and presentation decisions belong to
+  the model where a reviewer can see them.
+
+### 12.2 Slots — how a sentence carries a number it did not author
+
+The first version of this layer forbade numbers in prose outright. The
+golden report proved that wrong on product grounds: 9 of its 11 prose
+fields carry a number, and those are the sentences that make it
+readable ("cutting them in the first four weeks returns $389 a month").
+A sentence with the number removed reads as evasion.
+
+But relaxing the rule would hand back the guarantee §10 exists to
+protect — the run where FinOps wrote "€6,000 / 24 months" against a
+real €21,000 / 6.9. **Slots** (`src/report/slots.ts`) satisfy both at
+once: the agent writes `{wave.1.monthlyBanked}` and the renderer
+substitutes the value from `facts`. The agent cannot state a wrong
+number because it states no number, and the reader still sees one.
+
+The allowed paths are an allowlist of shapes, exhaustively:
+`kpis.<f>`, `cash.<f>`, `counts.<f>`, `meta.<f>`, `company.<f>`,
+`stack.<tool>.<f>`, `wave.<n>.<f>`. An unknown slot **throws**. It does
+not render as an empty string, and it does not render as `undefined`: a
+silent hole in a sentence about money is worse than a loud failure.
+
+The guard on the other side, `src/report/assertNoFigures.ts`, is an
+**allowlist too**, and that was a correction rather than a first
+instinct. Its first version enumerated forbidden shapes — "a number
+with a unit glued to it" — and passed a full green suite while letting
+through `pays back in month 15` and `cost 2043 a month`, including the
+most natural phrasing of the very §10 bug it was written for. The rule
+now reads: *every digit in prose is either inside a slot or directly
+after a label word* (`wave`, `phase`, `step`, `section`, `appendix`,
+`rule`, `risk`, `figure`, `table`). You cannot rephrase your way around
+an allowlist. The cost is real and deliberate — "a sample of 200
+contacts" is rejected too, and the author must either add a fact and a
+slot or write the quantity in words.
+
+### 12.3 The third money model — and why two were not enough
+
+`src/report/cash.ts` adds a **time-phased** cash model, and it does not
+replace anything. The package already had a flat one
+(`computeScenario`: `implementationCost / (netAnnual / 12)`) and the
+browser prototype had another (`computeTotals`:
+`ceil(oneOff / monthlySaving)`). For the Voltix numbers both answer
+~10.3 months. The report says 15 — and the report is right, because it
+asks a different question. The flat models ask "how many times does the
+saving fit inside the cost". This one asks "when does the account come
+back above the line", and money leaves while the work is happening and
+only arrives once a licence actually lapses.
+
+The rule, confirmed against the golden report to the dollar:
+
+> the programme runs `ceil(totalWeeks / 4)` months · a wave ends in
+> month `round(itsLastWeek / totalWeeks × programmeLength)` · a wave
+> starts spending the month after the previous one ends · **a wave's
+> saving arrives the month after that wave closes** · hosting is charged
+> from month 1
+
+`computeCashSeries` returns the 36-month series plus `maxExposure`,
+`maxExposureMonth`, `breakEvenMonth` and `netAtHorizon`. It reproduces
+all 25 published points of the golden chart, the exposure floor at
+−$14,967 in month 6, break-even in month 15 and +$40,923 at month 36 —
+which is the only question worth asking of this file: *is our model the
+same model that wrote the report?*
+
+Because two of the three models now run side by side, the document
+prints **both** payback numbers and names the difference, exactly as
+the golden report does under "Two payback numbers, and why they
+differ". `Paybacks.buildOnlyMonths` is the flat one and agrees with
+`computeScenario`; `Paybacks.programmeMonths` is the timed one and is
+larger. That is not a contradiction to hide; it is two questions, and a
+report that prints only one of them is the defect.
+
+`planWaveSpendWindows` and `computeCashSeries` are both exported, so
+both gate their inputs rather than trusting the type: a duplicated wave
+number (which silently collapsed two budgets into one month), `NaN`
+hours (which froze `maxExposure` at 0 and read as "no risk", because
+`NaN < x` is always false), negative hours (which turned the work into
+a profit) and a backwards wave are each rejected by name.
+
+### 12.4 Counters, waves, and the one number nobody computes
+
+`src/report/counts.ts` carries the section 02 line — "38 usage
+statements were extracted … 34 matched … 4 did not". It is the one
+number in the document that **no function can produce**, and saying so
+precisely mattered: it comes from a 62-minute call, seven invoices and
+three screen-shares, while deriving it from the mappings gives a
+different, smaller figure (15 for Voltix, because the brief records one
+slug per job and discovery pulls many statements out of one capability).
+
+So it is a consultant input, like `omOperatingCost` and
+`implementationCost` — §2 rule #2 is about a model inventing numbers,
+not about a human supplying them — and it is gated in three ways:
+`matched + offCatalog === statements`; `statements` may exceed what the
+engine mapped but never undercut it; and `offCatalog` may exceed what
+the engine found but never undercut it. **A gap the engine saw cannot
+be reported away.**
+
+`src/report/waves.ts` groups mappings into the migration waves section
+06 prints. This is derivation, not judgement — an agent never proposes
+a wave. It reuses `toolVerdict.ts` for "does this subscription go
+dark", takes hours from the Migration Planner, orders waves by
+increasing process risk, and lets an `annual` contract term pull its
+tool's wave forward so the work closes before the term does. A `build`
+row with no estimate sets `hoursAreFloor`, and the total is then
+printed as a lower bound rather than a quote.
+
+### 12.5 The renderer, and the gate in front of it
+
+`src/report/renderReport.ts` is a pure function `ReportModel -> string`
+and `src/report/writeReport.ts` is its only I/O. Both copy shapes that
+already existed in this package rather than inventing new ones: the
+template family from `src/preview/templates.ts` (escape every value,
+columns drive the table, exhaustive `switch` with `never`), and the
+write discipline from `src/preview/renderPreview.ts` (materialize the
+whole document in memory *before* the first byte, then refuse to follow
+a symlink — CWE-59). Ordering matters in the same way: everything that
+can throw, including slot resolution, runs before anything is
+assembled, so a bad slot in one sentence never leaves half a document
+behind.
+
+The document is single-file and self-contained on purpose — no
+`<link>`, no `<img>`, no `<iframe>`. It goes out by email, and a mail
+client either will not fetch an external resource or, worse, will tell
+the sender exactly who opened the pricing and when. The one place a
+model value leaves HTML is the JSON embedded for the optional inline
+script, where `<` is escaped inside the JSON itself: `escapeHtml` does
+not help there, because HTML entities are not decoded inside JavaScript,
+and a `"</script>"` in a milestone label would spill the rest of the
+document onto the page as markup.
+
+`src/intake/fromBrief.ts` is the gate at the other end — the only thing
+standing between a file a client produced and a prompt. Same pattern as
+`readBlueprintFile` in `bin/preview-cli.ts`: validate the shape before
+anything moves, rebuild the result field by field so a key nobody
+declared never reaches a model, cap the size (the whole request ends up
+inside `JSON.stringify(input)`), and name the offending path in every
+error — `tools[2].modules[0].caps[1]`, not "bad brief". It reads two
+brief versions and upgrades `v1` to `v2` by defaulting the evidence kind
+to `inferred`: not `observed`, which would be inventing the very
+evidence that column exists to protect, and not `estimated`, because
+nobody estimated anything. It does not read costs at all — those are a
+separate argument, so a client file can never set them.
+
+### 12.6 The three prose agents, and the test that holds the document
+
+`src/reportProse.ts` carries the only agents in this package whose
+sentences reach a client: `report_editor` (the one-sentence
+recommendation, the numbered findings, the section 02 lede),
+`report_risk_analyst` (section 08 risks, section 09 next steps) and
+`report_curator_reader` ("why unmapped" and "our read" for one Appendix
+B gap). They live *outside* `src/report/` on purpose — that directory
+is the deterministic core of the document, and an agent call has no
+business inside it.
+
+Each follows §11.3's shape — descriptor, typed validating wrapper,
+fake-client test — and each carries one obligation the earlier agents
+did not: its instructions and its `resultSchema` teach and permit
+**slots**, and the wrapper checks both directions. A slot the model
+invents is rejected before rendering, and a bare figure is rejected by
+`assertNoFigures`, so the only way for a number to reach the page is
+for a pure function to have computed it first.
+
+`src/__tests__/renderReport.test.ts` is what holds all of this to the
+north star. It compares the rendered document against the golden master
+**per section and by visible text**, not byte for byte, for two honest
+reasons: the golden is hand-written and breaks its paragraphs in the
+source, and both figures are *generated from the numbers*, so comparing
+their coordinates would check whether we redrew someone else's picture
+rather than whether we drew our own data — the normalizer strips
+`<svg>` and the figures get their own tests for proportion, scale,
+`<title>` and `<desc>`. Everything else must match. A difference that is
+not in `KNOWN_DEVIATIONS` fails the test, and so does a deviation that
+*stops* occurring — a list that no longer describes reality is a lie in
+both directions.

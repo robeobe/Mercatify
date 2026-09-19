@@ -1,0 +1,864 @@
+{
+  "facts": {
+    "meta": {
+      "caseId": "CASE-0041",
+      "version": "1.0",
+      "issued": "2026-09-19",
+      "validUntil": "2026-10-19",
+      "preparedFor": {
+        "organization": "Voltix Energy",
+        "person": "Marta Nowak",
+        "role": "COO"
+      },
+      "preparedBy": {
+        "organization": "Mercatify",
+        "person": "Joanna Pawłowska",
+        "role": "consultant on record"
+      },
+      "runMinutes": 11,
+      "humanReviewed": true,
+      "basis": "Open Mercato — self-hosted, source available",
+      "confidentialityNote": "Confidential — prepared for Voltix Energy. Contains supplier pricing disclosed by the client."
+    },
+    "company": {
+      "name": "Voltix Energy Sp. z o.o.",
+      "industry": "",
+      "employees": 34,
+      "currency": "USD"
+    },
+    "basis": {
+      "readWhat": "A 62-minute kick-off call with Marta Nowak and Piotr Zieliński (operations); seven supplier invoices for August 2026; three screen-shares covering HubSpot pipeline, Jobber dispatch and the Airtable permit base.",
+      "period": "Licence costs as billed in August 2026 at 34 seats. Effort estimates assume the current team size and one October 2026 start. Seasonal crew growth is handled in section 08.",
+      "exclusions": "Statutory accounting, payroll, Microsoft 365, and anything touching electrical compliance sign-off. None of it was assessed, and none of it appears in the savings figure.",
+      "counts": {
+        "statements": 38,
+        "matched": 34,
+        "offCatalog": 4
+      }
+    },
+    "kpis": {
+      "licencesTodayMonthly": 2320,
+      "licencesTodayAnnual": 27840,
+      "toolCount": 7,
+      "seatCount": 34,
+      "licencesAfterMonthly": 277,
+      "licencesAfterNote": "Accounting + e-signature only",
+      "netRecurringAnnual": 22356,
+      "hostingMonthly": 180,
+      "implementationCost": 19200,
+      "implementationHours": 160,
+      "implementationHoursAreFloor": false,
+      "programmeWeeks": 22,
+      "breakEvenMonth": 15,
+      "netAtHorizon": 40923,
+      "horizonMonths": 36,
+      "licencesCancelledMonthly": 2043,
+      "largestBuildHours": 40
+    },
+    "stack": {
+      "rows": [
+        {
+          "tool": "HubSpot Sales",
+          "plan": "Sales Professional",
+          "category": "CRM",
+          "seats": 10,
+          "unitPrice": 89,
+          "monthly": 890,
+          "annual": 10680,
+          "termEnds": "2027-02-28",
+          "termType": "annual"
+        },
+        {
+          "tool": "Zendesk Suite",
+          "plan": "Growth",
+          "category": "Support",
+          "seats": 5,
+          "unitPrice": 83,
+          "monthly": 415,
+          "annual": 4980,
+          "termEnds": "",
+          "termType": "monthly"
+        },
+        {
+          "tool": "Jobber",
+          "plan": "Connect",
+          "category": "Field service",
+          "seats": 12,
+          "unitPrice": 29,
+          "monthly": 349,
+          "annual": 4188,
+          "termEnds": "",
+          "termType": "monthly"
+        },
+        {
+          "tool": "Airtable",
+          "plan": "Team",
+          "category": "Ad-hoc registers",
+          "seats": 12,
+          "unitPrice": 20,
+          "monthly": 240,
+          "annual": 2880,
+          "termEnds": "",
+          "termType": "monthly"
+        },
+        {
+          "tool": "PandaDoc",
+          "plan": "Business",
+          "category": "Quotes & e-signature",
+          "seats": 5,
+          "unitPrice": 40,
+          "monthly": 199,
+          "annual": 2388,
+          "termEnds": "",
+          "termType": "monthly"
+        },
+        {
+          "tool": "Sortly",
+          "plan": "Advanced",
+          "category": "Inventory",
+          "seats": 5,
+          "unitPrice": 30,
+          "monthly": 149,
+          "annual": 1788,
+          "termEnds": "",
+          "termType": "monthly"
+        },
+        {
+          "tool": "Xero",
+          "plan": "Established",
+          "category": "Accounting",
+          "seats": 3,
+          "unitPrice": 26,
+          "monthly": 78,
+          "annual": 936,
+          "termEnds": "",
+          "termType": "monthly"
+        }
+      ],
+      "totalSeats": 52,
+      "totalMonthly": 2320,
+      "totalAnnual": 27840,
+      "seatDuplicationNote": "52 seats across 34 people — nine of your staff are paying for a login in three tools at once. Consolidation removes that duplication before it removes any product."
+    },
+    "coverage": {
+      "rows": [
+        {
+          "tool": "HubSpot Sales",
+          "capability": "CRM",
+          "usage": "Contacts, deals, pipeline stages, email log",
+          "evidenceKind": "observed",
+          "evidenceNote": "3 pipelines, 11 custom deal properties, no marketing automation in use",
+          "omTarget": "customers + sales",
+          "verdict": "native",
+          "confidence": "high",
+          "monthly": 890
+        },
+        {
+          "tool": "Airtable",
+          "capability": "Ad-hoc registers",
+          "usage": "Installer certifications, site surveys, permit tracking",
+          "evidenceKind": "observed",
+          "evidenceNote": "4 bases, 9 tables, all flat — no automations",
+          "omTarget": "Data designer — custom entities",
+          "verdict": "native",
+          "confidence": "high",
+          "monthly": 240
+        },
+        {
+          "tool": "Sortly",
+          "capability": "Inventory",
+          "usage": "Panels and inverters across two warehouses",
+          "evidenceKind": "observed",
+          "evidenceNote": "1,240 SKUs, barcode scanning on goods-in",
+          "omTarget": "wms — multi-warehouse stock",
+          "verdict": "native",
+          "confidence": "high",
+          "monthly": 149
+        },
+        {
+          "tool": "Jobber",
+          "capability": "Field service",
+          "usage": "Crew scheduling, job sheets, on-site checklists",
+          "evidenceKind": "inferred",
+          "evidenceNote": "offline use on site not confirmed — see risk 8.2",
+          "omTarget": "planner + business rules",
+          "verdict": "configure",
+          "confidence": "medium",
+          "monthly": 349
+        },
+        {
+          "tool": "Zendesk",
+          "capability": "Support",
+          "usage": "Post-install tickets, warranty claims",
+          "evidenceKind": "observed",
+          "evidenceNote": "3 macros, 2 SLA policies, email channel only",
+          "omTarget": "messages + warranty_claims",
+          "verdict": "configure",
+          "confidence": "medium",
+          "monthly": 415
+        },
+        {
+          "tool": "PandaDoc",
+          "capability": "Quotes",
+          "usage": "Quote templates driven by panel configuration",
+          "evidenceKind": "estimated",
+          "evidenceNote": "40 h to build · the only net-new module",
+          "omTarget": "quote builder — new module",
+          "verdict": "build",
+          "confidence": "medium",
+          "monthly": 199
+        },
+        {
+          "tool": "PandaDoc",
+          "capability": "Legally binding signature",
+          "usage": "Customer signs the installation contract",
+          "evidenceKind": "inferred",
+          "evidenceNote": "Retained on a signature-only plan at the same list price",
+          "omTarget": "stays external, wired in",
+          "verdict": "integrate",
+          "confidence": "high",
+          "monthly": "included"
+        },
+        {
+          "tool": "Xero",
+          "capability": "Accounting",
+          "usage": "Statutory books, VAT filing",
+          "evidenceKind": "inferred",
+          "evidenceNote": "Out of scope by recommendation, not by omission",
+          "omTarget": "not our business — keep it",
+          "verdict": "keep",
+          "confidence": "high",
+          "monthly": 78
+        }
+      ],
+      "byVerdict": {
+        "native": 19,
+        "configure": 9,
+        "build": 4,
+        "integrate": 2,
+        "keep": 0,
+        "drop": 0,
+        "offCatalog": 4
+      },
+      "paidTwice": []
+    },
+    "money": {
+      "recurring": [
+        {
+          "label": "Licence spend today",
+          "basis": "7 tools, as invoiced August 2026",
+          "monthly": 2320,
+          "annual": 27840,
+          "isDeduction": false
+        },
+        {
+          "label": "Licence spend retained",
+          "basis": "Xero $78 + PandaDoc signature-only $199",
+          "monthly": 277,
+          "annual": 3324,
+          "isDeduction": true
+        },
+        {
+          "label": "Hosting, backup and platform support",
+          "basis": "Managed instance, 34 users, daily backups",
+          "monthly": 180,
+          "annual": 2160,
+          "isDeduction": true
+        }
+      ],
+      "implementation": [
+        {
+          "waveNumber": 1,
+          "label": "Wave 1 — registers and stock",
+          "scope": "Entity design, data import, warehouse setup",
+          "hours": 30,
+          "cost": 3600,
+          "hoursAreFloor": false
+        },
+        {
+          "waveNumber": 2,
+          "label": "Wave 2 — CRM",
+          "scope": "Pipeline config, HubSpot migration, sales training",
+          "hours": 55,
+          "cost": 6600,
+          "hoursAreFloor": false
+        },
+        {
+          "waveNumber": 3,
+          "label": "Wave 3 — field service",
+          "scope": "Planner rules, job sheets, crew mobile setup",
+          "hours": 30,
+          "cost": 3600,
+          "hoursAreFloor": false
+        },
+        {
+          "waveNumber": 4,
+          "label": "Wave 4 — support and quoting",
+          "scope": "Warranty flow, plus 40 h quote builder build",
+          "hours": 45,
+          "cost": 5400,
+          "hoursAreFloor": false
+        }
+      ],
+      "totalHours": 160,
+      "rate": 120,
+      "totalImplementationCost": 19200,
+      "totalHoursAreFloor": false,
+      "paybacks": {
+        "buildOnlyMonths": 2.4,
+        "buildOnlyCost": 4800,
+        "programmeMonths": 15
+      }
+    },
+    "cash": {
+      "points": [
+        {
+          "month": 0,
+          "monthlyNet": 0,
+          "cumulative": 0,
+          "milestone": "Programme start"
+        },
+        {
+          "month": 1,
+          "monthlyNet": -3780,
+          "cumulative": -3780,
+          "milestone": "Wave 1 delivered"
+        },
+        {
+          "month": 2,
+          "monthlyNet": -3091,
+          "cumulative": -6871,
+          "milestone": ""
+        },
+        {
+          "month": 3,
+          "monthlyNet": -3091,
+          "cumulative": -9962,
+          "milestone": "Wave 2 delivered"
+        },
+        {
+          "month": 4,
+          "monthlyNet": -2501,
+          "cumulative": -12463,
+          "milestone": "Wave 3 delivered"
+        },
+        {
+          "month": 5,
+          "monthlyNet": -1252,
+          "cumulative": -13715,
+          "milestone": ""
+        },
+        {
+          "month": 6,
+          "monthlyNet": -1252,
+          "cumulative": -14967,
+          "milestone": "Wave 4 delivered — maximum exposure"
+        },
+        {
+          "month": 7,
+          "monthlyNet": 1863,
+          "cumulative": -13104,
+          "milestone": "Full run rate reached"
+        },
+        {
+          "month": 8,
+          "monthlyNet": 1863,
+          "cumulative": -11241,
+          "milestone": ""
+        },
+        {
+          "month": 9,
+          "monthlyNet": 1863,
+          "cumulative": -9378,
+          "milestone": ""
+        },
+        {
+          "month": 10,
+          "monthlyNet": 1863,
+          "cumulative": -7515,
+          "milestone": ""
+        },
+        {
+          "month": 11,
+          "monthlyNet": 1863,
+          "cumulative": -5652,
+          "milestone": ""
+        },
+        {
+          "month": 12,
+          "monthlyNet": 1863,
+          "cumulative": -3789,
+          "milestone": "End of year 1"
+        },
+        {
+          "month": 13,
+          "monthlyNet": 1863,
+          "cumulative": -1926,
+          "milestone": ""
+        },
+        {
+          "month": 14,
+          "monthlyNet": 1863,
+          "cumulative": -63,
+          "milestone": ""
+        },
+        {
+          "month": 15,
+          "monthlyNet": 1863,
+          "cumulative": 1800,
+          "milestone": "Break-even"
+        },
+        {
+          "month": 16,
+          "monthlyNet": 1863,
+          "cumulative": 3663,
+          "milestone": ""
+        },
+        {
+          "month": 17,
+          "monthlyNet": 1863,
+          "cumulative": 5526,
+          "milestone": ""
+        },
+        {
+          "month": 18,
+          "monthlyNet": 1863,
+          "cumulative": 7389,
+          "milestone": ""
+        },
+        {
+          "month": 19,
+          "monthlyNet": 1863,
+          "cumulative": 9252,
+          "milestone": ""
+        },
+        {
+          "month": 20,
+          "monthlyNet": 1863,
+          "cumulative": 11115,
+          "milestone": ""
+        },
+        {
+          "month": 21,
+          "monthlyNet": 1863,
+          "cumulative": 12978,
+          "milestone": ""
+        },
+        {
+          "month": 22,
+          "monthlyNet": 1863,
+          "cumulative": 14841,
+          "milestone": ""
+        },
+        {
+          "month": 23,
+          "monthlyNet": 1863,
+          "cumulative": 16704,
+          "milestone": ""
+        },
+        {
+          "month": 24,
+          "monthlyNet": 1863,
+          "cumulative": 18567,
+          "milestone": "End of year 2"
+        },
+        {
+          "month": 25,
+          "monthlyNet": 1863,
+          "cumulative": 20430,
+          "milestone": ""
+        },
+        {
+          "month": 26,
+          "monthlyNet": 1863,
+          "cumulative": 22293,
+          "milestone": ""
+        },
+        {
+          "month": 27,
+          "monthlyNet": 1863,
+          "cumulative": 24156,
+          "milestone": ""
+        },
+        {
+          "month": 28,
+          "monthlyNet": 1863,
+          "cumulative": 26019,
+          "milestone": ""
+        },
+        {
+          "month": 29,
+          "monthlyNet": 1863,
+          "cumulative": 27882,
+          "milestone": ""
+        },
+        {
+          "month": 30,
+          "monthlyNet": 1863,
+          "cumulative": 29745,
+          "milestone": ""
+        },
+        {
+          "month": 31,
+          "monthlyNet": 1863,
+          "cumulative": 31608,
+          "milestone": ""
+        },
+        {
+          "month": 32,
+          "monthlyNet": 1863,
+          "cumulative": 33471,
+          "milestone": ""
+        },
+        {
+          "month": 33,
+          "monthlyNet": 1863,
+          "cumulative": 35334,
+          "milestone": ""
+        },
+        {
+          "month": 34,
+          "monthlyNet": 1863,
+          "cumulative": 37197,
+          "milestone": ""
+        },
+        {
+          "month": 35,
+          "monthlyNet": 1863,
+          "cumulative": 39060,
+          "milestone": ""
+        },
+        {
+          "month": 36,
+          "monthlyNet": 1863,
+          "cumulative": 40923,
+          "milestone": ""
+        }
+      ],
+      "horizonMonths": 36,
+      "maxExposure": -14967,
+      "maxExposureMonth": 6,
+      "breakEvenMonth": 15,
+      "netAtHorizon": 40923
+    },
+    "waves": [
+      {
+        "n": 1,
+        "title": "Registers and stock",
+        "weekFrom": 1,
+        "weekTo": 4,
+        "hours": 30,
+        "hoursAreFloor": false,
+        "scope": [
+          {
+            "source": "Airtable",
+            "capability": "Ad-hoc registers",
+            "decision": "native",
+            "estimatedHours": null
+          },
+          {
+            "source": "Sortly",
+            "capability": "Inventory",
+            "decision": "native",
+            "estimatedHours": null
+          }
+        ],
+        "toolsOff": [
+          "Airtable",
+          "Sortly"
+        ],
+        "toolsReduced": [],
+        "monthlyBanked": 389,
+        "bankedFromMonth": 2
+      },
+      {
+        "n": 2,
+        "title": "CRM cut-over",
+        "weekFrom": 5,
+        "weekTo": 10,
+        "hours": 55,
+        "hoursAreFloor": false,
+        "scope": [
+          {
+            "source": "HubSpot Sales",
+            "capability": "CRM",
+            "decision": "native",
+            "estimatedHours": null
+          }
+        ],
+        "toolsOff": [
+          "HubSpot"
+        ],
+        "toolsReduced": [],
+        "monthlyBanked": 890,
+        "bankedFromMonth": 4
+      },
+      {
+        "n": 3,
+        "title": "Field service",
+        "weekFrom": 11,
+        "weekTo": 16,
+        "hours": 30,
+        "hoursAreFloor": false,
+        "scope": [
+          {
+            "source": "Jobber",
+            "capability": "Field service",
+            "decision": "configure",
+            "estimatedHours": null
+          }
+        ],
+        "toolsOff": [
+          "Jobber"
+        ],
+        "toolsReduced": [],
+        "monthlyBanked": 349,
+        "bankedFromMonth": 5
+      },
+      {
+        "n": 4,
+        "title": "Support and quoting",
+        "weekFrom": 17,
+        "weekTo": 22,
+        "hours": 45,
+        "hoursAreFloor": false,
+        "scope": [
+          {
+            "source": "Zendesk",
+            "capability": "Support",
+            "decision": "configure",
+            "estimatedHours": null
+          },
+          {
+            "source": "PandaDoc",
+            "capability": "Quotes",
+            "decision": "build",
+            "estimatedHours": 40
+          },
+          {
+            "source": "PandaDoc",
+            "capability": "Legally binding signature",
+            "decision": "integrate",
+            "estimatedHours": null
+          }
+        ],
+        "toolsOff": [
+          "Zendesk"
+        ],
+        "toolsReduced": [
+          "PandaDoc"
+        ],
+        "monthlyBanked": 415,
+        "bankedFromMonth": 7
+      }
+    ],
+    "glossary": {
+      "verdicts": [
+        {
+          "verdict": "native",
+          "means": "The platform already does this. Setup only.",
+          "costsYou": "Configuration time, no new code"
+        },
+        {
+          "verdict": "configure",
+          "means": "The platform does this once settings, business rules or custom fields are in place.",
+          "costsYou": "Analyst time, no new code"
+        },
+        {
+          "verdict": "build",
+          "means": "New code is required. Always accompanied by an hour estimate.",
+          "costsYou": "Developer time, quoted per item"
+        },
+        {
+          "verdict": "integrate",
+          "means": "Better left to a specialist tool and wired in through its API.",
+          "costsYou": "The retained licence, plus wiring"
+        },
+        {
+          "verdict": "keep",
+          "means": "We recommend you do not move it. Out of scope by judgement.",
+          "costsYou": "Nothing changes"
+        },
+        {
+          "verdict": "off-catalog",
+          "means": "No curated entry. Reported as unmapped rather than guessed.",
+          "costsYou": "One follow-up conversation"
+        }
+      ],
+      "rules": [
+        {
+          "id": "Rule 01",
+          "title": "The catalog decides, the model narrates",
+          "body": "Tool-to-platform verdicts come from a curated matrix by lookup, never from live model reasoning on the critical path. Language models write the explanations; they do not cast the votes."
+        },
+        {
+          "id": "Rule 02",
+          "title": "The model never computes money",
+          "body": "It selects the inputs. A pure function returns the figure. Every number in section 05 can be recomputed by hand at the table, which is why the formula is shown next to each line."
+        },
+        {
+          "id": "Rule 03",
+          "title": "Confidence is a band, not a decimal",
+          "body": "High — observed directly in your system or invoices. Medium — inferred from consistent evidence. Low — stated once, unverified. A \"87% match\" is a claim nobody can defend in a room full of people who know their own business."
+        }
+      ]
+    },
+    "gaps": [
+      {
+        "id": "B.1",
+        "source": "Aurora Solar, mentioned on the call",
+        "capability": "",
+        "described": "Panel layout and shading design"
+      },
+      {
+        "id": "B.2",
+        "source": "Two operator portals, done by hand",
+        "capability": "",
+        "described": "Utility interconnection filings"
+      },
+      {
+        "id": "B.3",
+        "source": "Shared spreadsheets",
+        "capability": "",
+        "described": "Subsidy and grant paperwork"
+      },
+      {
+        "id": "B.4",
+        "source": "Gusto",
+        "capability": "",
+        "described": "Crew timesheet export to payroll"
+      }
+    ]
+  },
+  "prose": {
+    "recommendation": "Start with Airtable and Sortly. They carry the least process risk, they are month-to-month, and cutting them in the first four weeks returns $389 a month while the team learns the platform on data that cannot break an installation.",
+    "findings": [
+      {
+        "heading": "Five of your seven tools are covered by the platform you would run anyway",
+        "body": "HubSpot, Airtable, Sortly, Jobber and Zendesk together cost $2,043 a month. Every capability Voltix actually uses in them maps onto an Open Mercato module — three of them natively, two with configuration only. None of the five requires a bespoke module."
+      },
+      {
+        "heading": "One genuine gap: the quote builder",
+        "body": "Generating a customer quote from a panel-and-inverter configuration is the only thing Voltix does that the platform does not already do. We estimate 40 hours. It is the single largest piece of new code in the programme, and it is a small one."
+      },
+      {
+        "heading": "Two things we recommend you keep",
+        "body": "Xero stays: statutory books and VAT filing are not a platform problem, and replacing an accounting system to save $78 a month is a bad trade. Legally binding e-signature stays with PandaDoc, wired into the platform through its API rather than rebuilt."
+      },
+      {
+        "heading": "The HubSpot contract sets the timetable",
+        "body": "Your HubSpot term renews on 28 February 2027 and is the only annual commitment in the stack. A programme starting in October reaches the CRM cut-over in week 10 — comfortably before the renewal decision, which is the point of sequencing it second rather than first."
+      },
+      {
+        "heading": "Four usage statements we could not map",
+        "body": "Panel-layout design, utility interconnection filings, subsidy paperwork and payroll export sit outside our catalog. They are listed in Appendix B rather than folded into a percentage. Two of them may turn out to be real scope; we would rather find that out with you than around you."
+      }
+    ],
+    "basisIntro": "Everything below derives from material you supplied. Where we inferred rather than observed, the confidence band on the row says so.",
+    "disclaimer": "It is not a proposal to replace your stack. It is an ordered list of pieces worth cutting, each with what it saves and what it costs to cut. You can stop after any wave and keep the savings banked to that point.",
+    "waveNotes": [
+      {
+        "waveNumber": 1,
+        "body": "Installer certifications, site surveys and permit tracking become custom entities in the data designer. The two warehouses move to the wms module with the existing barcode flow. Lowest process risk in the stack: flat data, few users, nothing on the critical path of an installation."
+      },
+      {
+        "waveNumber": 2,
+        "body": "Contacts, deals and pipeline stages move to customers + sales, with the email log imported. Runs in parallel with HubSpot for two weeks before the switch. Completing this before 28 February 2027 is what removes the annual renewal from the table."
+      },
+      {
+        "waveNumber": 3,
+        "body": "Crew scheduling and job sheets move to the planner with your dispatch rules expressed as business rules rather than as habits. Crews run one full week on both systems before Jobber is cancelled — this is the wave the installers actually feel."
+      },
+      {
+        "waveNumber": 4,
+        "body": "Post-install tickets and warranty claims move to messages + warranty_claims. The quote builder is written here — 40 of the 45 hours — and PandaDoc drops to a signature-only plan wired into the platform through its API."
+      }
+    ],
+    "risks": [
+      {
+        "id": "8.1",
+        "risk": "HubSpot data exports cleanly",
+        "basis": "Assumed from a sample of 200 contacts",
+        "effect": "Wave 2 grows by 10–20 h if custom property mapping is messier than the sample suggests",
+        "handling": "Full export reviewed in week 1, before wave 2 is quoted firm"
+      },
+      {
+        "id": "8.2",
+        "risk": "Crews may rely on Jobber offline",
+        "basis": "Not confirmed on the call",
+        "effect": "Offline job sheets are a build, not a configure — adds roughly 25 h to wave 3",
+        "handling": "Resolved by one question to the crew leads; re-quoted before wave 3 starts"
+      },
+      {
+        "id": "8.3",
+        "risk": "Seat count grows with the installation season",
+        "basis": "34 today; you mentioned 40+ in spring",
+        "effect": "Savings grow, not shrink — per-seat licences scale, a self-hosted platform does not",
+        "handling": "No action. The figures here are the conservative case"
+      },
+      {
+        "id": "8.4",
+        "risk": "Four usage statements are off-catalog",
+        "basis": "Appendix B",
+        "effect": "Up to two could become real scope; we would estimate them separately",
+        "handling": "One 45-minute follow-up before the programme is signed"
+      },
+      {
+        "id": "8.5",
+        "risk": "PandaDoc signature-only pricing",
+        "basis": "Quoted at list, not negotiated",
+        "effect": "A cheaper signature provider would improve the retained figure below $277/mo",
+        "handling": "Optional; not assumed in any number in this report"
+      }
+    ],
+    "nextSteps": [
+      {
+        "action": "Click through the preview",
+        "owner": "Voltix — Marta, Piotr",
+        "when": "this week"
+      },
+      {
+        "action": "Answer the offline-crew question in risk 8.2",
+        "owner": "Voltix — crew leads",
+        "when": "before wave 3 is quoted"
+      },
+      {
+        "action": "Share the full HubSpot export for a migration dry run",
+        "owner": "Voltix — Marta",
+        "when": "before wave 2 is quoted firm"
+      },
+      {
+        "action": "45-minute session on the four off-catalog items",
+        "owner": "Both",
+        "when": "Appendix B"
+      },
+      {
+        "action": "Approve wave 1 only — $3,600, four weeks, $389/mo returned",
+        "owner": "Voltix",
+        "when": "decision point"
+      }
+    ],
+    "gaps": [
+      {
+        "gapId": "B.1",
+        "whyUnmapped": "Specialist CAD; no entry in our catalog and no platform equivalent",
+        "ourRead": "Almost certainly stays where it is. Possible integration target later"
+      },
+      {
+        "gapId": "B.2",
+        "whyUnmapped": "Manual process, no tool, no licence cost to compare against",
+        "ourRead": "May be worth a small build. Would be quoted separately"
+      },
+      {
+        "gapId": "B.3",
+        "whyUnmapped": "Not a product; a process running on files",
+        "ourRead": "Likely a natural fit for custom entities in wave 1. Needs 30 minutes to confirm"
+      },
+      {
+        "gapId": "B.4",
+        "whyUnmapped": "Payroll is outside the scope declared in section 02",
+        "ourRead": "Out of scope. Flagged only because wave 3 touches the data it reads"
+      }
+    ]
+  }
+}

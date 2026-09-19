@@ -16,14 +16,18 @@ describe('mapCapabilities', () => {
     expect(mapping).toMatchObject({
       capability: 'contacts',
       source: 'HubSpot',
-      targetFeature: 'OM CRM',
+      // Stary klucz `contacts` rozwiązuje się przez `src/catalogAliases.ts` na
+      // slug `crm.contacts`, a ten niesie prawdziwy cel z `OM_TARGETS`.
+      // Poprzednio stało tu 'OM CRM' - nazwa modułu, która w platformie nie
+      // istnieje i której scalony katalog nie powtarza.
+      targetFeature: 'customers + sales',
       decision: 'native',
       confidence: 'high',
     })
     expect(mapping.evidence).toContain('catalog-verified')
   })
 
-  it('falls back to build/low/"not in catalog" for an off-catalog capability', () => {
+  it('S11: falls back to build/low/"not in catalog" for an off-catalog capability', () => {
     const caps: SaaSCapabilityInput[] = [
       { id: 'c2', saasProductId: 'p1', capability: 'quantum_forecasting', importance: 'nice' },
     ]
@@ -33,7 +37,7 @@ describe('mapCapabilities', () => {
     expect(mapping.evidence).toBe('not in catalog')
   })
 
-  it('falls back the same way for a tool with no catalog entry at all', () => {
+  it('S10: falls back the same way for a tool with no catalog entry at all', () => {
     const caps: SaaSCapabilityInput[] = [
       { id: 'c3', saasProductId: 'p2', capability: 'anything', importance: 'core' },
     ]

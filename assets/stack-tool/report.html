@@ -6,21 +6,11 @@
 <title>Stack consolidation report — Mercatify</title>
 <link rel="stylesheet" href="tool.css">
 <style>
-  .rep-head { padding: 48px 0 28px; border-bottom: 1px solid var(--rule); }
-  .rep-head .meta { display: flex; gap: 14px; flex-wrap: wrap; color: var(--ink-2); font-size: 12.5px; margin-top: 18px; }
-  .verdict-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; border: 1px solid var(--rule-strong); }
-  .verdict-bar span { display: block; }
-  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
-  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
-  .sw-native { background: var(--accent); }
-  .sw-configure { background: var(--violet); }
-  .sw-build { background: var(--yellow); }
-  .sw-integrate { background: var(--rule-strong); }
-  .sw-keep { background: var(--surface-2); }
-  .sw-drop { background: transparent; border: 1px dashed var(--rule-strong); }
-  #rep table { min-width: 860px; }
-  .lines td { font-size: 13px; }
-  .lines .tot td { font-weight: 600; border-top: 1px solid var(--rule-strong); }
+  /* The report is a document of its own, rendered by the shared renderer and
+     shown in a frame. Nothing here styles it — it brings its own stylesheet,
+     which is the point: what is on screen is the file. */
+  #rep { margin-top: 26px; }
+  .reportframe { border-radius: var(--radius-lg, 12px); overflow: hidden; }
 </style>
 </head>
 <body>
@@ -53,17 +43,32 @@
     </div>
   </section>
 
+  <section class="card no-print" id="assume" hidden>
+    <div class="row" style="align-items:flex-end;gap:14px">
+      <div>
+        <label for="a-months">Implementation months</label>
+        <input type="number" id="a-months" min="1" max="24" step="1" placeholder="3" style="width:110px">
+      </div>
+      <p class="hint" style="margin:0">How long the work runs before the old licences start dropping
+         off. A consultant's assumption, not something this page can know — it sets the programme
+         length the report prints.</p>
+    </div>
+  </section>
+
   <div id="rep" hidden></div>
 
   <p class="footer">Mercatify · SaaS-to-Open-Mercato consolidation. Costs are client-provided;
      every figure on this page is a multiplication of the table above it.</p>
 </main>
 
+<script src="../shared/catalog.generated.js"></script>
 <script src="catalog.js"></script>
+<script src="../shared/report-renderer.generated.js"></script>
+<script src="../shared/report-model.js"></script>
 <script>
 (function(){
   initTheme('theme');
-  document.getElementById('print').addEventListener('click', function(){ window.print(); });
+  document.getElementById('print').addEventListener('click', function(){ printReportFrame(frame); });
 
   function parseJSON(text){
     var t = (text || '').trim();
@@ -98,276 +103,44 @@
     r.readAsText(f);
   });
 
-  /* ---------- report ---------- */
-  function build(d){
-    var cur = d.currency || 'EUR';
-    var t = computeTotals(d);
-    var rows = d.rows || [];
-    var tools = d.tools || [];
+  /* ---------- report ----------
+     One renderer, shared with the console and the client portal. This page
+     used to build its own document out of el() calls; it produced a different
+     report from the same kind of data, which is exactly the drift this file no
+     longer contributes to. What it owns now is the loader above and the frame
+     below — the document itself comes from mercatify-labs/src/report/. */
+  var frame = null;
+  var loaded = null;
+  var monthsEl = document.getElementById('a-months');
 
-    function rowsOf(toolId){ return rows.filter(function(r){ return r.toolId === toolId; }); }
-    function retained(tool){
-      return rowsOf(tool.id).some(function(r){ return r.verdict === 'keep' || r.verdict === 'integrate'; });
-    }
-    var cancelled = tools.filter(function(x){ return !retained(x); });
-    var covered = tools.filter(function(x){
-      var rs = rowsOf(x.id);
-      return rs.length && rs.every(function(r){ return r.verdict === 'native' || r.verdict === 'configure' || r.verdict === 'drop'; });
-    });
-    var buildRows = rows.filter(function(r){ return r.verdict === 'build'; });
-    var counts = {};
-    Object.keys(VERDICTS).forEach(function(k){ counts[k] = rows.filter(function(r){ return r.verdict === k; }).length; });
-    var decided = Object.keys(counts).reduce(function(s, k){ return s + counts[k]; }, 0);
-
+  function draw(scroll){
+    var d = loaded;
+    if (!d) return;
+    d.assumptions = d.assumptions || {};
+    d.assumptions.months = monthsEl.value;
     var rep = document.getElementById('rep');
-    rep.innerHTML = '';
     rep.hidden = false;
-    document.getElementById('loader').hidden = true;
-
-    /* header */
-    var head = el('section', { class:'rep-head' });
-    head.appendChild(el('p', { class:'eyebrow', text: 'Stack consolidation · ' + (d.company.name || 'unnamed case') }));
-    var headline = cancelled.length
-      ? cancelled.length + ' of your ' + tools.length + ' tools can be switched off.'
-      : 'Every tool in your stack earns its place — for now.';
-    head.appendChild(el('h1', { text: headline }));
-    var covers = counts.native + counts.configure;
-    var summary = 'You pay ' + money(t.monthlyNow, cur) + ' a month across ' + tools.length + ' tools. ' +
-      'Of the ' + rows.length + ' things you actually do in them, ' + covers +
-      (covers === 1 ? ' is' : ' are') + ' covered by Open Mercato' +
-      (covered.length ? ' — ' + covered.length + (covered.length === 1 ? ' tool is' : ' tools are') + ' covered end to end' : '') + '. ' +
-      (counts.build ? counts.build + (counts.build === 1 ? ' thing genuinely needs' : ' things genuinely need') + ' building: ' + t.hours + ' hours. ' : '') +
-      (counts.keep + counts.integrate ? plural(counts.keep + counts.integrate, 'tool') + ' stays where it is' + (counts.keep + counts.integrate === 1 ? '' : ' — both on purpose') + '.' : '');
-    head.appendChild(el('p', { class:'lede', text: summary }));
-    var meta = el('div', { class:'meta' });
-    [ d.created || '', d.company.industry || '', (d.company.people ? d.company.people + ' people' : ''),
-      (t.seats ? t.seats + ' seats' : ''), (d.assumptions && d.assumptions.analyst ? 'reviewed by ' + d.assumptions.analyst : 'not yet reviewed') ]
-      .filter(Boolean).forEach(function(x){ meta.appendChild(el('span', { text: x })); });
-    head.appendChild(meta);
-    rep.appendChild(head);
-
-    /* KPI tiles */
-    var kpis = el('div', { class:'grid grid--4', style:'margin:26px 0 8px' });
-    function kpi(k, v, s, cls){
-      kpis.appendChild(el('div', { class:'kpi ' + (cls || '') }, [
-        el('div', { class:'k', text:k }), el('div', { class:'v', text:v }), el('div', { class:'s', text:s })
-      ]));
-    }
-    kpi('Licences today', money(t.monthlyNow, cur), 'per month · ' + tools.length + ' tools');
-    kpi('Licences after', money(t.monthlyAfter, cur), t.hosting ? 'per month · incl. ' + money(t.hosting, cur) + ' hosting' : 'per month · hosting not costed');
-    kpi('Net saving', money(t.annualSaving, cur), 'per year · ' + plural(cancelled.length, 'tool') + ' cancelled', 'kpi--accent');
-    kpi(t.oneOff ? 'One-off build' : 'Build effort',
-        t.oneOff ? money(t.oneOff, cur) : t.hours + ' h',
-        t.breakEven ? t.hours + ' h · break-even month ' + t.breakEven
-          : (t.hours ? t.hours + ' h · rate not entered' : 'nothing to build'));
-    rep.appendChild(kpis);
-
-    /* verdict bar */
-    if (decided) {
-      var bar = el('div', { class:'verdict-bar' });
-      Object.keys(VERDICTS).forEach(function(k){
-        if (!counts[k]) return;
-        bar.appendChild(el('span', { class:'sw-' + k, style:'width:' + (counts[k] / decided * 100) + '%' }));
-      });
-      var legend = el('div', { class:'legend' });
-      Object.keys(VERDICTS).forEach(function(k){
-        if (!counts[k]) return;
-        legend.appendChild(el('span', { html: '<i class="sw-' + k + '"></i>' + counts[k] + ' ' + VERDICTS[k].label }));
-      });
-      var wrapBar = el('section', { class:'card card--plain' }, [bar, legend]);
-      rep.appendChild(wrapBar);
-    }
-
-    /* tool by tool */
-    rep.appendChild(el('div', { class:'section' }, [
-      el('h2', { text:'Tool by tool' }),
-      el('p', { text:'One verdict per module, each with the evidence behind it. A tool appears more than once when it does more than one job.' })
-    ]));
-
-    var tw = el('div', { class:'tablewrap' });
-    var table = el('table');
-    var thead = el('thead', {}, [ el('tr', {}, [
-      el('th', { scope:'col', text:'Tool · module' }),
-      el('th', { scope:'col', text:'What it is used for' }),
-      el('th', { scope:'col', text:'Open Mercato' }),
-      el('th', { scope:'col', text:'Verdict' }),
-      el('th', { scope:'col', text:'Confidence' }),
-      el('th', { scope:'col', class:'num', text:'Monthly' })
-    ])]);
-    table.appendChild(thead);
-    var tb = el('tbody');
-    tools.forEach(function(tool){
-      var rs = rowsOf(tool.id);
-      rs.forEach(function(r, idx){
-        var tr = el('tr');
-        tr.appendChild(el('td', {}, [
-          el('div', { text: idx === 0 ? tool.name : '' }),
-          el('div', { class:'sub', text: r.modName })
-        ]));
-        tr.appendChild(el('td', {}, [
-          el('div', { text: r.usage || '—' }),
-          r.note ? el('div', { class:'sub', text: r.note }) : document.createTextNode('')
-        ]));
-        tr.appendChild(el('td', {}, [ el('div', { text: r.om || '—' }) ]));
-        tr.appendChild(el('td', {}, [ r.verdict
-          ? el('span', { class:'chip chip--' + r.verdict, text: VERDICTS[r.verdict].label })
-          : el('span', { class:'chip', text:'undecided' }) ]));
-        tr.appendChild(el('td', {}, [ el('span', { class:'sub', text: r.conf || '—' }) ]));
-        tr.appendChild(el('td', { class:'num' }, [
-          el('div', { text: idx === 0 ? (tool.monthly ? money(tool.monthly, cur) : '—') : '' }),
-          idx === 0 && !retained(tool) ? el('div', { class:'sub', text:'cancelled' }) : document.createTextNode('')
-        ]));
-        tb.appendChild(tr);
-      });
+    frame = renderModelInto(rep, function(){ return reportModelFromMapping(d); }, {
+      title: 'Stack consolidation report — ' + ((d.company && d.company.name) || 'unnamed case')
     });
-    table.appendChild(tb);
-    tw.appendChild(table);
-    rep.appendChild(tw);
-
-    /* duplicates */
-    var ov = overlaps(tools);
-    if (ov.length) {
-      rep.appendChild(el('div', { class:'section' }, [
-        el('h2', { text:'You pay twice for these' }),
-        el('p', { text:'Same job, more than one invoice. This is where consolidation pays before a single line of code is written.' })
-      ]));
-      var dw = el('div', { class:'tablewrap' });
-      var dt = el('table');
-      dt.appendChild(el('thead', {}, [ el('tr', {}, [
-        el('th', { scope:'col', text:'Capability' }),
-        el('th', { scope:'col', text:'Covered by' }),
-        el('th', { scope:'col', class:'num', text:'Tools' })
-      ])]));
-      var dtb = el('tbody');
-      ov.forEach(function(o){
-        dtb.appendChild(el('tr', {}, [
-          el('td', {}, [ el('strong', { text: o.label }) ]),
-          el('td', {}, [ el('span', { text: o.tools.map(function(x){ return x.toolName + ' (' + x.moduleName + ')'; }).join(', ') }) ]),
-          el('td', { class:'num', text: String(o.tools.length) })
-        ]));
-      });
-      dt.appendChild(dtb);
-      dw.appendChild(dt);
-      rep.appendChild(dw);
-    }
-
-    /* build backlog */
-    rep.appendChild(el('div', { class:'section' }, [
-      el('h2', { text:'What genuinely has to be built' }),
-      el('p', { text: buildRows.length ? 'Everything else is configuration. These are the hours in the quote.'
-                                       : 'Nothing on this list needs new code. Everything you use is configuration.' })
-    ]));
-    if (buildRows.length) {
-      var bw = el('div', { class:'tablewrap' });
-      var bt = el('table');
-      bt.appendChild(el('thead', {}, [ el('tr', {}, [
-        el('th', { scope:'col', text:'What' }),
-        el('th', { scope:'col', text:'Replaces' }),
-        el('th', { scope:'col', text:'Confidence' }),
-        el('th', { scope:'col', class:'num', text:'Hours' }),
-        el('th', { scope:'col', class:'num', text:'Cost' })
-      ])]));
-      var btb = el('tbody');
-      buildRows.forEach(function(r){
-        btb.appendChild(el('tr', {}, [
-          el('td', {}, [ el('div', { text: r.om || r.modName }), el('div', { class:'sub', text: r.note || '' }) ]),
-          el('td', {}, [ el('div', { text: r.toolName + ' · ' + r.modName }) ]),
-          el('td', { text: r.conf || '—' }),
-          el('td', { class:'num', text: (Number(r.hours) || 0) + ' h' }),
-          el('td', { class:'num', text: t.rate ? money((Number(r.hours) || 0) * t.rate, cur) : '—' })
-        ]));
-      });
-      btb.appendChild(el('tr', { class:'tot' }, [
-        el('td', { text:'Total' }), el('td', {}), el('td', {}),
-        el('td', { class:'num', text: t.hours + ' h' }),
-        el('td', { class:'num', text: t.rate ? money(t.oneOff, cur) : '—' })
-      ]));
-      bt.appendChild(btb);
-      bw.appendChild(bt);
-      rep.appendChild(bw);
-    }
-
-    /* the money, line by line */
-    rep.appendChild(el('div', { class:'section' }, [
-      el('h2', { text:'What it costs, what it returns' }),
-      el('p', { text:'Computed from the numbers you gave us. Every line can be recomputed by hand in the room.' })
-    ]));
-    var mw = el('div', { class:'tablewrap' });
-    var mt = el('table', { class:'lines' });
-    mt.appendChild(el('thead', {}, [ el('tr', {}, [
-      el('th', { scope:'col', text:'Line' }),
-      el('th', { scope:'col', text:'Basis' }),
-      el('th', { scope:'col', class:'num', text:'Amount' })
-    ])]));
-    var mtb = el('tbody');
-    function line(k, basis, val, cls){
-      mtb.appendChild(el('tr', { class: cls || '' }, [
-        el('td', { text:k }), el('td', { class:'sub', text:basis }), el('td', { class:'num', text:val })
-      ]));
-    }
-    line('Licences today', tools.length + ' tools as invoiced', money(t.monthlyNow, cur) + '/mo');
-    line('Licences retained', tools.filter(function(x){ return (Number(x.after) || 0) > 0; })
-         .map(function(x){ return x.name; }).join(', ') || 'none',
-         money(t.retained, cur) + '/mo');
-    line('Hosting & ops', d.assumptions && d.assumptions.hosting ? 'client-provided estimate' : 'not entered',
-         money(t.hosting, cur) + '/mo');
-    line('Monthly after', 'retained + hosting', money(t.monthlyAfter, cur) + '/mo');
-    line('Monthly saving', 'today − after', money(t.monthlySaving, cur) + '/mo');
-    line('Annual saving', 'monthly saving × 12', money(t.annualSaving, cur) + '/yr', 'tot');
-    if (t.rate) {
-      line('One-off build', t.hours + ' h × ' + money(t.rate, cur) + '/h', money(t.oneOff, cur));
-      line('Break-even', t.breakEven ? 'one-off ÷ monthly saving' : 'no saving to pay it back',
-           t.breakEven ? 'month ' + t.breakEven : '—', 'tot');
-    }
-    mt.appendChild(mtb);
-    mw.appendChild(mt);
-    rep.appendChild(mw);
-
-    /* what they told us */
-    if (d.pains || d.mustKeep) {
-      rep.appendChild(el('div', { class:'section' }, [ el('h2', { text:'In their own words' }) ]));
-      var c = el('section', { class:'card' });
-      if (d.pains) { c.appendChild(el('h3', { text:'What hurts today' })); c.appendChild(el('p', { class:'note', text: d.pains })); }
-      if (d.mustKeep) { c.appendChild(el('h3', { text:'What must not be touched' })); c.appendChild(el('p', { class:'note', text: d.mustKeep })); }
-      rep.appendChild(c);
-    }
-
-    /* assumptions */
-    rep.appendChild(el('div', { class:'section' }, [
-      el('h2', { text:'Assumptions and what we are not sure about' }),
-      el('p', { text:'Confidence is a band, not a decimal. Anything marked low is a conversation, not a commitment.' })
-    ]));
-    var ac = el('section', { class:'card' });
-    var lows = rows.filter(function(r){ return r.conf === 'low'; });
-    var ul = el('ul', { style:'margin:0;padding-left:18px;color:var(--ink-2)' });
-    if (d.assumptions && d.assumptions.notes) {
-      d.assumptions.notes.split('\n').filter(Boolean).forEach(function(n){ ul.appendChild(el('li', { text: n })); });
-    }
-    lows.forEach(function(r){
-      ul.appendChild(el('li', { text: r.toolName + ' · ' + r.modName + ' — low confidence' + (r.note ? ': ' + r.note : '') }));
-    });
-    var unmapped = rows.filter(function(r){ return !r.caps || !r.caps.length; });
-    unmapped.forEach(function(r){
-      ul.appendChild(el('li', { text: r.toolName + ' is off catalog — reported as unmapped rather than guessed at' }));
-    });
-    var undecided = rows.filter(function(r){ return !r.verdict; });
-    if (undecided.length) ul.appendChild(el('li', { text: undecided.length + ' modules have no verdict yet — this report is a draft' }));
-    if (!ul.childNodes.length) ul.appendChild(el('li', { text:'No open questions recorded.' }));
-    ac.appendChild(ul);
-    rep.appendChild(ac);
-
-    /* next step */
-    var next = el('section', { class:'card', style:'margin-top:26px' });
-    next.appendChild(el('h3', { text:'The first piece worth cutting' }));
-    var first = cancelled.slice().sort(function(a, b){ return (Number(b.monthly) || 0) - (Number(a.monthly) || 0); })[0];
-    next.appendChild(el('p', { class:'note', text: first
-      ? first.name + ' — ' + (first.monthly ? money(first.monthly, cur) + ' a month, ' + money((Number(first.monthly) || 0) * 12, cur) + ' a year' : 'no cost on file')
-        + '. Everything it does is covered. We never propose replacing a stack; we name one piece, and then the next.'
-      : 'Nothing is cancellable on the current verdicts. Worth re-reading the table before this goes to a client.' }));
-    rep.appendChild(next);
-
-    rep.scrollIntoView({ behavior:'smooth', block:'start' });
+    if (scroll) rep.scrollIntoView({ behavior:'smooth', block:'start' });
   }
+
+  function build(d){
+    loaded = d;
+    document.getElementById('loader').hidden = true;
+    document.getElementById('assume').hidden = false;
+    monthsEl.value = (d.assumptions && d.assumptions.months) || '';
+    draw(true);
+  }
+
+  /* A whole document per keystroke is wasteful, so the redraw waits for the
+     typing to stop — the same rule the console's report screen follows. */
+  var pending = null;
+  monthsEl.addEventListener('input', function(){
+    window.clearTimeout(pending);
+    pending = window.setTimeout(function(){ draw(false); }, 300);
+  });
 
   /* auto-load whatever this browser is holding */
   var c = loadCase();

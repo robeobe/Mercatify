@@ -1,0 +1,1417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stack Consolidation Report — Voltix</title>
+<meta name="description" content="Mercatify stack consolidation report for Voltix (CASE-0041): capability coverage, computed savings and a phased migration onto Open Mercato.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5/index.css">
+<style>
+  /* Palette and type inherited from the Mercatify site (openmercato.com tokens, Geist). */
+  :root {
+    --bg: #FFFFFF;
+    --surface: #FAFAFA;
+    --surface-2: #ECECEC;
+    --ink: #0C0C0C;
+    --ink-2: #6D6D6D;
+    --ink-3: #9E9E9E;
+    --rule: #ECECEC;
+    --rule-strong: #C8C8C8;
+    --accent: #B4F372;
+    --accent-ink: #0C0C0C;
+    --accent-text: #2F520B;
+    --accent-soft: #F6FEEE;
+    --violet: #BC9AFF;
+    --yellow: #EEFB63;
+
+    /* Chart categorical steps — validated: lightness band, chroma floor,
+       CVD separation, normal-vision floor and contrast all pass on this surface. */
+    --cat-native: #3F7D20;
+    --cat-configure: #6D42C8;
+    --cat-build: #A8830F;
+    --cat-integrate: #0C7D9E;
+    --cat-unknown: #9E9E9E;
+    --grid: #E4E4E4;
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C0C0C;
+      --surface: #111111;
+      --surface-2: #1F1F1F;
+      --ink: #FAFAFA;
+      --ink-2: #9E9E9E;
+      --ink-3: #6D6D6D;
+      --rule: #1F1F1F;
+      --rule-strong: #303030;
+      --accent: #B4F372;
+      --accent-ink: #0C0C0C;
+      --accent-text: #B4F372;
+      --accent-soft: #16210D;
+      --cat-native: #61A833;
+      --cat-configure: #9169E0;
+      --cat-build: #B8891A;
+      --cat-integrate: #1C94B0;
+      --cat-unknown: #6D6D6D;
+      --grid: #242424;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0C0C0C;
+    --surface: #111111;
+    --surface-2: #1F1F1F;
+    --ink: #FAFAFA;
+    --ink-2: #9E9E9E;
+    --ink-3: #6D6D6D;
+    --rule: #1F1F1F;
+    --rule-strong: #303030;
+    --accent-text: #B4F372;
+    --accent-soft: #16210D;
+    --cat-native: #61A833;
+    --cat-configure: #9169E0;
+    --cat-build: #B8891A;
+    --cat-integrate: #1C94B0;
+    --cat-unknown: #6D6D6D;
+    --grid: #242424;
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--surface-2);
+    color: var(--ink);
+    font-family: "Geist Sans", "Geist", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent-text); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  h1, h2, h3, h4 { margin: 0; letter-spacing: -0.026em; line-height: 1.15; font-weight: 600; text-wrap: balance; }
+  h1 { font-size: clamp(1.9rem, 4.4vw, 2.9rem); line-height: 1.05; }
+  h2 { font-size: clamp(1.25rem, 2.4vw, 1.6rem); }
+  h3 { font-size: 1.02rem; }
+  h4 { font-size: .92rem; }
+  p { margin: 0; }
+
+  .mono, .num { font-family: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  /* ---------- document shell ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: 30;
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+  }
+  .toolbar__inner {
+    max-width: 62rem; margin: 0 auto; padding: 11px 24px;
+    display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 1.02rem; letter-spacing: -0.035em; color: var(--ink); text-decoration: none; margin-right: auto; }
+  .brand__mark { width: 21px; height: 21px; border-radius: 5px; background: var(--accent); display: grid; place-items: center; color: var(--accent-ink); font-size: .72rem; font-weight: 700; letter-spacing: 0; }
+  .toolbar__note { font-family: "Geist Mono", monospace; font-size: .72rem; color: var(--ink-3); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: .5rem; font-size: .86rem; font-weight: 600; font-family: inherit; text-decoration: none; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+  .btn--primary { background: var(--accent); color: var(--accent-ink); }
+  .btn--primary:hover { filter: brightness(1.08); }
+  .btn--ghost { border-color: var(--rule-strong); color: var(--ink); background: transparent; }
+  .btn--ghost:hover { background: var(--surface-2); }
+
+  .doc { max-width: 62rem; margin: 26px auto 60px; background: var(--bg); border: 1px solid var(--rule); border-radius: .75rem; overflow: hidden; }
+  .pad { padding: 44px 48px; }
+  @media (max-width: 680px) { .pad { padding: 30px 22px; } }
+
+  .band { border-top: 1px solid var(--rule); }
+
+  /* ---------- cover ---------- */
+  .cover { background: var(--surface); border-bottom: 1px solid var(--rule); }
+  .eyebrow { display: inline-block; font-family: "Geist Mono", monospace; font-size: .7rem; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3); }
+  .cover h1 { margin-top: 16px; max-width: 18ch; }
+  .cover .lede { margin-top: 18px; font-size: clamp(1rem, 1.7vw, 1.14rem); color: var(--ink-2); max-width: 58ch; line-height: 1.5; }
+
+  .meta { margin: 34px 0 0; padding-top: 22px; border-top: 1px solid var(--rule-strong); display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px 24px; }
+  .meta dt { font-family: "Geist Mono", monospace; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 5px; }
+  .meta dd { margin: 0; font-weight: 600; font-size: .9rem; }
+  .meta dd span { display: block; font-weight: 400; color: var(--ink-2); font-size: .82rem; }
+
+  .confidential { margin-top: 26px; font-family: "Geist Mono", monospace; font-size: .7rem; letter-spacing: .05em; color: var(--ink-3); border: 1px dashed var(--rule-strong); border-radius: .4rem; padding: 9px 13px; display: inline-block; }
+
+  /* ---------- section headings ---------- */
+  .sec__no { font-family: "Geist Mono", monospace; font-size: .7rem; letter-spacing: .12em; color: var(--accent-text); text-transform: uppercase; }
+  .sec__head { margin-bottom: 22px; }
+  .sec__head h2 { margin-top: 10px; max-width: 26ch; }
+  .sec__head p { margin-top: 12px; color: var(--ink-2); max-width: 64ch; font-size: .96rem; }
+
+  /* ---------- key numbers ---------- */
+  /* Exactly six tiles — 3x2 so the grid never leaves a bare cell. */
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: .6rem; overflow: hidden; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 440px) { .kpis { grid-template-columns: 1fr; } }
+  .kpi { background: var(--bg); padding: 17px 18px; }
+  .kpi__k { font-family: "Geist Mono", monospace; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 7px; }
+  .kpi__v { font-size: 1.62rem; font-weight: 600; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; display: block; line-height: 1.05; }
+  .kpi__v small { font-size: .74rem; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }
+  .kpi__n { display: block; font-size: .75rem; color: var(--ink-3); margin-top: 5px; line-height: 1.35; }
+  .kpi--lead { background: var(--accent-soft); }
+  .kpi--lead .kpi__v { color: var(--accent-text); }
+
+  /* ---------- callout ---------- */
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 .5rem .5rem 0; padding: 18px 22px; margin-top: 26px; }
+  .callout h4 { margin-bottom: 7px; }
+  .callout p { font-size: .94rem; color: var(--ink); }
+  .callout--plain { background: var(--surface); border-left-color: var(--rule-strong); }
+  .callout--plain p { color: var(--ink-2); }
+
+  /* ---------- tables ---------- */
+  .tablewrap { overflow-x: auto; margin-top: 22px; border: 1px solid var(--rule); border-radius: .6rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+  .tablewrap--wide table { min-width: 46rem; }
+  thead th { text-align: left; padding: 10px 14px; white-space: nowrap; font-family: "Geist Mono", monospace; font-weight: 500; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--rule-strong); background: var(--surface); }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tfoot td { padding: 11px 14px; border-top: 1px solid var(--rule-strong); font-weight: 600; background: var(--surface); }
+  td.num, th.num, tfoot td.num { text-align: right; font-family: "Geist Mono", monospace; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tool { font-weight: 600; }
+  .sub { display: block; color: var(--ink-3); font-size: .78rem; margin-top: 2px; font-weight: 400; }
+
+  /* Chip ink is set per fill so uppercase 10px text clears WCAG AA (4.5:1) in
+     both themes: white fails on the amber step in light and on every step in dark. */
+  .chip { display: inline-block; padding: 3px 8px; border-radius: .25rem; font-family: "Geist Mono", monospace; font-size: .64rem; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; border: 1px solid transparent; color: #FFFFFF; }
+  .chip--native { background: var(--cat-native); }
+  .chip--configure { background: var(--cat-configure); }
+  .chip--build { background: var(--cat-build); color: #0C0C0C; }
+  .chip--integrate { background: var(--cat-integrate); }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .chip--native,
+    :root:not([data-theme="light"]) .chip--configure,
+    :root:not([data-theme="light"]) .chip--integrate { color: #0C0C0C; }
+    :root:not([data-theme="light"]) .g-seg-label { fill: #0C0C0C; }
+  }
+  :root[data-theme="dark"] .chip--native,
+  :root[data-theme="dark"] .chip--configure,
+  :root[data-theme="dark"] .chip--integrate { color: #0C0C0C; }
+  :root[data-theme="dark"] .g-seg-label { fill: #0C0C0C; }
+  .chip--keep { background: transparent; border-color: var(--rule-strong); color: var(--ink-2); }
+  .chip--unknown { background: transparent; border-color: var(--rule-strong); color: var(--ink-2); }
+
+  .conf { font-family: "Geist Mono", monospace; font-size: .7rem; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .conf__bars { display: inline-flex; gap: 2px; }
+  .conf__bars i { width: 4px; height: 10px; border-radius: 1px; background: var(--rule-strong); display: block; }
+  .conf--high i:nth-child(-n+3), .conf--medium i:nth-child(-n+2), .conf--low i:nth-child(1) { background: var(--ink-2); }
+
+  /* ---------- charts ---------- */
+  .figure { margin-top: 26px; border: 1px solid var(--rule); border-radius: .6rem; padding: 20px 22px 16px; background: var(--bg); }
+  .figure__title { font-size: .95rem; font-weight: 600; letter-spacing: -0.012em; }
+  .figure__sub { font-size: .82rem; color: var(--ink-2); margin-top: 4px; max-width: 62ch; }
+  .figure svg { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
+  .figure__cap { font-size: .76rem; color: var(--ink-3); margin-top: 10px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 13px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; font-size: .8rem; color: var(--ink-2); }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; display: block; flex: none; }
+  .legend .num { color: var(--ink); font-weight: 600; }
+
+  .g-axis text { font-family: "Geist Mono", monospace; font-size: 10px; fill: var(--ink-3); }
+  .g-grid line { stroke: var(--grid); stroke-width: 1; }
+  .g-zero { stroke: var(--rule-strong); stroke-width: 1; stroke-dasharray: 4 3; }
+  .g-line { fill: none; stroke: var(--cat-native); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .g-dot { fill: var(--cat-native); stroke: var(--bg); stroke-width: 2; }
+  .g-note { font-family: "Geist Mono", monospace; font-size: 10px; fill: var(--ink-2); }
+  .g-note--strong { fill: var(--ink); font-weight: 600; }
+  .g-shade { fill: var(--surface); }
+  .g-seg-label { font-family: "Geist Mono", monospace; font-size: 11px; fill: #FFFFFF; font-weight: 600; }
+
+  .tip { position: fixed; z-index: 40; pointer-events: none; opacity: 0; transition: opacity .1s; background: var(--ink); color: var(--bg); border-radius: .4rem; padding: 7px 10px; font-size: .78rem; line-height: 1.4; box-shadow: 0 6px 20px rgb(0 0 0 / .18); max-width: 15rem; }
+  .tip b { font-family: "Geist Mono", monospace; font-variant-numeric: tabular-nums; }
+
+  /* ---------- waves ---------- */
+  .waves { margin-top: 24px; display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: .6rem; overflow: hidden; }
+  .wave { background: var(--bg); padding: 20px 22px; display: grid; grid-template-columns: 7rem 1fr 9rem; gap: 20px; align-items: start; }
+  @media (max-width: 720px) { .wave { grid-template-columns: 1fr; gap: 10px; } }
+  .wave__when { font-family: "Geist Mono", monospace; font-size: .74rem; color: var(--ink-3); }
+  .wave__when b { display: block; color: var(--accent-text); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 5px; }
+  .wave__body p { font-size: .9rem; color: var(--ink-2); margin-top: 6px; }
+  .wave__body .drops { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .wave__body .drops span { font-family: "Geist Mono", monospace; font-size: .7rem; border: 1px solid var(--rule-strong); border-radius: .3rem; padding: 3px 8px; color: var(--ink-2); }
+  .wave__save { text-align: right; }
+  @media (max-width: 720px) { .wave__save { text-align: left; } }
+  .wave__save b { display: block; font-size: 1.15rem; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .wave__save span { font-size: .74rem; color: var(--ink-3); }
+
+  /* ---------- lists ---------- */
+  .rule-list { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+  .rule-list li { border-bottom: 1px solid var(--rule); padding: 16px 0; display: grid; grid-template-columns: 2.4rem 1fr; gap: 16px; align-items: start; }
+  .rule-list .n { font-family: "Geist Mono", monospace; font-size: .76rem; color: var(--ink-3); padding-top: 3px; }
+  .rule-list p { font-size: .9rem; color: var(--ink-2); margin-top: 5px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 24px; }
+  .card { border: 1px solid var(--rule); border-radius: .6rem; padding: 20px; background: var(--surface); }
+  .card h4 { margin-bottom: 7px; }
+  .card p { font-size: .88rem; color: var(--ink-2); }
+  .card__tag { font-family: "Geist Mono", monospace; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 9px; }
+
+  .checklist { margin: 22px 0 0; padding: 0; list-style: none; }
+  .checklist li { display: grid; grid-template-columns: 1.4rem 1fr; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: .92rem; }
+  .checklist li:last-child { border-bottom: 0; }
+  .checklist .box { width: 13px; height: 13px; border: 1px solid var(--rule-strong); border-radius: 3px; margin-top: 5px; }
+  .checklist b { font-weight: 600; }
+  .checklist span.who { display: block; font-size: .78rem; color: var(--ink-3); margin-top: 2px; }
+
+  /* ---------- signature ---------- */
+  .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px; }
+  @media (max-width: 680px) { .sign { grid-template-columns: 1fr; gap: 24px; } }
+  .sign__line { border-bottom: 1px solid var(--rule-strong); height: 40px; }
+  .sign__who { font-size: .8rem; color: var(--ink-3); margin-top: 8px; font-family: "Geist Mono", monospace; }
+
+  .docfoot { background: var(--surface); border-top: 1px solid var(--rule); padding: 22px 48px 28px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: .78rem; color: var(--ink-3); }
+  @media (max-width: 680px) { .docfoot { padding-inline: 22px; } }
+  .docfoot a { color: var(--ink-2); text-decoration: none; }
+
+  .footnote { font-family: "Geist Mono", monospace; font-size: .72rem; color: var(--ink-3); margin-top: 14px; line-height: 1.55; }
+
+  .print-footer { display: none; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ================= PRINT / PDF ================= */
+  @page {
+    size: A4;
+    margin: 14mm 13mm 18mm;
+  }
+
+  @media print {
+    /* Force the light instrument on paper, whatever the screen theme is. */
+    :root, :root[data-theme="dark"] {
+      --bg: #FFFFFF; --surface: #FAFAFA; --surface-2: #ECECEC;
+      --ink: #0C0C0C; --ink-2: #545454; --ink-3: #767676;
+      --rule: #DFDFDF; --rule-strong: #B4B4B4;
+      --accent: #B4F372; --accent-ink: #0C0C0C; --accent-text: #2F520B; --accent-soft: #F4FDEA;
+      --cat-native: #3F7D20; --cat-configure: #6D42C8; --cat-build: #A8830F; --cat-integrate: #0C7D9E;
+      --cat-unknown: #9E9E9E; --grid: #E4E4E4;
+      color-scheme: light;
+    }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    html, body { background: #FFFFFF; font-size: 9.4pt; line-height: 1.45; }
+    .toolbar, .tip { display: none !important; }
+
+    .doc { max-width: none; margin: 0; border: 0; border-radius: 0; }
+    .pad { padding: 0 0 6mm; }
+    .cover { border-bottom: 0.6pt solid var(--rule-strong); padding-bottom: 8mm; background: #FFFFFF; }
+    .band { border-top: 0; padding-top: 7mm; }
+
+    h1 { font-size: 26pt; }
+    h2 { font-size: 14pt; }
+    h3 { font-size: 10.5pt; }
+    h4 { font-size: 9.6pt; }
+
+    /* Page breaks: each numbered section starts fresh, cover stands alone. */
+    .pb { break-before: page; page-break-before: always; }
+    .no-break, .figure, .kpis, .callout, .card, .wave, .sign, .tablewrap { break-inside: avoid; page-break-inside: avoid; }
+    tr, li { break-inside: avoid; page-break-inside: avoid; }
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+
+    /* Tables must fit 184mm of usable width. */
+    .tablewrap { overflow: visible; border-color: var(--rule-strong); }
+    .tablewrap--wide table { min-width: 0; }
+    table { font-size: 8pt; }
+    thead th { padding: 5pt 6pt; font-size: 6pt; }
+    tbody td, tfoot td { padding: 5pt 6pt; }
+    .sub { font-size: 7pt; }
+    .chip { font-size: 6pt; padding: 1.5pt 4pt; }
+    .chip--native, .chip--configure, .chip--integrate { color: #FFFFFF; }
+    .chip--build { color: #0C0C0C; }
+    .g-seg-label { fill: #FFFFFF; }
+    .conf { font-size: 6.6pt; }
+
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+    .kpi__v { font-size: 15pt; }
+    .kpi { padding: 8pt 9pt; }
+    .figure { padding: 10pt 12pt 8pt; }
+    .docfoot { padding: 6mm 0 0; background: #FFFFFF; }
+
+    a { color: var(--ink); text-decoration: none; }
+
+    /* Repeated on every printed page by the print engine. */
+    .print-footer {
+      display: block; position: fixed; bottom: -12mm; left: 0; right: 0;
+      border-top: 0.6pt solid var(--rule); padding-top: 2mm;
+      font-family: "Geist Mono", monospace; font-size: 6.6pt; color: var(--ink-3);
+      display: flex; justify-content: space-between;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar__inner">
+    <a class="brand" href="#top"><span class="brand__mark">M</span>Mercatify</a>
+    <span class="toolbar__note">CASE-0041 · v1.0 · 19 Sep 2026</span>
+    <button class="btn btn--ghost" type="button" id="themeToggle">Toggle theme</button>
+    <button class="btn btn--primary" type="button" id="printBtn">Print / Save as PDF</button>
+  </div>
+</div>
+
+<div class="doc" id="top">
+
+  <!-- ============ COVER ============ -->
+  <header class="cover pad">
+    <span class="eyebrow">Stack consolidation report · prepared for Voltix Energy Sp. z o.o.</span>
+    <h1>What you rent today, and what you could own instead.</h1>
+    <p class="lede">
+      We read the seven tools Voltix pays for each month, established what each one is actually
+      used for, and matched that against the Open Mercato platform. This report states — per
+      capability, with evidence — what is already native, what needs configuration, what has to
+      be built, what stays where it is, and what the difference is worth.
+    </p>
+
+    <dl class="meta">
+      <div><dt>Prepared for</dt><dd>Voltix Energy<span>Marta Nowak, COO</span></dd></div>
+      <div><dt>Prepared by</dt><dd>Mercatify<span>Joanna Pawłowska, consultant on record</span></dd></div>
+      <div><dt>Case</dt><dd class="mono">CASE-0041<span>Analysis run 11 min · human-reviewed</span></dd></div>
+      <div><dt>Issued</dt><dd>19 September 2026<span>Version 1.0</span></dd></div>
+      <div><dt>Valid until</dt><dd>19 October 2026<span>Pricing and effort estimates</span></dd></div>
+      <div><dt>Basis</dt><dd>Open Mercato<span>Self-hosted, source available</span></dd></div>
+    </dl>
+
+    <p class="confidential">Confidential — prepared for Voltix Energy. Contains supplier pricing disclosed by the client.</p>
+  </header>
+
+  <!-- ============ AT A GLANCE ============ -->
+  <section class="pad band no-break">
+    <div class="sec__head">
+      <span class="sec__no">At a glance</span>
+      <h2>The six numbers this report is about</h2>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <span class="kpi__k">Licences today</span>
+        <span class="kpi__v">$2,320<small>/mo</small></span>
+        <span class="kpi__n">7 tools · 34 seats · $27,840 a year</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__k">Licences after</span>
+        <span class="kpi__v">$277<small>/mo</small></span>
+        <span class="kpi__n">Accounting + e-signature only</span>
+      </div>
+      <div class="kpi kpi--lead">
+        <span class="kpi__k">Net recurring saving</span>
+        <span class="kpi__v">$22,356<small>/yr</small></span>
+        <span class="kpi__n">After $180/mo hosting and support</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__k">One-off implementation</span>
+        <span class="kpi__v">$19,200</span>
+        <span class="kpi__n">160 h at $120/h · 22 weeks</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__k">Break-even</span>
+        <span class="kpi__v">Month 15</span>
+        <span class="kpi__n">Cumulative position turns positive</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__k">36-month net</span>
+        <span class="kpi__v">+$40,923</span>
+        <span class="kpi__n">All one-off and recurring costs included</span>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h4>The recommendation in one sentence</h4>
+      <p>
+        Start with Airtable and Sortly. They carry the least process risk, they are month-to-month,
+        and cutting them in the first four weeks returns $389 a month while the team learns the
+        platform on data that cannot break an installation.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 01</span>
+      <h2>Executive summary</h2>
+    </div>
+
+    <ul class="rule-list">
+      <li>
+        <span class="n">1.1</span>
+        <div>
+          <h3>Five of your seven tools are covered by the platform you would run anyway</h3>
+          <p>
+            HubSpot, Airtable, Sortly, Jobber and Zendesk together cost $2,043 a month. Every
+            capability Voltix actually uses in them maps onto an Open Mercato module — three of
+            them natively, two with configuration only. None of the five requires a bespoke module.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="n">1.2</span>
+        <div>
+          <h3>One genuine gap: the quote builder</h3>
+          <p>
+            Generating a customer quote from a panel-and-inverter configuration is the only thing
+            Voltix does that the platform does not already do. We estimate 40 hours. It is the
+            single largest piece of new code in the programme, and it is a small one.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="n">1.3</span>
+        <div>
+          <h3>Two things we recommend you keep</h3>
+          <p>
+            Xero stays: statutory books and VAT filing are not a platform problem, and replacing an
+            accounting system to save $78 a month is a bad trade. Legally binding e-signature stays
+            with PandaDoc, wired into the platform through its API rather than rebuilt.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="n">1.4</span>
+        <div>
+          <h3>The HubSpot contract sets the timetable</h3>
+          <p>
+            Your HubSpot term renews on 28 February 2027 and is the only annual commitment in the
+            stack. A programme starting in October reaches the CRM cut-over in week 10 — comfortably
+            before the renewal decision, which is the point of sequencing it second rather than first.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="n">1.5</span>
+        <div>
+          <h3>Four usage statements we could not map</h3>
+          <p>
+            Panel-layout design, utility interconnection filings, subsidy paperwork and payroll
+            export sit outside our catalog. They are listed in Appendix B rather than folded into a
+            percentage. Two of them may turn out to be real scope; we would rather find that out
+            with you than around you.
+          </p>
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout callout--plain">
+      <h4>What this report is not</h4>
+      <p>
+        It is not a proposal to replace your stack. It is an ordered list of pieces worth cutting,
+        each with what it saves and what it costs to cut. You can stop after any wave and keep the
+        savings banked to that point.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 2. SCOPE ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 02</span>
+      <h2>What this analysis is based on</h2>
+      <p>
+        Everything below derives from material you supplied. Where we inferred rather than observed,
+        the confidence band on the row says so.
+      </p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <span class="card__tag">Inputs</span>
+        <h4>What we read</h4>
+        <p>
+          A 62-minute kick-off call with Marta Nowak and Piotr Zieliński (operations); seven supplier
+          invoices for August 2026; three screen-shares covering HubSpot pipeline, Jobber dispatch
+          and the Airtable permit base.
+        </p>
+      </div>
+      <div class="card">
+        <span class="card__tag">Period</span>
+        <h4>What it covers</h4>
+        <p>
+          Licence costs as billed in August 2026 at 34 seats. Effort estimates assume the current
+          team size and one October 2026 start. Seasonal crew growth is handled in section 08.
+        </p>
+      </div>
+      <div class="card">
+        <span class="card__tag">Exclusions</span>
+        <h4>What we left alone</h4>
+        <p>
+          Statutory accounting, payroll, Microsoft 365, and anything touching electrical compliance
+          sign-off. None of it was assessed, and none of it appears in the savings figure.
+        </p>
+      </div>
+    </div>
+
+    <p class="footnote">
+      38 usage statements were extracted from the above. 34 matched a catalog capability;
+      4 did not and are carried openly into Appendix B.
+    </p>
+  </section>
+
+  <!-- ============ 3. STACK TODAY ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 03</span>
+      <h2>Your stack today</h2>
+      <p>
+        Costs as invoiced in August 2026. Renewal dates matter: they decide what can be cut in which
+        month, and they are the reason the sequence in section 06 looks the way it does.
+      </p>
+    </div>
+
+    <div class="tablewrap tablewrap--wide">
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Category</th>
+            <th class="num">Seats</th>
+            <th class="num">Unit</th>
+            <th class="num">Monthly</th>
+            <th class="num">Annual</th>
+            <th>Term ends</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tool">HubSpot Sales<span class="sub">Sales Professional</span></td>
+            <td>CRM</td>
+            <td class="num">10</td>
+            <td class="num">$89</td>
+            <td class="num">$890</td>
+            <td class="num">$10,680</td>
+            <td>28 Feb 2027<span class="sub">Annual, locked</span></td>
+          </tr>
+          <tr>
+            <td class="tool">Zendesk Suite<span class="sub">Growth</span></td>
+            <td>Support</td>
+            <td class="num">5</td>
+            <td class="num">$83</td>
+            <td class="num">$415</td>
+            <td class="num">$4,980</td>
+            <td>Monthly</td>
+          </tr>
+          <tr>
+            <td class="tool">Jobber<span class="sub">Connect</span></td>
+            <td>Field service</td>
+            <td class="num">12</td>
+            <td class="num">$29</td>
+            <td class="num">$349</td>
+            <td class="num">$4,188</td>
+            <td>Monthly</td>
+          </tr>
+          <tr>
+            <td class="tool">Airtable<span class="sub">Team</span></td>
+            <td>Ad-hoc registers</td>
+            <td class="num">12</td>
+            <td class="num">$20</td>
+            <td class="num">$240</td>
+            <td class="num">$2,880</td>
+            <td>Monthly</td>
+          </tr>
+          <tr>
+            <td class="tool">PandaDoc<span class="sub">Business</span></td>
+            <td>Quotes &amp; e-signature</td>
+            <td class="num">5</td>
+            <td class="num">$40</td>
+            <td class="num">$199</td>
+            <td class="num">$2,388</td>
+            <td>Monthly</td>
+          </tr>
+          <tr>
+            <td class="tool">Sortly<span class="sub">Advanced</span></td>
+            <td>Inventory</td>
+            <td class="num">5</td>
+            <td class="num">$30</td>
+            <td class="num">$149</td>
+            <td class="num">$1,788</td>
+            <td>Monthly</td>
+          </tr>
+          <tr>
+            <td class="tool">Xero<span class="sub">Established</span></td>
+            <td>Accounting</td>
+            <td class="num">3</td>
+            <td class="num">$26</td>
+            <td class="num">$78</td>
+            <td class="num">$936</td>
+            <td>Monthly</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Total across 7 tools</td>
+            <td class="num">52</td>
+            <td class="num">—</td>
+            <td class="num">$2,320</td>
+            <td class="num">$27,840</td>
+            <td>—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p class="footnote">
+      52 seats across 34 people — nine of your staff are paying for a login in three tools at once.
+      Consolidation removes that duplication before it removes any product.
+    </p>
+  </section>
+
+  <!-- ============ 4. COVERAGE ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 04</span>
+      <h2>Capability coverage</h2>
+      <p>
+        We do not compare products. Each tool is described as coverage over a canonical capability
+        vocabulary, Open Mercato is described in the same vocabulary, and the comparison becomes
+        arithmetic on sets. Verdict definitions are in Appendix A.
+      </p>
+    </div>
+
+    <!-- Figure 1: stacked coverage bar -->
+    <figure class="figure no-break" id="fig-coverage">
+      <figcaption>
+        <span class="figure__title">Figure 1 — Where your 38 usage statements land</span>
+        <p class="figure__sub">
+          One segment per verdict. Off-catalog means we have no curated entry for it and refuse to
+          guess; those four are itemised in Appendix B.
+        </p>
+      </figcaption>
+
+      <svg viewBox="0 0 720 76" role="img" aria-labelledby="fig1title fig1desc">
+        <title id="fig1title">Coverage of 38 usage statements by verdict</title>
+        <desc id="fig1desc">Native 19, configure 9, build 4, integrate 2, off-catalog 4.</desc>
+
+        <defs>
+          <clipPath id="barClip"><rect x="56" y="10" width="644" height="30" rx="4"></rect></clipPath>
+          <pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="var(--surface-2)"></rect>
+            <line x1="0" y1="0" x2="0" y2="6" stroke="var(--cat-unknown)" stroke-width="2.4"></line>
+          </pattern>
+        </defs>
+
+        <g clip-path="url(#barClip)">
+          <rect class="seg" x="56"     y="10" width="318"   height="30" fill="var(--cat-native)"    data-label="Native — already in the platform" data-value="19 statements"></rect>
+          <rect class="seg" x="376"    y="10" width="150.6" height="30" fill="var(--cat-configure)" data-label="Configure — settings and business rules" data-value="9 statements"></rect>
+          <rect class="seg" x="528.63" y="10" width="66.95" height="30" fill="var(--cat-build)"     data-label="Build — new code required" data-value="4 statements"></rect>
+          <rect class="seg" x="597.58" y="10" width="33.47" height="30" fill="var(--cat-integrate)" data-label="Integrate — stays external, wired in" data-value="2 statements"></rect>
+          <rect class="seg" x="633.05" y="10" width="66.95" height="30" fill="url(#hatch)"          data-label="Off-catalog — needs a follow-up conversation" data-value="4 statements"></rect>
+        </g>
+
+        <text class="g-seg-label" x="70"  y="30">19</text>
+        <text class="g-seg-label" x="390" y="30">9</text>
+
+        <g class="g-axis">
+          <text x="56" y="60">0</text>
+          <text x="700" y="60" text-anchor="end">38 usage statements</text>
+        </g>
+      </svg>
+
+      <div class="legend">
+        <span><i style="background:var(--cat-native)"></i>Native <b class="num">19</b></span>
+        <span><i style="background:var(--cat-configure)"></i>Configure <b class="num">9</b></span>
+        <span><i style="background:var(--cat-build)"></i>Build <b class="num">4</b></span>
+        <span><i style="background:var(--cat-integrate)"></i>Integrate <b class="num">2</b></span>
+        <span><i style="background:var(--surface-2); border:1px solid var(--cat-unknown)"></i>Off-catalog <b class="num">4</b></span>
+      </div>
+    </figure>
+
+    <div class="tablewrap tablewrap--wide">
+      <table>
+        <thead>
+          <tr>
+            <th>Tool in use</th>
+            <th>What it is actually used for</th>
+            <th>Open Mercato</th>
+            <th>Verdict</th>
+            <th>Confidence</th>
+            <th class="num">Monthly</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tool">HubSpot Sales<span class="sub">CRM</span></td>
+            <td>Contacts, deals, pipeline stages, email log<span class="sub">Observed: 3 pipelines, 11 custom deal properties, no marketing automation in use</span></td>
+            <td>customers + sales</td>
+            <td><span class="chip chip--native">native</span></td>
+            <td><span class="conf conf--high"><span class="conf__bars"><i></i><i></i><i></i></span>high</span></td>
+            <td class="num">$890</td>
+          </tr>
+          <tr>
+            <td class="tool">Airtable<span class="sub">Ad-hoc registers</span></td>
+            <td>Installer certifications, site surveys, permit tracking<span class="sub">Observed: 4 bases, 9 tables, all flat — no automations</span></td>
+            <td>Data designer — custom entities</td>
+            <td><span class="chip chip--native">native</span></td>
+            <td><span class="conf conf--high"><span class="conf__bars"><i></i><i></i><i></i></span>high</span></td>
+            <td class="num">$240</td>
+          </tr>
+          <tr>
+            <td class="tool">Sortly<span class="sub">Inventory</span></td>
+            <td>Panels and inverters across two warehouses<span class="sub">Observed: 1,240 SKUs, barcode scanning on goods-in</span></td>
+            <td>wms — multi-warehouse stock</td>
+            <td><span class="chip chip--native">native</span></td>
+            <td><span class="conf conf--high"><span class="conf__bars"><i></i><i></i><i></i></span>high</span></td>
+            <td class="num">$149</td>
+          </tr>
+          <tr>
+            <td class="tool">Jobber<span class="sub">Field service</span></td>
+            <td>Crew scheduling, job sheets, on-site checklists<span class="sub">Inferred: offline use on site not confirmed — see risk 8.2</span></td>
+            <td>planner + business rules</td>
+            <td><span class="chip chip--configure">configure</span></td>
+            <td><span class="conf conf--medium"><span class="conf__bars"><i></i><i></i><i></i></span>medium</span></td>
+            <td class="num">$349</td>
+          </tr>
+          <tr>
+            <td class="tool">Zendesk<span class="sub">Support</span></td>
+            <td>Post-install tickets, warranty claims<span class="sub">Observed: 3 macros, 2 SLA policies, email channel only</span></td>
+            <td>messages + warranty_claims</td>
+            <td><span class="chip chip--configure">configure</span></td>
+            <td><span class="conf conf--medium"><span class="conf__bars"><i></i><i></i><i></i></span>medium</span></td>
+            <td class="num">$415</td>
+          </tr>
+          <tr>
+            <td class="tool">PandaDoc<span class="sub">Quotes</span></td>
+            <td>Quote templates driven by panel configuration<span class="sub">Estimated: 40 h to build · the only net-new module</span></td>
+            <td>quote builder — new module</td>
+            <td><span class="chip chip--build">build</span></td>
+            <td><span class="conf conf--medium"><span class="conf__bars"><i></i><i></i><i></i></span>medium</span></td>
+            <td class="num">$199</td>
+          </tr>
+          <tr>
+            <td class="tool">PandaDoc<span class="sub">Legally binding signature</span></td>
+            <td>Customer signs the installation contract<span class="sub">Retained on a signature-only plan at the same list price</span></td>
+            <td>stays external, wired in</td>
+            <td><span class="chip chip--integrate">integrate</span></td>
+            <td><span class="conf conf--high"><span class="conf__bars"><i></i><i></i><i></i></span>high</span></td>
+            <td class="num">incl.</td>
+          </tr>
+          <tr>
+            <td class="tool">Xero<span class="sub">Accounting</span></td>
+            <td>Statutory books, VAT filing<span class="sub">Out of scope by recommendation, not by omission</span></td>
+            <td>not our business — keep it</td>
+            <td><span class="chip chip--keep">keep</span></td>
+            <td><span class="conf conf--high"><span class="conf__bars"><i></i><i></i><i></i></span>high</span></td>
+            <td class="num">$78</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="footnote">
+      PandaDoc appears twice because it does two unrelated jobs at two different verdicts. Splitting
+      a tool by capability rather than by invoice line is the whole point of the method.
+    </p>
+  </section>
+
+  <!-- ============ 5. MONEY ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 05</span>
+      <h2>What it costs and what it returns</h2>
+      <p>
+        Every figure below is computed from the invoices in section 03 by a fixed formula, not
+        estimated in prose. You can recompute any of them at this table.
+      </p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Line</th><th>Basis</th><th class="num">Monthly</th><th class="num">Annual</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Licence spend today</td>
+            <td>7 tools, as invoiced August 2026</td>
+            <td class="num">$2,320</td>
+            <td class="num">$27,840</td>
+          </tr>
+          <tr>
+            <td>Licence spend retained</td>
+            <td>Xero $78 + PandaDoc signature-only $199</td>
+            <td class="num">−$277</td>
+            <td class="num">−$3,324</td>
+          </tr>
+          <tr>
+            <td>Hosting, backup and platform support</td>
+            <td>Managed instance, 34 users, daily backups</td>
+            <td class="num">−$180</td>
+            <td class="num">−$2,160</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>Net recurring saving</td>
+            <td>Steady state, from month 7 onward</td>
+            <td class="num">$1,863</td>
+            <td class="num">$22,356</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>One-off implementation</th><th>Scope</th><th class="num">Hours</th><th class="num">Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Wave 1 — registers and stock</td><td>Entity design, data import, warehouse setup</td><td class="num">30</td><td class="num">$3,600</td></tr>
+          <tr><td>Wave 2 — CRM</td><td>Pipeline config, HubSpot migration, sales training</td><td class="num">55</td><td class="num">$6,600</td></tr>
+          <tr><td>Wave 3 — field service</td><td>Planner rules, job sheets, crew mobile setup</td><td class="num">30</td><td class="num">$3,600</td></tr>
+          <tr><td>Wave 4 — support and quoting</td><td>Warranty flow, plus 40 h quote builder build</td><td class="num">45</td><td class="num">$5,400</td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td>Total</td><td>Blended rate $120/h</td><td class="num">160</td><td class="num">$19,200</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Figure 2: cumulative net cash position -->
+    <figure class="figure no-break" id="fig-cash">
+      <figcaption>
+        <span class="figure__title">Figure 2 — Cumulative net cash position, months 0 to 24</span>
+        <p class="figure__sub">
+          Implementation is spent as it is worked; each wave's saving starts the month after that
+          wave completes. Hosting begins in month 1. The line is your bank balance relative to doing
+          nothing.
+        </p>
+      </figcaption>
+
+      <svg viewBox="0 0 720 290" role="img" aria-labelledby="fig2title fig2desc" id="cashSvg">
+        <title id="fig2title">Cumulative net cash position over 24 months</title>
+        <desc id="fig2desc">Position falls to minus 14,967 dollars at month 6, crosses zero in month 15, and reaches plus 18,567 dollars at month 24.</desc>
+
+        <!-- investment period shading -->
+        <rect class="g-shade" x="56" y="24" width="402.5" height="226"></rect>
+        <text class="g-note" x="64" y="38">investment period</text>
+
+        <g class="g-grid">
+          <line x1="56" y1="24" x2="700" y2="24"></line>
+          <line x1="56" y1="55.39" x2="700" y2="55.39"></line>
+          <line x1="56" y1="86.78" x2="700" y2="86.78"></line>
+          <line x1="56" y1="118.17" x2="700" y2="118.17"></line>
+          <line x1="56" y1="180.94" x2="700" y2="180.94"></line>
+          <line x1="56" y1="212.33" x2="700" y2="212.33"></line>
+          <line x1="56" y1="243.72" x2="700" y2="243.72"></line>
+        </g>
+
+        <line class="g-zero" x1="56" y1="149.56" x2="700" y2="149.56"></line>
+
+        <g class="g-axis">
+          <text x="48" y="28"     text-anchor="end">+20k</text>
+          <text x="48" y="90.78"  text-anchor="end">+10k</text>
+          <text x="48" y="153.56" text-anchor="end">0</text>
+          <text x="48" y="216.33" text-anchor="end">−10k</text>
+          <text x="48" y="247.72" text-anchor="end">−15k</text>
+
+          <text x="56"   y="268" text-anchor="middle">M0</text>
+          <text x="217"  y="268" text-anchor="middle">M6</text>
+          <text x="378"  y="268" text-anchor="middle">M12</text>
+          <text x="539"  y="268" text-anchor="middle">M18</text>
+          <text x="700"  y="268" text-anchor="middle">M24</text>
+          <text x="378"  y="285" text-anchor="middle">months from programme start</text>
+        </g>
+
+        <path class="g-line" d="M56,149.56 L82.83,173.28 L109.67,192.69 L136.5,212.1 L163.33,227.8 L190.17,235.66 L217,243.52 L243.83,231.82 L270.67,220.12 L297.5,208.43 L324.33,196.74 L351.17,185.04 L378,173.34 L404.83,161.65 L431.67,149.95 L458.5,138.25 L485.33,126.56 L512.17,114.86 L539,103.17 L565.83,91.47 L592.67,79.78 L619.5,68.08 L646.33,56.39 L673.17,44.69 L700,33"></path>
+
+        <!-- selective direct labels: trough, break-even, endpoint -->
+        <circle class="g-dot" cx="217" cy="243.52" r="4.5"></circle>
+        <text class="g-note g-note--strong" x="225" y="257">−$14,967 max exposure (M6)</text>
+
+        <circle class="g-dot" cx="458.5" cy="138.25" r="4.5"></circle>
+        <text class="g-note g-note--strong" x="451" y="130" text-anchor="end">break-even · M15</text>
+
+        <circle class="g-dot" cx="700" cy="33" r="4.5"></circle>
+        <text class="g-note g-note--strong" x="692" y="26" text-anchor="end">+$18,567</text>
+
+        <g id="cashHits"></g>
+      </svg>
+
+      <p class="figure__cap">
+        Read together with the milestone table below, which carries the same series as numbers.
+      </p>
+    </figure>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Milestone</th><th>What has happened by then</th><th class="num">Monthly net</th><th class="num">Cumulative</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Month 1</td><td>Wave 1 delivered, hosting live</td><td class="num">−$3,780</td><td class="num">−$3,780</td></tr>
+          <tr><td>Month 6</td><td>All four waves delivered — maximum exposure</td><td class="num">−$1,252</td><td class="num">−$14,967</td></tr>
+          <tr><td>Month 12</td><td>Six months of full run-rate saving</td><td class="num">+$1,863</td><td class="num">−$3,789</td></tr>
+          <tr><td>Month 15</td><td>Programme has paid for itself</td><td class="num">+$1,863</td><td class="num">+$1,800</td></tr>
+          <tr><td>Month 24</td><td>—</td><td class="num">+$1,863</td><td class="num">+$18,567</td></tr>
+          <tr><td>Month 36</td><td>—</td><td class="num">+$1,863</td><td class="num">+$40,923</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout--plain">
+      <h4>Two payback numbers, and why they differ</h4>
+      <p>
+        The net-new build — the 40-hour quote builder, $4,800 — is repaid by the total saving in
+        <b>2.4 months</b>. The full programme, including configuration, data migration and training,
+        breaks even in <b>month 15</b>. The first number is the one that answers "is building this
+        worth it"; the second is the one that belongs in your budget.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 6. SEQUENCE ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 06</span>
+      <h2>Recommended sequence</h2>
+      <p>
+        Four waves, ordered by risk rather than by saving. Each one ends with a tool switched off and
+        a saving banked. You can stop after any wave; nothing later depends on work you have not
+        approved.
+      </p>
+    </div>
+
+    <div class="waves">
+      <div class="wave">
+        <div class="wave__when"><b>Wave 1</b>Weeks 1–4<br>30 h</div>
+        <div class="wave__body">
+          <h3>Registers and stock</h3>
+          <p>
+            Installer certifications, site surveys and permit tracking become custom entities in the
+            data designer. The two warehouses move to the wms module with the existing barcode flow.
+            Lowest process risk in the stack: flat data, few users, nothing on the critical path of
+            an installation.
+          </p>
+          <div class="drops"><span>Airtable off</span><span>Sortly off</span></div>
+        </div>
+        <div class="wave__save"><b>+$389<span class="sub">/mo</span></b><span>banked from month 2</span></div>
+      </div>
+
+      <div class="wave">
+        <div class="wave__when"><b>Wave 2</b>Weeks 5–10<br>55 h</div>
+        <div class="wave__body">
+          <h3>CRM cut-over</h3>
+          <p>
+            Contacts, deals and pipeline stages move to customers + sales, with the email log
+            imported. Runs in parallel with HubSpot for two weeks before the switch. Completing this
+            before 28 February 2027 is what removes the annual renewal from the table.
+          </p>
+          <div class="drops"><span>HubSpot off</span></div>
+        </div>
+        <div class="wave__save"><b>+$890<span class="sub">/mo</span></b><span>banked from month 4</span></div>
+      </div>
+
+      <div class="wave">
+        <div class="wave__when"><b>Wave 3</b>Weeks 11–16<br>30 h</div>
+        <div class="wave__body">
+          <h3>Field service</h3>
+          <p>
+            Crew scheduling and job sheets move to the planner with your dispatch rules expressed as
+            business rules rather than as habits. Crews run one full week on both systems before
+            Jobber is cancelled — this is the wave the installers actually feel.
+          </p>
+          <div class="drops"><span>Jobber off</span></div>
+        </div>
+        <div class="wave__save"><b>+$349<span class="sub">/mo</span></b><span>banked from month 5</span></div>
+      </div>
+
+      <div class="wave">
+        <div class="wave__when"><b>Wave 4</b>Weeks 17–22<br>45 h</div>
+        <div class="wave__body">
+          <h3>Support and quoting</h3>
+          <p>
+            Post-install tickets and warranty claims move to messages + warranty_claims. The quote
+            builder is written here — 40 of the 45 hours — and PandaDoc drops to a signature-only
+            plan wired into the platform through its API.
+          </p>
+          <div class="drops"><span>Zendesk off</span><span>PandaDoc reduced</span></div>
+        </div>
+        <div class="wave__save"><b>+$415<span class="sub">/mo</span></b><span>banked from month 7</span></div>
+      </div>
+    </div>
+
+    <p class="footnote">
+      Full run rate from month 7: $2,043/mo of licences cancelled, $1,863/mo net of hosting.
+    </p>
+  </section>
+
+  <!-- ============ 7. PREVIEW ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 07</span>
+      <h2>Your preview</h2>
+      <p>
+        Attached to this report is a clickable preview of one Voltix process end to end: lead to
+        quote to scheduled installation. It is not a mockup drawn in a design tool.
+      </p>
+    </div>
+
+    <ul class="rule-list">
+      <li>
+        <span class="n">7.1</span>
+        <div>
+          <h3>Generated from the real system</h3>
+          <p>
+            The screens come from actual Open Mercato entity definitions and the admin design
+            system, so the preview cannot promise a field the platform does not have. What you click
+            is what exists on day one of wave 1.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="n">7.2</span>
+        <div>
+          <h3>Filled with your own data</h3>
+          <p>
+            Seeded with Voltix product names, two warehouses, and three anonymised deals from the
+            HubSpot export you shared. Nothing in it says "Acme Corp".
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="n">7.3</span>
+        <div>
+          <h3>Honest about what is not built</h3>
+          <p>
+            The quote builder step is marked <span class="chip chip--build">build</span> in the
+            preview itself. A prototype that hides its own gaps is a sales trick, and it surfaces in
+            week three anyway.
+          </p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ============ 8. RISKS ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 08</span>
+      <h2>Risks and assumptions</h2>
+      <p>
+        These are the things that would change the numbers above. We would rather state them now
+        than discover them in week three.
+      </p>
+    </div>
+
+    <div class="tablewrap tablewrap--wide">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Risk or assumption</th><th>Effect if it turns out otherwise</th><th>How we would handle it</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">8.1</td>
+            <td><b>HubSpot data exports cleanly</b><span class="sub">Assumed from a sample of 200 contacts</span></td>
+            <td>Wave 2 grows by 10–20 h if custom property mapping is messier than the sample suggests</td>
+            <td>Full export reviewed in week 1, before wave 2 is quoted firm</td>
+          </tr>
+          <tr>
+            <td class="num">8.2</td>
+            <td><b>Crews may rely on Jobber offline</b><span class="sub">Not confirmed on the call</span></td>
+            <td>Offline job sheets are a build, not a configure — adds roughly 25 h to wave 3</td>
+            <td>Resolved by one question to the crew leads; re-quoted before wave 3 starts</td>
+          </tr>
+          <tr>
+            <td class="num">8.3</td>
+            <td><b>Seat count grows with the installation season</b><span class="sub">34 today; you mentioned 40+ in spring</span></td>
+            <td>Savings grow, not shrink — per-seat licences scale, a self-hosted platform does not</td>
+            <td>No action. The figures here are the conservative case</td>
+          </tr>
+          <tr>
+            <td class="num">8.4</td>
+            <td><b>Four usage statements are off-catalog</b><span class="sub">Appendix B</span></td>
+            <td>Up to two could become real scope; we would estimate them separately</td>
+            <td>One 45-minute follow-up before the programme is signed</td>
+          </tr>
+          <tr>
+            <td class="num">8.5</td>
+            <td><b>PandaDoc signature-only pricing</b><span class="sub">Quoted at list, not negotiated</span></td>
+            <td>A cheaper signature provider would improve the retained figure below $277/mo</td>
+            <td>Optional; not assumed in any number in this report</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 9. NEXT STEPS ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Section 09</span>
+      <h2>What happens next</h2>
+      <p>
+        Nothing in this report commits you to the full programme. The only decision in front of you
+        is whether wave 1 is worth four weeks.
+      </p>
+    </div>
+
+    <ul class="checklist">
+      <li><span class="box"></span><div><b>Click through the preview</b><span class="who">Voltix — Marta, Piotr · this week</span></div></li>
+      <li><span class="box"></span><div><b>Answer the offline-crew question in risk 8.2</b><span class="who">Voltix — crew leads · before wave 3 is quoted</span></div></li>
+      <li><span class="box"></span><div><b>Share the full HubSpot export for a migration dry run</b><span class="who">Voltix — Marta · before wave 2 is quoted firm</span></div></li>
+      <li><span class="box"></span><div><b>45-minute session on the four off-catalog items</b><span class="who">Both · Appendix B</span></div></li>
+      <li><span class="box"></span><div><b>Approve wave 1 only — $3,600, four weeks, $389/mo returned</b><span class="who">Voltix · decision point</span></div></li>
+    </ul>
+
+    <div class="sign">
+      <div>
+        <div class="sign__line"></div>
+        <p class="sign__who">Marta Nowak — COO, Voltix Energy</p>
+      </div>
+      <div>
+        <div class="sign__line"></div>
+        <p class="sign__who">Joanna Pawłowska — consultant on record, Mercatify</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ APPENDIX A ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Appendix A</span>
+      <h2>How we reach a verdict</h2>
+      <p>
+        So that you can argue with any row in section 04 on its merits rather than on ours.
+      </p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Verdict</th><th>Means</th><th>What it costs you</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip chip--native">native</span></td><td>The platform already does this. Setup only.</td><td>Configuration time, no new code</td></tr>
+          <tr><td><span class="chip chip--configure">configure</span></td><td>The platform does this once settings, business rules or custom fields are in place.</td><td>Analyst time, no new code</td></tr>
+          <tr><td><span class="chip chip--build">build</span></td><td>New code is required. Always accompanied by an hour estimate.</td><td>Developer time, quoted per item</td></tr>
+          <tr><td><span class="chip chip--integrate">integrate</span></td><td>Better left to a specialist tool and wired in through its API.</td><td>The retained licence, plus wiring</td></tr>
+          <tr><td><span class="chip chip--keep">keep</span></td><td>We recommend you do not move it. Out of scope by judgement.</td><td>Nothing changes</td></tr>
+          <tr><td><span class="chip chip--unknown">off-catalog</span></td><td>No curated entry. Reported as unmapped rather than guessed.</td><td>One follow-up conversation</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <span class="card__tag">Rule 01</span>
+        <h4>The catalog decides, the model narrates</h4>
+        <p>
+          Tool-to-platform verdicts come from a curated matrix by lookup, never from live model
+          reasoning on the critical path. Language models write the explanations; they do not cast
+          the votes.
+        </p>
+      </div>
+      <div class="card">
+        <span class="card__tag">Rule 02</span>
+        <h4>The model never computes money</h4>
+        <p>
+          It selects the inputs. A pure function returns the figure. Every number in section 05 can
+          be recomputed by hand at the table, which is why the formula is shown next to each line.
+        </p>
+      </div>
+      <div class="card">
+        <span class="card__tag">Rule 03</span>
+        <h4>Confidence is a band, not a decimal</h4>
+        <p>
+          <b>High</b> — observed directly in your system or invoices. <b>Medium</b> — inferred from
+          consistent evidence. <b>Low</b> — stated once, unverified. A "87% match" is a claim nobody
+          can defend in a room full of people who know their own business.
+        </p>
+      </div>
+    </div>
+
+    <p class="footnote">
+      Every case, artifact and figure in this report is a record in an Open Mercato instance — the
+      same platform this report recommends. Mercatify runs its own business on it.
+    </p>
+  </section>
+
+  <!-- ============ APPENDIX B ============ -->
+  <section class="pad band pb">
+    <div class="sec__head">
+      <span class="sec__no">Appendix B</span>
+      <h2>Off-catalog items</h2>
+      <p>
+        Four of the 38 usage statements we extracted have no entry in our capability catalog. They
+        are excluded from every figure in this report. They are listed because the gaps in our
+        knowledge are part of the deliverable.
+      </p>
+    </div>
+
+    <div class="tablewrap tablewrap--wide">
+      <table>
+        <thead><tr><th>#</th><th>What you described</th><th>Why it is unmapped</th><th>Our read</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="num">B.1</td>
+            <td><b>Panel layout and shading design</b><span class="sub">Aurora Solar, mentioned on the call</span></td>
+            <td>Specialist CAD; no entry in our catalog and no platform equivalent</td>
+            <td>Almost certainly stays where it is. Possible integration target later</td>
+          </tr>
+          <tr>
+            <td class="num">B.2</td>
+            <td><b>Utility interconnection filings</b><span class="sub">Two operator portals, done by hand</span></td>
+            <td>Manual process, no tool, no licence cost to compare against</td>
+            <td>May be worth a small build. Would be quoted separately</td>
+          </tr>
+          <tr>
+            <td class="num">B.3</td>
+            <td><b>Subsidy and grant paperwork</b><span class="sub">Shared spreadsheets</span></td>
+            <td>Not a product; a process running on files</td>
+            <td>Likely a natural fit for custom entities in wave 1. Needs 30 minutes to confirm</td>
+          </tr>
+          <tr>
+            <td class="num">B.4</td>
+            <td><b>Crew timesheet export to payroll</b><span class="sub">Gusto</span></td>
+            <td>Payroll is outside the scope declared in section 02</td>
+            <td>Out of scope. Flagged only because wave 3 touches the data it reads</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="docfoot">
+    <span>Mercatify — SaaS-to-Open-Mercato consolidation · CASE-0041 · v1.0 · 19 Sep 2026</span>
+    <span>Confidential — prepared for Voltix Energy · <a href="https://www.openmercato.com/">openmercato.com</a></span>
+  </footer>
+</div>
+
+<div class="print-footer">
+  <span>Mercatify · CASE-0041 · Voltix Energy</span>
+  <span>Confidential · 19 September 2026 · v1.0</span>
+</div>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var printBtn = document.getElementById('printBtn');
+  if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+
+  var toggle = document.getElementById('themeToggle');
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var root = document.documentElement;
+      var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var current = root.getAttribute('data-theme') || (dark ? 'dark' : 'light');
+      root.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    });
+  }
+
+  var tip = document.getElementById('tip');
+
+  function showTip(html, event) {
+    tip.innerHTML = html;
+    tip.style.opacity = '1';
+    var pad = 14;
+    var box = tip.getBoundingClientRect();
+    var x = event.clientX + pad;
+    var y = event.clientY + pad;
+    if (x + box.width > window.innerWidth - 8) x = event.clientX - box.width - pad;
+    if (y + box.height > window.innerHeight - 8) y = event.clientY - box.height - pad;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+  }
+
+  function hideTip() { tip.style.opacity = '0'; }
+
+  // Figure 1 — segment hover
+  var segs = document.querySelectorAll('#fig-coverage .seg');
+  Array.prototype.forEach.call(segs, function (seg) {
+    seg.addEventListener('mousemove', function (e) {
+      showTip('<b>' + seg.getAttribute('data-value') + '</b><br>' + seg.getAttribute('data-label'), e);
+    });
+    seg.addEventListener('mouseleave', hideTip);
+  });
+
+  // Figure 2 — crosshair over an invisible hit strip per month
+  var months = [
+    [0, 0, 'Programme start'],
+    [1, -3780, 'Wave 1 delivered'],
+    [2, -6871, ''],
+    [3, -9962, 'Wave 2 delivered'],
+    [4, -12463, 'Wave 3 delivered'],
+    [5, -13715, ''],
+    [6, -14967, 'Wave 4 delivered — maximum exposure'],
+    [7, -13104, 'Full run rate reached'],
+    [8, -11241, ''], [9, -9378, ''], [10, -7515, ''], [11, -5652, ''],
+    [12, -3789, 'End of year 1'],
+    [13, -1926, ''], [14, -63, ''],
+    [15, 1800, 'Break-even'],
+    [16, 3663, ''], [17, 5526, ''], [18, 7389, ''], [19, 9252, ''],
+    [20, 11115, ''], [21, 12978, ''], [22, 14841, ''], [23, 16704, ''],
+    [24, 18567, 'End of year 2']
+  ];
+
+  var svg = document.getElementById('cashSvg');
+  var hits = document.getElementById('cashHits');
+  if (!svg || !hits) return;
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var crosshair = document.createElementNS(NS, 'line');
+  crosshair.setAttribute('stroke', 'var(--rule-strong)');
+  crosshair.setAttribute('stroke-width', '1');
+  crosshair.setAttribute('y1', '24');
+  crosshair.setAttribute('y2', '250');
+  crosshair.setAttribute('opacity', '0');
+  hits.appendChild(crosshair);
+
+  var marker = document.createElementNS(NS, 'circle');
+  marker.setAttribute('r', '4.5');
+  marker.setAttribute('fill', 'var(--cat-native)');
+  marker.setAttribute('stroke', 'var(--bg)');
+  marker.setAttribute('stroke-width', '2');
+  marker.setAttribute('opacity', '0');
+  hits.appendChild(marker);
+
+  function money(v) {
+    var sign = v < 0 ? '−$' : '+$';
+    return sign + Math.abs(v).toLocaleString('en-US');
+  }
+
+  months.forEach(function (row) {
+    var m = row[0];
+    var x = 56 + m * (644 / 24);
+    var y = 250 - (row[1] + 16000) * (226 / 36000);
+
+    var hit = document.createElementNS(NS, 'rect');
+    hit.setAttribute('x', String(x - 13.4));
+    hit.setAttribute('y', '24');
+    hit.setAttribute('width', '26.8');
+    hit.setAttribute('height', '226');
+    hit.setAttribute('fill', 'transparent');
+
+    hit.addEventListener('mousemove', function (e) {
+      crosshair.setAttribute('x1', String(x));
+      crosshair.setAttribute('x2', String(x));
+      crosshair.setAttribute('opacity', '1');
+      marker.setAttribute('cx', String(x));
+      marker.setAttribute('cy', String(y));
+      marker.setAttribute('opacity', '1');
+      var note = row[2] ? '<br>' + row[2] : '';
+      showTip('Month ' + m + '<br><b>' + money(row[1]) + '</b> cumulative' + note, e);
+    });
+    hit.addEventListener('mouseleave', function () {
+      crosshair.setAttribute('opacity', '0');
+      marker.setAttribute('opacity', '0');
+      hideTip();
+    });
+
+    hits.appendChild(hit);
+  });
+})();
+</script>
+
+</body>
+</html>

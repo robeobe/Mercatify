@@ -1,3 +1,4 @@
+import { toolGoesOff } from './toolVerdict'
 import type {
   ConsolidationScenarioResult,
   MercatoMappingResult,
@@ -11,9 +12,16 @@ import type {
  * and only ever selected/passed through by an agent, never invented.
  *
  * A SaaS tool is "removed" only when every one of its mapped capabilities
- * resolved to native/configure/build (OM covers it, now or via custom dev).
+ * resolved to native/configure/build (OM covers it, now or via custom dev)
+ * AND none of them fell off the catalog — an off-catalog capability is the
+ * engine saying "we have no entry for this", and banking a licence on that is
+ * banking on ignorance (see `toolGoesOff`).
  * A single 'integrate' or 'keep' capability keeps the whole subscription —
- * you don't half-cancel a SaaS contract.
+ * you don't half-cancel a SaaS contract. That rule now lives in exactly one
+ * place — `toolGoesOff` (`src/toolVerdict.ts`) — because the report's wave
+ * planner (`src/report/waves.ts`) decides the same thing about the same tools
+ * and a second copy would let the ROI table and section 06 of one document
+ * disagree about which subscriptions end.
  */
 export function computeScenario(
   mappings: MercatoMappingResult[],
@@ -32,13 +40,10 @@ export function computeScenario(
 
   for (const product of stack) {
     const productMappings = mappingsBySource.get(product.name) ?? []
-    const mustRetain = productMappings.some(
-      (mapping) => mapping.decision === 'integrate' || mapping.decision === 'keep',
-    )
-    if (mustRetain || productMappings.length === 0) {
-      retainedSaaS.push(product.name)
-    } else {
+    if (toolGoesOff(productMappings)) {
       removedSaaS.push(product.name)
+    } else {
+      retainedSaaS.push(product.name)
     }
   }
 

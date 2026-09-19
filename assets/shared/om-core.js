@@ -365,7 +365,9 @@ var CONFIDENCE_BANDS = ['high', 'medium', 'low'];
 
 function capTarget(req, cap) {
   var ov = (req.overrides || {})[cap];
-  var auto = CAP_MAP[cap] || { module: '__build', status: 'build' };
+  var base = CAP_MAP[cap] || { module: '__build', status: 'build' };
+  var canonical = canonicalStatus(req, cap);
+  var auto = canonical === null ? base : { module: base.module, status: canonical };
   var status = (ov && ov.status) || auto.status;
   return {
     module: (ov && ov.module) || auto.module,
@@ -374,9 +376,64 @@ function capTarget(req, cap) {
     note: (ov && ov.note) || '',
     conf: (ov && ov.conf) || DEFAULT_CONFIDENCE[status] || 'medium',
     /* Hours are never guessed. Blank means nobody has estimated it yet, and
-       the report prints that instead of a zero that reads like "free". */
-    hours: ov && ov.hours !== undefined && ov.hours !== '' ? Number(ov.hours) : null
+       the report prints that instead of a zero that reads like "free".
+
+       `null` has to be excluded explicitly: an override stored with
+       `hours: null` passed both `!== undefined` and `!== ''`, and
+       `Number(null)` is 0 — so "nobody estimated this" arrived at the report
+       as a hard zero, which is the one thing this comment promises it is not.
+       A non-numeric value goes the same way rather than reaching the document
+       as NaN. */
+    hours: hoursOverride(ov)
   };
+}
+/* Werdykty pochodzą z KANONICZNEGO katalogu, nie z literału `CAP_MAP`.
+
+   `CAP_MAP` był trzecią niezależną kopią tej wiedzy - po
+   `mercatify-labs/src/catalogData.json` i module'ach w
+   `../stack-tool/catalog.js`. Rozjazd był widoczny u klienta: katalog mówił
+   o `quotes.cpq` `build` ("the only net-new module"), a konsola renderowała
+   `native`, więc raport gubił jedyną pozycję do zbudowania w programie.
+
+   Szukamy PER NARZĘDZIE Z TEGO ZGŁOSZENIA, nie per slug globalnie.
+   Pierwsza wersja tej poprawki brała najcięższy werdykt ze WSZYSTKICH
+   narzędzi katalogu i nadpisywała nim wpis - przez co Jobber dostawał
+   `field.scheduling: build` od Calendly, którego w zgłoszeniu nie ma, i
+   przestawał gasnąć. Kosztowało to 4 188/rok różnicy wobec silnika.
+   Katalog jest indeksowany parą narzędzie+slug i tak trzeba go czytać.
+
+   Kiedy dwa narzędzia W TYM zgłoszeniu niosą ten sam slug z różnym
+   werdyktem, model przeglądarki nie ma tego jak wyrazić - ma jeden wiersz
+   na slug, a nie na parę. Bierzemy wtedy cięższy i odnotowujemy w
+   `CAP_MAP_DRIFT`, bo to ograniczenie tego ekranu, nie fakt o platformie. */
+var CAP_MAP_DRIFT = [];
+var CANONICAL_RANK = { native: 0, drop: 1, integrate: 2, configure: 3, build: 4, keep: 5 };
+
+function canonicalStatus(req, cap) {
+  if (typeof CATALOG_CAPABILITIES === 'undefined' || !CATALOG_CAPABILITIES) return null;
+  var tools = (req && req.tools) || [];
+  var best = null;
+  for (var i = 0; i < tools.length; i += 1) {
+    var tool = tools[i];
+    if (!tool || !tool.caps || tool.caps.indexOf(cap) === -1) continue;
+    var entry = Object.prototype.hasOwnProperty.call(CATALOG_CAPABILITIES, tool.name)
+      && CATALOG_CAPABILITIES[tool.name].capabilities
+      && CATALOG_CAPABILITIES[tool.name].capabilities[cap];
+    if (!entry) continue;
+    var decision = entry.reportVerdict || entry.decision;
+    if (!decision) continue;
+    if (best === null) { best = decision; continue; }
+    if (best === decision) continue;
+    CAP_MAP_DRIFT.push(cap + ': ' + best + ' vs ' + decision + ' (' + tool.name + ')');
+    if ((CANONICAL_RANK[decision] || 0) > (CANONICAL_RANK[best] || 0)) best = decision;
+  }
+  return best;
+}
+
+function hoursOverride(ov) {
+  if (!ov || ov.hours === undefined || ov.hours === null || ov.hours === '') return null;
+  var n = Number(ov.hours);
+  return isFinite(n) && n >= 0 ? n : null;
 }
 function setCapOverride(req, cap, patch) {
   var overrides = {};

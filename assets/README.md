@@ -43,6 +43,19 @@ Shell: the full staff sidebar and breadcrumbs.
 request store, both shells). Shared because both apps are Open Mercato surfaces
 and the capability vocabulary has to agree across them.
 
+Three of the files here are **generated and never edited by hand** — each says
+so in its first line, and a test in `mercatify-labs` fails if the copy on disk
+is not what the generator produces:
+
+| File | Generated from | Refresh |
+|---|---|---|
+| `catalog.generated.js` | `mercatify-labs/src/catalogData.json` joined with the module structure in `stack-tool/catalog.js` | `npm run catalog:generate` |
+| `report-renderer.generated.js` | `mercatify-labs/src/report/renderReport.ts` and its imports | `npm run renderer:generate` |
+
+`report-model.js` is not generated: it is the adapter that turns a request (or
+a stack-tool mapping) into the `ReportModel` the renderer eats. It is the only
+place that decides what a mapping *cannot* say — see below.
+
 ### Mapping and reporting are not both available at once
 
 The two verbs follow one state machine, read by the queue row, the mapping
@@ -73,20 +86,27 @@ is sent on purpose.
 
 ### The report
 
-Modelled on `stack-tool/report.html`, which is where the shape of this document
-came from. It carries a computed headline, a summary paragraph, four KPIs, a
-verdict bar over every job in the stack, a tool-by-tool table with confidence
-bands, the duplicates, the build backlog with hours and cost, the arithmetic
-line by line with a basis for each, the client's own words, what we are not sure
-about, and the first piece worth cutting.
+**There is one renderer, and it is not here.** `console/report.html`,
+`client/offer.html` and `stack-tool/report.html` all call
+`window.renderReport(model)` from `shared/report-renderer.generated.js`, which
+is `mercatify-labs/src/report/renderReport.ts` transpiled for the browser. The
+console's preview and the client's page render the *same string* — byte for
+byte, which is what makes "what you see is what they get" a fact rather than a
+claim. Each page shows it in an iframe, because the document is a whole page
+with its own stylesheet, and a preview that let the report restyle the console
+around it would not be a preview of anything.
 
-**The cash curve** is the one picture: cumulative position against doing nothing,
-month by month. Money goes out while the work happens, the curve turns when the
-licences drop off, and it crosses zero the month the move has paid for itself.
-Three shapes, three different stories, and the caption says which one it is:
-nothing to pay back, pays back in month N, or does not pay back inside two years.
-Implementation length is a consultant's assumption on the report screen, not
-something the mock invents.
+The document itself is the engine's: a cover, six KPI tiles, the scope and its
+counters, the stack as invoiced, capability coverage with Figure 1 over it, the
+money line by line, the sequence, the risks, the next steps and two appendices.
+Sections whose data is missing **do not render** — they do not render empty.
+
+**What a mapping cannot say.** A request in the queue carries tools, seats,
+monthly cost, capability slugs and the consultant's overrides. It carries no
+waves and no timed cash model, so `facts.waves` is empty and `facts.cash` is
+left out: section 06 disappears and section 05 says, in words, that there is no
+curve to plot. That is deliberate. A cash curve drawn through months nobody
+stated would be the one figure in the document that nobody could recompute.
 
 **The money.** A tool counts as a candidate to retire only when *every* job it
 carries lands natively or by configuration. Anything with a build, integrate or
@@ -94,6 +114,12 @@ keep row still has a reason to exist, so counting its licence as saved would be
 a lie; a tool that stays keeps costing what it costs, which is what *licences
 after* is made of. Hours are never guessed — a build row with no estimate prints
 as "to estimate" and the total says it is a floor, not a quote.
+
+**What the consultant writes** goes into the prose half of the model: the
+opening line becomes the recommendation on the cover, the closing note opens
+section 09 above the signatures, and each open question becomes a row in section
+08. The opening line may carry a `{slot}` — `{kpis.netRecurringAnnual}` prints
+the computed figure — so a sentence can quote a number without authoring one.
 
 ## Writing
 
@@ -115,8 +141,11 @@ the second licence.
 - **Module names** — every id in `OM_MODULES` is a real module folder in
   `@open-mercato/core`. Jobs nothing covers are shown as *build*, *integrate* or
   *keep* rather than pinned on a module that does not exist.
-- **Tool catalog** — reused from `stack-tool/catalog.js`, so the client's form
-  and the console's mapping speak one capability vocabulary.
+- **Tool catalog** — one vocabulary for every page, so the client's form and the
+  console's mapping cannot disagree. Verdicts and Open Mercato targets come from
+  `mercatify-labs/src/catalogData.json` through `shared/catalog.generated.js`;
+  `stack-tool/catalog.js` keeps the helpers and the module structure the JSON has
+  no room for (ids, names, descriptions, which slugs a module groups).
 - **Everything else** — mocked. Requests live in `localStorage` under
   `mercatify.requests.v1`, on top of three seeded cases that keep the console
   from ever being empty. The client's own submission lands in that same store,
