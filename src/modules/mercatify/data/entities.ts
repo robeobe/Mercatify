@@ -117,6 +117,27 @@ export class InterviewCase {
    */
   @Property({ name: 'handoff_document', type: 'text', nullable: true })
   handoffDocument?: string | null
+
+  /**
+   * S-06: the outcome of handing the document to Mercatify Lab, written once
+   * the client accepts the report (`mercatify.cases.answer`). Valid values:
+   * 'delivered' | 'not_installed' | 'no_document' | 'failed'. Null means the
+   * handoff has not run — the case was never accepted.
+   */
+  @Property({ name: 'lab_handoff_status', type: 'text', nullable: true })
+  labHandoffStatus?: string | null
+
+  /**
+   * A snapshot of exactly what was handed over, not a pointer to
+   * `handoffDocument`: a later admin edit must not rewrite what Lab already
+   * received, and FR-013's "see what would have been handed over" has to keep
+   * showing that same text.
+   */
+  @Property({ name: 'lab_handoff_document', type: 'text', nullable: true })
+  labHandoffDocument?: string | null
+
+  @Property({ name: 'lab_handoff_at', type: Date, nullable: true })
+  labHandoffAt?: Date | null
 }
 
 /**

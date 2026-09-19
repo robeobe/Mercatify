@@ -42,7 +42,7 @@ The insight the product rests on: *"Your SaaS stack is already your specificatio
 | S-05 | `mercatify-handoff-document`    | **admin** sees the `.md` configuration document while preparing the report and edits it or pastes their own *(reassigned from client, not shown to the client, 2026-09-19)* | S-03                        | US-01, FR-010, FR-011          | blocked  |
 | S-09 | `mercatify-report-build-send`   | **admin** builds the client-facing report from a confirmed mapping (KPIs, tool table, duplicates, backlog, cash curve) and sends it *(added 2026-09-19 — gap, distinct from S-04's saving lines and S-05's `.md` editor)* | S-03, S-04                  | FR-018                         | blocked  |
 | S-10 | `mercatify-client-offer`        | **client** (employee role) sees the sent report and accepts it or asks for a consult call *(added 2026-09-19 — gap; this is what S-06 assumed already existed)* | S-08, S-09                  | FR-019                         | blocked  |
-| S-06 | `mercatify-run-in-lab-handoff`  | the client's existing **Accept** action (not a separate button) triggers handing over exactly the current `.md` *(reassigned 2026-09-19)* | S-05, S-10, F-02             | US-01, FR-012, FR-013          | proposed |
+| S-06 | `mercatify-run-in-lab-handoff`  | the client's existing **Accept** action (not a separate button) triggers handing over exactly the current `.md` *(reassigned 2026-09-19)* | S-05, S-10, F-02             | US-01, FR-012, FR-013          | done     |
 
 ## Streams
 
@@ -250,7 +250,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Parallel with:** S-04
 - **Blockers:** Mercatify Lab does not exist yet — it has not had its own shaping session, so the installed-Lab path can only be verified end-to-end once Lab ships a receiving surface. The not-installed path (FR-013) is fully verifiable now and is what the demo runs on.
 - **Unknowns:**
-  - How "Lab is installed" is detected, given F-02 fixes the contract but not the discovery mechanism. Owner: team. Block: no.
+  - ~~How "Lab is installed" is detected, given F-02 fixes the contract but not the discovery mechanism.~~ Resolved 2026-09-19 (issue #22): a defaultless `registerMercatifyLabHandoffPort` registry alongside F-02's port — no port registered means Lab is not installed.
 - **Risk:** Last in dependency order because it needs the document that S-05 produces, but it is also the slice whose demo value is highest per unit of work — the not-installed path is a small amount of work and closes the flow. Risk is treating the absent-Lab case as an error path rather than a first-class outcome; FR-013 is explicit that it is not.
 - **Status:** proposed
 

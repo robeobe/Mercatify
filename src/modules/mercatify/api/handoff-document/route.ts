@@ -19,13 +19,27 @@ type BaseFields = {
   handoff_document: string | null
   mapping_confirmed_at: Date | string | null
   updated_at: Date | string | null
+  lab_handoff_status: string | null
+  lab_handoff_document: string | null
+  lab_handoff_at: Date | string | null
 }
 
 // Deliberately narrow: this is a SEPARATE route from `api/cases/route.ts`,
 // gated by its own admin-only features, so the handoff document is never
 // returned to a session that only holds `mercatify.cases.view` (the client
 // role — see the plan's Current State Analysis).
-const baseListFields = ['id', 'handoff_document', 'mapping_confirmed_at', 'updated_at']
+// S-06's outcome fields ride on this same admin-only route on purpose: the
+// snapshot of what was handed over is the `.md` itself, so it must never reach
+// a session that only holds `mercatify.cases.view`.
+const baseListFields = [
+  'id',
+  'handoff_document',
+  'mapping_confirmed_at',
+  'updated_at',
+  'lab_handoff_status',
+  'lab_handoff_document',
+  'lab_handoff_at',
+]
 
 function toIsoTimestamp(value: unknown): string | null {
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString()
@@ -70,6 +84,9 @@ export const { metadata, GET, PUT } = makeCrudRoute({
       handoffDocument: item.handoff_document ?? null,
       mappingConfirmedAt: toIsoTimestamp(item.mapping_confirmed_at),
       updatedAt: toIsoTimestamp(item.updated_at),
+      labHandoffStatus: item.lab_handoff_status ?? null,
+      labHandoffDocument: item.lab_handoff_document ?? null,
+      labHandoffAt: toIsoTimestamp(item.lab_handoff_at),
     }),
   },
   actions: {

@@ -1,8 +1,9 @@
-import { describe, expect, it, beforeEach } from '@jest/globals'
+import { describe, expect, it, beforeEach, afterEach } from '@jest/globals'
 import { randomUUID } from 'node:crypto'
 import type { CommandRuntimeContext } from '@open-mercato/shared/lib/commands'
 import { isCrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import { CaseReport, InterviewCase } from '../../data/entities'
+import { registerMercatifyLabHandoffPort, type MercatifyHandoff } from '../../lib/mercatify-lab-port'
 import { answerCaseCommand } from '../client-answer'
 
 const TENANT_A = '11111111-1111-4111-8111-111111111111'
@@ -11,6 +12,7 @@ const TENANT_B = '33333333-3333-4333-8333-333333333333'
 const ORG_B = '44444444-4444-4444-8444-444444444444'
 const OWNER = 'user-1'
 const SOMEONE_ELSE = 'user-2'
+const HANDOFF_DOCUMENT = '# Handoff\n\nExactly as the admin last left it.\n'
 
 type Row = InterviewCase | CaseReport
 
@@ -110,7 +112,12 @@ async function expectCrudStatus(run: () => unknown, status: number): Promise<voi
 /** A case whose report has been sent — the only state an answer is legal in. */
 async function seedSentCase(
   world: World,
-  overrides: { status?: string; ownerId?: string | null; sentAt?: Date | null } = {},
+  overrides: {
+    status?: string
+    ownerId?: string | null
+    sentAt?: Date | null
+    handoffDocument?: string | null
+  } = {},
 ): Promise<InterviewCase> {
   const de = world.container.resolve('dataEngine') as any
   const interviewCase: InterviewCase = await de.createOrmEntity({
@@ -122,6 +129,7 @@ async function seedSentCase(
       organizationId: ORG_A,
       createdByUserId: overrides.ownerId !== undefined ? overrides.ownerId : OWNER,
       mappingConfirmedAt: new Date('2026-01-02T00:00:00.000Z'),
+      handoffDocument: overrides.handoffDocument !== undefined ? overrides.handoffDocument : HANDOFF_DOCUMENT,
     },
   })
   await de.createOrmEntity({
@@ -230,5 +238,101 @@ describe('mercatify.cases.answer', () => {
       answerCaseCommand.execute({ caseId: created.id, answer: 'sent' }, makeCtx(world)),
     ).rejects.toThrow()
     expect(world.cases[0].status).toBe('sent')
+  })
+})
+
+/** S-06 (#22): accepting the report is what hands the `.md` to Mercatify Lab. */
+describe('mercatify.cases.answer — Mercatify Lab handoff', () => {
+  let world: World
+
+  beforeEach(() => {
+    world = makeWorld()
+  })
+
+  afterEach(() => {
+    registerMercatifyLabHandoffPort(null)
+  })
+
+  it('records the not-installed outcome with the exact document when Lab is absent', async () => {
+    const created = await seedSentCase(world)
+    const result = await answerCaseCommand.execute({ caseId: created.id, answer: 'accepted' }, makeCtx(world))
+
+    expect(result.labHandoffStatus).toBe('not_installed')
+    expect(world.cases[0].labHandoffStatus).toBe('not_installed')
+    expect(world.cases[0].labHandoffDocument).toBe(HANDOFF_DOCUMENT)
+    expect(world.cases[0].labHandoffAt).toBeInstanceOf(Date)
+  })
+
+  it('hands the admin-edited document, not a regenerated one, to an installed Lab', async () => {
+    const edited = '# Pasted from elsewhere\n\nNothing like the mapping table.\n'
+    const created = await seedSentCase(world, { handoffDocument: edited })
+    const received: MercatifyHandoff[] = []
+    registerMercatifyLabHandoffPort({
+      receiveHandoff: async (handoff) => {
+        received.push(handoff)
+      },
+    })
+
+    const result = await answerCaseCommand.execute({ caseId: created.id, answer: 'accepted' }, makeCtx(world))
+
+    expect(result.labHandoffStatus).toBe('delivered')
+    expect(received).toHaveLength(1)
+    expect(received[0].document).toBe(edited)
+    expect(world.cases[0].labHandoffDocument).toBe(edited)
+  })
+
+  it('hands nothing over when the client asks for a call instead', async () => {
+    const created = await seedSentCase(world)
+    let called = false
+    registerMercatifyLabHandoffPort({
+      receiveHandoff: async () => {
+        called = true
+      },
+    })
+
+    const result = await answerCaseCommand.execute({ caseId: created.id, answer: 'consult' }, makeCtx(world))
+
+    expect(result.labHandoffStatus).toBeNull()
+    expect(called).toBe(false)
+    expect(world.cases[0].labHandoffStatus ?? null).toBeNull()
+  })
+
+  it('records no_document when the admin never prepared one', async () => {
+    const created = await seedSentCase(world, { handoffDocument: null })
+    const result = await answerCaseCommand.execute({ caseId: created.id, answer: 'accepted' }, makeCtx(world))
+
+    expect(result.labHandoffStatus).toBe('no_document')
+    expect(world.cases[0].status).toBe('accepted')
+  })
+
+  it('still records the acceptance when Lab blows up', async () => {
+    const created = await seedSentCase(world)
+    registerMercatifyLabHandoffPort({
+      receiveHandoff: async () => {
+        throw new Error('lab exploded')
+      },
+    })
+
+    const result = await answerCaseCommand.execute({ caseId: created.id, answer: 'accepted' }, makeCtx(world))
+
+    expect(result.status).toBe('accepted')
+    expect(result.labHandoffStatus).toBe('failed')
+    expect(world.cases[0].status).toBe('accepted')
+    expect(world.cases[0].labHandoffDocument).toBe(HANDOFF_DOCUMENT)
+  })
+
+  it('re-hands the current document when a consult client accepts later', async () => {
+    const created = await seedSentCase(world, { status: 'consult' })
+    const received: MercatifyHandoff[] = []
+    registerMercatifyLabHandoffPort({
+      receiveHandoff: async (handoff) => {
+        received.push(handoff)
+      },
+    })
+
+    await answerCaseCommand.execute({ caseId: created.id, answer: 'accepted' }, makeCtx(world))
+
+    expect(received).toHaveLength(1)
+    expect(received[0].document).toBe(HANDOFF_DOCUMENT)
   })
 })

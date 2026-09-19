@@ -7,6 +7,7 @@ import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import { CaseReport, InterviewCase } from '../data/entities'
 import { caseAnswerSchema } from '../data/validators'
 import { isReportReadyStatus } from '../lib/request-progress'
+import { handOffToLab, type LabHandoffStatus } from '../lib/lab-handoff'
 import { emitMercatifyEvent } from '../events'
 
 const CASE_RESOURCE_KIND = 'mercatify.case' as const
@@ -43,6 +44,8 @@ type AnswerResult = {
   previousStatus: string
   tenantId: string
   organizationId: string
+  /** S-06: null unless this answer was an acceptance. */
+  labHandoffStatus: LabHandoffStatus | null
 }
 
 const answerCaseCommand: CommandHandler<Record<string, unknown>, AnswerResult> = {
@@ -92,6 +95,37 @@ const answerCaseCommand: CommandHandler<Record<string, unknown>, AnswerResult> =
     })
     if (!updated) throw notFound('Interview case not found')
 
+    // S-06 (FR-012): accepting the report IS the handoff trigger — there is no
+    // separate "Run in Mercatify Lab" button. Runs after the status write has
+    // committed, carries exactly the `.md` as the admin last left it, and
+    // never throws: if Lab is absent (the normal case today) or misbehaves,
+    // the client's answer still stands.
+    let labHandoffStatus: LabHandoffStatus | null = null
+    if (parsed.answer === 'accepted') {
+      const outcome = await handOffToLab({
+        caseId: String(interviewCase.id),
+        title: interviewCase.title,
+        tenantId,
+        organizationId,
+        document: updated.handoffDocument ?? null,
+      })
+      labHandoffStatus = outcome.status
+      await de.updateOrmEntity({
+        entity: InterviewCase,
+        where: {
+          id: parsed.caseId,
+          tenantId,
+          organizationId,
+          deletedAt: null,
+        } as FilterQuery<InterviewCase>,
+        apply: (record: InterviewCase) => {
+          record.labHandoffStatus = outcome.status
+          record.labHandoffDocument = outcome.document
+          record.labHandoffAt = outcome.at
+        },
+      })
+    }
+
     await emitMercatifyEvent('mercatify.case.answered', {
       id: String(interviewCase.id),
       tenantId,
@@ -104,6 +138,7 @@ const answerCaseCommand: CommandHandler<Record<string, unknown>, AnswerResult> =
       previousStatus,
       tenantId,
       organizationId,
+      labHandoffStatus,
     }
   },
   buildLog: async ({ result }) => {
@@ -118,7 +153,7 @@ const answerCaseCommand: CommandHandler<Record<string, unknown>, AnswerResult> =
       organizationId: result.organizationId,
       changes: { status: { from: result.previousStatus, to: result.status } },
       snapshotBefore: { id: result.id, status: result.previousStatus },
-      snapshotAfter: { id: result.id, status: result.status },
+      snapshotAfter: { id: result.id, status: result.status, labHandoffStatus: result.labHandoffStatus },
     }
   },
 }

@@ -81,6 +81,11 @@ export const handoffDocumentListItemSchema = z
     handoffDocument: z.string().nullable().optional(),
     mappingConfirmedAt: z.string().nullable().optional(),
     updatedAt: z.string().nullable().optional(),
+    // S-06: what happened when the client accepted — including the snapshot of
+    // what would have been handed over while Mercatify Lab is not installed.
+    labHandoffStatus: z.string().nullable().optional(),
+    labHandoffDocument: z.string().nullable().optional(),
+    labHandoffAt: z.string().nullable().optional(),
   })
   .passthrough()
 
