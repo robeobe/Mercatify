@@ -29,7 +29,7 @@
       <p id="p-sub"></p>
     </div>
     <div class="pagehead__actions">
-      <a class="btn btn--ghost" href="intake.html">← Back</a>
+      <a class="btn btn--ghost" id="back">← Back to your request</a>
       <button class="btn btn--outline" type="button" id="print">Print / PDF</button>
     </div>
   </div>
@@ -83,7 +83,7 @@
   <div class="empty">
     We are still reading what you sent. You will find the map here as soon as a consultant
     has been through it — usually within two working days.
-    <div style="margin-top:14px"><a class="btn btn--outline" href="intake.html">Back to your request</a></div>
+    <div style="margin-top:14px"><a class="btn btn--outline" href="requests.html">Back to my requests</a></div>
   </div>
 </template>
 
@@ -91,12 +91,12 @@
 <script src="../shared/om-core.js"></script>
 <script>
 (function () {
-  var content = mountPortalShell({});
+  var content = mountPortalShell({ active: 'requests' });
 
-  /* Same rule as the rest of the client app: only her own ref, strict lookup,
-     no fallback to anyone else's request. */
-  var ref = readClientRef();
-  var req = ref ? findRequest(ref) : null;
+  /* Same rule as the rest of the client app, and the same refusal to silently
+     substitute: an unknown ref is not found, not somebody else's map. */
+  var asked = qs('ref');
+  var req = asked ? clientRequest(asked) : clientRequests()[0];
 
   if (!req || req.status === 'new' || req.status === 'mapping' || req.status === 'mapped' || !req.report) {
     content.appendChild(document.getElementById('tpl-none').content.cloneNode(true));
@@ -110,6 +110,7 @@
     req.company + ' · ' + offer.caps.length + ' jobs across ' + (req.tools || []).length +
     ' tools · prepared ' + offer.generatedAt;
   document.getElementById('p-offer').appendChild(renderOffer(offer));
+  document.getElementById('back').href = 'request.html?ref=' + encodeURIComponent(req.ref);
   document.getElementById('print').addEventListener('click', function () { window.print(); });
 
   var form = document.getElementById('answer-form');

@@ -45,15 +45,70 @@ function currentUser(app) {
   return s && s.email ? s : FALLBACK_USER[app];
 }
 
-/* ─────────────── the client's own request ─────────────── */
-function readClientRef() {
-  try { return localStorage.getItem(CLIENT_REF_KEY); } catch (e) { return null; }
+/* ─────────────── the client's own requests ───────────────
+   She can send more than one over time, so the portal keeps a list of her refs
+   and never reads the queue. Everything the client app shows is filtered
+   through this list — that is what keeps one tenant out of another's data. */
+var CLIENT_REFS_KEY = 'mercatify.client.refs.v1';
+
+function readClientRefs() {
+  var refs = [];
+  try {
+    var raw = localStorage.getItem(CLIENT_REFS_KEY);
+    if (raw) refs = JSON.parse(raw) || [];
+  } catch (e) { refs = []; }
+  /* Earlier builds stored a single ref under another key; fold it in so a
+     browser that already sent something does not lose it. */
+  try {
+    var legacy = localStorage.getItem(CLIENT_REF_KEY);
+    if (legacy && refs.indexOf(legacy) === -1) refs.push(legacy);
+  } catch (e) {}
+  return refs;
 }
-function writeClientRef(ref) {
-  try { localStorage.setItem(CLIENT_REF_KEY, ref); } catch (e) {}
-}
-function clearClientRef() {
+function addClientRef(ref) {
+  var refs = readClientRefs();
+  if (refs.indexOf(ref) === -1) refs.unshift(ref);
+  try { localStorage.setItem(CLIENT_REFS_KEY, JSON.stringify(refs)); } catch (e) {}
   try { localStorage.removeItem(CLIENT_REF_KEY); } catch (e) {}
+  return refs;
+}
+/* Her requests, newest first, with the ones that no longer resolve dropped. */
+function clientRequests() {
+  return readClientRefs()
+    .map(function (ref) { return findRequest(ref); })
+    .filter(Boolean)
+    .sort(function (a, b) { return String(b.ref).localeCompare(String(a.ref)); });
+}
+/* Strict: a ref she does not own returns null, whatever the URL says. */
+function clientRequest(ref) {
+  if (!ref) return null;
+  return readClientRefs().indexOf(ref) === -1 ? null : findRequest(ref);
+}
+
+/* The steps she sees, in order, with the one she is on marked. Derived from the
+   request rather than stored, so it cannot fall out of step with the status. */
+function clientProgress(req) {
+  var steps = [
+    { key: 'sent', title: 'You sent your stack', done: true, when: req.received,
+      body: 'We have your list of tools and what you use them for.' },
+    { key: 'review', title: 'A consultant reads it',
+      done: !!req.sentAt, current: !req.sentAt,
+      when: null,
+      body: 'Someone goes through every tool by hand. Usually two working days.' },
+    { key: 'map', title: 'Your map comes back',
+      done: !!req.sentAt, current: !!req.sentAt && !req.clientResponse,
+      when: req.sentAt,
+      body: req.sentAt ? 'Ready to read.' : 'What moves, what stays, and what it saves.' },
+    { key: 'answer', title: 'You decide',
+      done: !!req.clientResponse, current: false,
+      when: req.clientResponse ? req.clientResponse.at : null,
+      body: req.clientResponse
+        ? (req.clientResponse.kind === 'accepted'
+            ? 'You accepted. A consultant is putting the first step together.'
+            : 'You asked for a call. Sales will be in touch.')
+        : 'Accept it, or ask to talk it through with someone first.' }
+  ];
+  return steps;
 }
 function initials(name) {
   return (name || '?').split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
@@ -677,15 +732,25 @@ function mountConsoleShell(opts) {
    Deliberately not a sidebar. Ola has exactly one thing to do here, and the
    shell should not imply there is a workspace behind it. */
 function mountPortalShell(opts) {
+  opts = opts || {};
   var user = currentUser('client');
+  /* One link, and only once she has something to come back to. An empty
+     "My requests" would be a dead end on her very first visit. */
+  var nav = readClientRefs().length
+    ? '<a class="portal__link' + (opts.active === 'requests' ? ' is-on' : '') +
+      '" href="requests.html">My requests</a>'
+    : '';
   var shell = document.getElementById('shell');
   shell.className = 'portal';
   shell.innerHTML =
     '<header class="portal__bar">' +
       '<div class="portal__inner">' +
-        '<span class="om-mark" aria-hidden="true">M</span>' +
-        '<span><span class="sidebar__name">Mercatify</span>' +
-        '<span class="sidebar__tenant">' + DEMO_TENANT.name + '</span></span>' +
+        '<a class="portal__brand" href="' + (readClientRefs().length ? 'requests.html' : 'intake.html') + '">' +
+          '<span class="om-mark" aria-hidden="true">M</span>' +
+          '<span><span class="sidebar__name">Mercatify</span>' +
+          '<span class="sidebar__tenant">' + DEMO_TENANT.name + '</span></span>' +
+        '</a>' +
+        nav +
         '<div class="portal__right">' +
           '<span class="small muted">Signed in as ' + user.name + '</span>' +
           '<button class="btn btn--ghost btn--sm" type="button" id="om-theme">Theme</button>' +

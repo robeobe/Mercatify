@@ -86,7 +86,10 @@
 
     /* A beat of latency so the button state is visible — the real login also
        takes a moment and the demo should not look like a hyperlink. */
-    setTimeout(function () { window.location.href = 'intake.html'; }, 450);
+    /* Returning clients land on their requests; a first-time visitor has
+       nothing there, so the form is the right first screen for them. */
+    var home = readClientRefs().length ? 'requests.html' : 'intake.html';
+    setTimeout(function () { window.location.href = home; }, 450);
   });
 })();
 </script>

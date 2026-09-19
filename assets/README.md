@@ -14,13 +14,17 @@ itself, where the customer portal and the staff backend are separate surfaces.
 
 | File | What it is |
 |---|---|
-| `login.html` | Client sign-in, branded to their tenant (Voltix Energy). |
-| `intake.html` | The stack form, empty. After sending, it becomes a read-only view of **her own** request, and once a consultant sends the map, a card that points at it. |
-| `offer.html` | The map she got back. She reads it, then either accepts or asks for a call with Sales; her answer goes straight back to the console. |
+| `login.html` | Client sign-in, branded to their tenant (Voltix Energy). A returning client lands on her requests, a first-time one on the form. |
+| `intake.html` | The stack form, empty. Nothing else — sending files the request and takes her to it. |
+| `requests.html` | Her requests as tiles, each carrying the one thing she came back for: where it got to, and whether the ball is with her or with us. |
+| `request.html` | One request: what she sent, and a four-step track from *you sent your stack* to *you decide*. The map card appears here once a consultant actually sends it. |
+| `offer.html` | The map itself. She reads it, then either accepts or asks for a call with Sales; her answer goes straight back to the console. |
 
-Shell: a single top bar, no navigation. There is one thing to do here and the
-chrome should not imply otherwise. The page reads only the ref stored under
-`mercatify.client.ref.v1`; it has no way to list the queue.
+Shell: a top bar with one link, *My requests*, and only once she has something
+to come back to — an empty list would be a dead end on a first visit. The client
+app reads only the refs under `mercatify.client.refs.v1`, never the queue, and a
+ref in a URL that is not hers gives *Not found* rather than quietly showing her
+a different request.
 
 ### `console/` — what Mercatify sees
 
@@ -45,7 +49,7 @@ and the capability vocabulary has to agree across them.
 2. A consultant opens `console/modules.html`, corrects whatever the agent got wrong, and moves on to the report.
 3. `console/report.html` writes the opening line and the closing note; everything else is derived from the mapping, so an edit in step 2 shows up here without a regenerate step. The preview calls the same renderer the client's page does, so what you see is the document itself.
 4. **Send** → status **report sent**, and only now can the client see anything.
-5. She reads it in `client/offer.html` and either **accepts** or **asks for a call with Sales** → status **accepted** or **consult asked**, visible back in the queue.
+5. She sees it on her tile and on the request's track, reads it in `client/offer.html`, and either **accepts** or **asks for a call with Sales** → status **accepted** or **consult asked**, visible back in the queue.
 
 ### The money in the report
 
@@ -84,7 +88,7 @@ In the browser console:
 
 ```js
 ['mercatify.requests.v1', 'mercatify.patches.v1', 'mercatify.case.v1',
- 'mercatify.client.ref.v1', 'mercatify.session.client.v1',
- 'mercatify.session.console.v1']
+ 'mercatify.client.refs.v1', 'mercatify.client.ref.v1',
+ 'mercatify.session.client.v1', 'mercatify.session.console.v1']
   .forEach(k => localStorage.removeItem(k))
 ```

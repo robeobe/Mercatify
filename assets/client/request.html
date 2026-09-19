@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your request — Mercatify</title>
+<link rel="stylesheet" href="../shared/om.css">
+<style>
+  .sent__list { list-style: none; margin: 0; padding: 0; display: grid; }
+  .sent__list li { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .sent__list li:first-child { padding-top: 0; }
+  .sent__list li:last-child { padding-bottom: 0; border-bottom: 0; }
+  .sent__tool { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .sent__tool b { font-size: 0.875rem; }
+  .sent__caps { color: var(--muted-foreground); font-size: 0.8125rem; margin-top: 2px; }
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div id="shell"></div>
+
+<template id="tpl">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1 id="h-title">Your request</h1>
+      <p id="h-sub"></p>
+    </div>
+    <div class="pagehead__actions">
+      <a class="btn btn--ghost" href="requests.html">← Back to my requests</a>
+    </div>
+  </div>
+
+  <div class="card" id="map-ready" hidden style="margin-bottom:16px">
+    <div class="card__head">
+      <h2 id="ready-title">Your map is ready</h2>
+      <span class="badge badge--info" id="ready-badge"></span>
+    </div>
+    <p id="ready-body" class="muted"></p>
+    <div class="row" style="margin-top:14px">
+      <a class="btn" id="ready-cta">Read your map</a>
+    </div>
+  </div>
+
+  <div class="split">
+    <div>
+      <div class="card">
+        <div class="card__head">
+          <h2 id="r-company">—</h2>
+          <span class="badge badge--outline mono" id="r-ref"></span>
+          <p id="r-meta" style="margin-left:auto"></p>
+        </div>
+        <ul class="sent__list" id="r-tools"></ul>
+      </div>
+
+      <div class="card">
+        <div class="grid grid--2">
+          <div>
+            <div class="small muted" style="margin-bottom:4px">What hurts today</div>
+            <p id="r-pains" class="small">—</p>
+          </div>
+          <div>
+            <div class="small muted" style="margin-bottom:4px">Must not be touched</div>
+            <p id="r-keep" class="small">—</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head">
+          <h2>Something to change?</h2>
+          <p>Send a corrected list and we will work from the newer one.</p>
+        </div>
+        <a class="btn btn--outline" href="intake.html">Send a corrected list</a>
+      </div>
+    </div>
+
+    <aside class="card" aria-label="Progress">
+      <div class="card__head"><h2>Where it is</h2></div>
+      <ol class="track" id="track"></ol>
+    </aside>
+  </div>
+</template>
+
+<template id="tpl-none">
+  <div class="pagehead">
+    <div class="pagehead__text">
+      <h1>Not found</h1>
+      <p>That request is not one of yours.</p>
+    </div>
+  </div>
+  <div class="empty">
+    We cannot show you this one. It may have been sent from a different browser.
+    <div style="margin-top:14px"><a class="btn btn--outline" href="requests.html">Back to my requests</a></div>
+  </div>
+</template>
+
+<script src="../stack-tool/catalog.js"></script>
+<script src="../shared/om-core.js"></script>
+<script>
+(function () {
+  var content = mountPortalShell({ active: 'requests' });
+
+  /* A ref that is not hers must say so, not quietly show her a different
+     request — silently substituting one would make the URL lie. The newest is
+     a fallback only when no ref was asked for at all. */
+  var asked = qs('ref');
+  var req = asked ? clientRequest(asked) : clientRequests()[0];
+  if (!req) {
+    content.appendChild(document.getElementById('tpl-none').content.cloneNode(true));
+    return;
+  }
+
+  content.appendChild(document.getElementById('tpl').content.cloneNode(true));
+
+  document.getElementById('h-title').textContent = 'Your request ' + req.ref;
+  document.getElementById('h-sub').textContent =
+    'Sent on ' + req.received + '. This is what we are working from.';
+  document.getElementById('r-company').textContent = req.company;
+  document.getElementById('r-ref').textContent = req.ref;
+  document.getElementById('r-meta').textContent =
+    (req.industry || '') + (req.people ? ' · ' + req.people + ' people' : '') +
+    ' · ' + money(requestMonthly(req), req.currency) + '/mo on licences';
+  document.getElementById('r-pains').textContent = req.pains || 'Not stated.';
+  document.getElementById('r-keep').textContent = req.mustKeep || 'Not stated.';
+
+  var list = document.getElementById('r-tools');
+  (req.tools || []).forEach(function (t) {
+    var bits = [];
+    if (t.seats) bits.push(t.seats + ' seats');
+    if (t.monthly) bits.push(money(t.monthly, req.currency) + '/mo');
+    list.appendChild(node('li', {}, [
+      node('div', { class: 'sent__tool' }, [
+        node('b', { text: t.name }),
+        node('span', { class: 'small muted', text: bits.join(' · ') })
+      ]),
+      node('div', { class: 'sent__caps', text: (t.caps || []).map(capLabel).join(', ') || '—' })
+    ]));
+  });
+
+  /* Progress rail — four steps, so it is obvious whether the ball is with us. */
+  var track = document.getElementById('track');
+  clientProgress(req).forEach(function (s) {
+    var cls = s.done ? 'is-done' : (s.current ? 'is-current' : 'is-pending');
+    track.appendChild(node('li', { class: cls }, [
+      node('div', {}, [
+        node('span', { class: 'track__title', text: s.title }),
+        s.when ? node('span', { class: 'track__when', text: s.when }) : document.createTextNode('')
+      ]),
+      node('div', { class: 'track__body', text: s.body })
+    ]));
+  });
+
+  /* The map card only appears once a consultant has actually sent it. The
+     earlier statuses are Mercatify's own and say nothing to her. */
+  if (req.report && req.sentAt) {
+    var ready = document.getElementById('map-ready');
+    var badge = document.getElementById('ready-badge');
+    ready.hidden = false;
+    badge.textContent = statusLabel(req, 'client');
+    badge.className = statusBadge(req);
+    document.getElementById('ready-cta').href = 'offer.html?ref=' + encodeURIComponent(req.ref);
+    if (req.clientResponse) {
+      document.getElementById('ready-title').textContent = 'Your map';
+      document.getElementById('ready-body').textContent = req.clientResponse.kind === 'accepted'
+        ? 'You accepted it on ' + req.clientResponse.at + '. It stays here for you to re-read.'
+        : 'You asked for a call on ' + req.clientResponse.at + '. Sales will be in touch.';
+      document.getElementById('ready-cta').textContent = 'Read it again';
+    } else {
+      document.getElementById('ready-body').textContent =
+        'A consultant has been through your stack and sent the map back on ' + req.sentAt +
+        '. Read it, then accept it or ask for a call — whichever suits.';
+    }
+  }
+})();
+</script>
+</body>
+</html>

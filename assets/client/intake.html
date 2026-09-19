@@ -65,6 +65,9 @@
          with the plan. Seats and monthly cost are optional, but without them we can only tell
          you what moves, not what it saves. It takes about four minutes.</p>
     </div>
+    <div class="pagehead__actions" id="head-actions" hidden>
+      <a class="btn btn--ghost" href="requests.html">← Back to my requests</a>
+    </div>
   </div>
 
   <div class="layout">
@@ -174,138 +177,14 @@
   </div>
 </template>
 
-<!-- ── what she sees after sending ─────────────────────────────── -->
-<template id="tpl-sent">
-  <div class="pagehead">
-    <div class="pagehead__text">
-      <h1>Your request is with us</h1>
-      <p>This is what you sent. A consultant reads it and comes back with the map and a
-         savings figure — you keep both whether or not you go ahead with us.</p>
-    </div>
-  </div>
-
-  <div class="alert alert--success" style="margin-bottom:16px">
-    <div>
-      <strong>Received as <span id="r-ref" class="mono"></span>.</strong>
-      <span id="r-when"></span>
-    </div>
-  </div>
-
-  <div class="card" id="map-ready" hidden style="margin-bottom:16px">
-    <div class="card__head">
-      <h2 id="ready-title">Your map is ready</h2>
-      <span class="badge badge--info" id="ready-badge">new</span>
-    </div>
-    <p id="ready-body" class="muted"></p>
-    <div class="row" style="margin-top:14px">
-      <a class="btn" href="offer.html" id="ready-cta">Read it</a>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card__head">
-      <h2 id="r-company">—</h2>
-      <span class="badge badge--info">in review</span>
-      <p id="r-meta" style="margin-left:auto"></p>
-    </div>
-    <ul class="sent__list" id="r-tools"></ul>
-  </div>
-
-  <div class="card">
-    <div class="grid grid--2">
-      <div>
-        <div class="small muted" style="margin-bottom:4px">What hurts today</div>
-        <p id="r-pains" class="small">—</p>
-      </div>
-      <div>
-        <div class="small muted" style="margin-bottom:4px">Must not be touched</div>
-        <p id="r-keep" class="small">—</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card__head">
-      <h2>Something to change?</h2>
-      <p>Send a corrected list and we will use the newer one.</p>
-    </div>
-    <button class="btn btn--outline" type="button" id="again">Start a new request</button>
-  </div>
-</template>
-
 <script src="../stack-tool/catalog.js"></script>
 <script src="../shared/om-core.js"></script>
 <script>
 (function () {
   var content = mountPortalShell({});
-
-  /* She only ever sees her own ref — the queue is not reachable from here. */
-  var myRef = readClientRef();
-  var mine = myRef ? findRequest(myRef) : null;
-  if (mine) { showSent(mine); return; }
-  showForm();
-
-  /* ─────────────── submitted view ─────────────── */
-  function showSent(req) {
-    content.innerHTML = '';
-    content.appendChild(document.getElementById('tpl-sent').content.cloneNode(true));
-
-    document.getElementById('r-ref').textContent = req.ref;
-    document.getElementById('r-when').textContent = 'Sent on ' + req.received + '. We usually come back within two working days.';
-    document.getElementById('r-company').textContent = req.company;
-    document.getElementById('r-meta').textContent =
-      (req.industry || '') + (req.people ? ' · ' + req.people + ' people' : '') +
-      ' · ' + money(requestMonthly(req), req.currency) + '/mo on licences';
-    document.getElementById('r-pains').textContent = req.pains || 'Not stated.';
-    document.getElementById('r-keep').textContent = req.mustKeep || 'Not stated.';
-
-    /* The map only exists here once a consultant has actually sent it; the
-       earlier statuses are Mercatify's own and say nothing to her. */
-    if (req.report && req.sentAt) {
-      var ready = document.getElementById('map-ready');
-      var badge = document.getElementById('ready-badge');
-      ready.hidden = false;
-      badge.textContent = statusLabel(req, 'client');
-      badge.className = statusBadge(req);
-      if (req.clientResponse) {
-        document.getElementById('ready-title').textContent = 'Your map';
-        document.getElementById('ready-body').textContent = req.clientResponse.kind === 'accepted'
-          ? 'You accepted it on ' + req.clientResponse.at + '. It stays here for you to re-read.'
-          : 'You asked for a call on ' + req.clientResponse.at + '. Sales will be in touch.';
-        document.getElementById('ready-cta').textContent = 'Read it again';
-      } else {
-        document.getElementById('ready-body').textContent =
-          'A consultant has been through your stack and sent the map back on ' + req.sentAt +
-          '. Read it, then accept it or ask for a call — whichever suits.';
-      }
-    }
-
-    var list = document.getElementById('r-tools');
-    (req.tools || []).forEach(function (t) {
-      var bits = [];
-      if (t.seats) bits.push(t.seats + ' seats');
-      if (t.monthly) bits.push(money(t.monthly, req.currency) + '/mo');
-      list.appendChild(node('li', {}, [
-        node('div', { class: 'sent__tool' }, [
-          node('b', { text: t.name }),
-          node('span', { class: 'small muted', text: bits.join(' · ') })
-        ]),
-        node('div', { class: 'sent__caps', text: (t.caps || []).map(capLabel).join(', ') || '—' })
-      ]));
-    });
-
-    document.getElementById('again').addEventListener('click', function () {
-      /* The sent request stays in Mercatify's queue — clearing only unlinks it
-         from this browser so she can fill the form again. */
-      clearClientRef();
-      window.location.reload();
-    });
-  }
-
-  /* ─────────────── the form ─────────────── */
-  function showForm() {
-  content.innerHTML = '';
   content.appendChild(document.getElementById('tpl-form').content.cloneNode(true));
+  /* Only offer a way back once there is something to go back to. */
+  if (readClientRefs().length) document.getElementById('head-actions').hidden = false;
 
   var state = {
     meta: { name: '', industry: '', people: '', currency: 'EUR', pains: '', mustKeep: '' },
@@ -530,9 +409,10 @@
       })
     };
     saveRequest(req);
-    writeClientRef(req.ref);
-    showSent(req);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    addClientRef(req.ref);
+    /* Straight to the request itself: the form has done its job, and what she
+       wants next is confirmation that it landed and where it now sits. */
+    window.location.href = 'request.html?ref=' + encodeURIComponent(req.ref);
   }
 
   document.getElementById('send').addEventListener('click', send);
@@ -572,7 +452,6 @@
 
   renderCustom();
   sync(true);
-  }
 })();
 </script>
 </body>
