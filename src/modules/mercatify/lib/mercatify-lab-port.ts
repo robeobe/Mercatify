@@ -34,7 +34,20 @@ export const MercatifyEvaluationRequestSchema = z.object({
   organizationId: z.string(),
   caseId: z.string(),
   companyProfile: z.record(z.string(), z.unknown()), // shape owned by F-01's case entity; kept loose until it ships
-  saasTools: z.array(z.object({ name: z.string(), monthlyCost: z.number(), notes: z.string().optional() })),
+  // Additive since contract v1 shipped: the three optional fields below let an
+  // analysis ground itself in what the client actually ticked in the intake
+  // (S-01) instead of guessing from the product name. A caller that omits them
+  // still validates, so this is a backward-compatible widening.
+  saasTools: z.array(z.object({
+    name: z.string(),
+    monthlyCost: z.number(),
+    notes: z.string().optional(),
+    /** `data/saas-catalog.ts` tool id, when the intake picked one. */
+    catalogToolId: z.string().optional(),
+    /** Catalog module ids the client ticked under that tool. */
+    selectedModuleIds: z.array(z.string()).optional(),
+    seats: z.number().optional(),
+  })),
   answers: z.array(z.object({ questionId: z.string(), chip: z.string().optional(), freeText: z.string().optional() })),
   freeText: z.array(z.string()).optional(),
 })

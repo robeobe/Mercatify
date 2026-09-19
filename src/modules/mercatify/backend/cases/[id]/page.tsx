@@ -1,5 +1,5 @@
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
-import { CaseEditLoader } from '../../../components/CaseForm'
+import { CaseDetailView } from '../../../components/analysis/CaseDetailView'
 
 export default function InterviewCaseDetailPage({ params }: { params?: { id?: string } }) {
   const id = params?.id
@@ -8,7 +8,7 @@ export default function InterviewCaseDetailPage({ params }: { params?: { id?: st
   return (
     <Page>
       <PageBody>
-        <CaseEditLoader id={id} />
+        <CaseDetailView id={id} />
       </PageBody>
     </Page>
   )

@@ -19,6 +19,7 @@ type BaseFields = {
   case_id: string
   position: number
   capability: string
+  source: string
   decision: string
   target_kind: string
   target_module_id: string | null
@@ -34,7 +35,7 @@ type BaseFields = {
 }
 
 const baseListFields = [
-  'id', 'case_id', 'position', 'capability', 'decision', 'target_kind', 'target_module_id',
+  'id', 'case_id', 'position', 'capability', 'source', 'decision', 'target_kind', 'target_module_id',
   'target_tool_name', 'target_label', 'justification', 'confidence', 'flagged', 'flag_reason',
   'tenant_id', 'organization_id', 'updated_at',
 ]
@@ -87,6 +88,9 @@ export const { metadata, GET, PUT } = makeCrudRoute({
       caseId: String(item.case_id),
       position: Number(item.position),
       capability: String(item.capability),
+      // The intake tool the row was derived from. `lib/savings.ts` groups by
+      // it, so the client needs it to line rows up against the stack.
+      source: String(item.source),
       decision: String(item.decision),
       targetKind: String(item.target_kind),
       targetModuleId: item.target_module_id ?? null,
