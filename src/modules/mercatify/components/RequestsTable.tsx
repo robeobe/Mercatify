@@ -1,119 +1,50 @@
 "use client"
 
 import * as React from 'react'
-import { useQuery } from '@tanstack/react-query'
-import type { LegacyColumnDef as ColumnDef } from '@tanstack/react-table/legacy'
-import { DataTable } from '@open-mercato/ui/backend/DataTable'
-import { RowActions } from '@open-mercato/ui/backend/RowActions'
-import { EmptyState } from '@open-mercato/ui/primitives/empty-state'
-import { Alert, AlertDescription } from '@open-mercato/ui/primitives/alert'
-import { Button } from '@open-mercato/ui/primitives/button'
-import { StatusBadge, type StatusMap } from '@open-mercato/ui/primitives/status-badge'
-import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
-import { formatDate } from '@open-mercato/ui/utils/format'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { isReportReadyStatus, type WhoseTurn } from '../lib/request-progress'
+import { useQuery } from '@tanstack/react-query'
+import { PageHeader } from '@open-mercato/ui/backend/Page'
+import { Alert, AlertDescription } from '@open-mercato/ui/primitives/alert'
+import { Button } from '@open-mercato/ui/primitives/button'
+import { StatusBadge } from '@open-mercato/ui/primitives/status-badge'
+import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { isAnsweredStatus, isReportReadyStatus } from '../lib/request-progress'
+import {
+  CLIENT_STATUS_FALLBACKS,
+  CLIENT_STATUS_LABEL_KEYS,
+  CLIENT_STATUS_VARIANTS,
+  isClientStatus,
+  money,
+  monthlyTotal,
+  requestRef,
+  shortDate,
+  type ClientCase,
+} from './client/clientRequest'
 
-const ENTITY_ID = 'mercatify:interview_case'
 const PAGE_SIZE = 50
+const CREATE_HREF = '/backend/cases/create'
 
-type CaseStatus = 'draft' | 'new' | 'mapping' | 'mapped' | 'sent' | 'accepted' | 'consult'
-
-type RequestRow = {
-  id: string
-  title: string
-  status: string
-  whoseTurn?: WhoseTurn
-  submittedAt: string | null
-}
-
-const statusVariants: StatusMap<CaseStatus> = {
-  draft: 'neutral',
-  new: 'info',
-  mapping: 'warning',
-  mapped: 'warning',
-  sent: 'info',
-  accepted: 'success',
-  consult: 'warning',
-}
-
-const statusLabelKeys: Record<CaseStatus, string> = {
-  draft: 'mercatify.cases.status.draft',
-  new: 'mercatify.requests.status.received',
-  mapping: 'mercatify.requests.status.inReview',
-  mapped: 'mercatify.requests.status.inReview',
-  sent: 'mercatify.requests.status.reportReady',
-  accepted: 'mercatify.requests.status.accepted',
-  consult: 'mercatify.requests.status.consult',
-}
-
-const turnVariants: StatusMap<WhoseTurn> = {
-  mercatify: 'info',
-  client: 'warning',
-}
-
-function isKnownStatus(value: string): value is CaseStatus {
-  return value in statusLabelKeys
-}
-
-function isWhoseTurn(value: string): value is WhoseTurn {
-  return value === 'mercatify' || value === 'client'
-}
-
+/**
+ * `assets/client/requests.html` — tiles, not a table. The one thing the client
+ * came back for is whether the ball is with us or with them, so the tile leads
+ * with the status and changes its call to action with it.
+ */
 export default function RequestsTable() {
   const t = useT()
   const router = useRouter()
-  const [page, setPage] = React.useState(1)
-
-  const columns = React.useMemo<ColumnDef<RequestRow>[]>(() => [
-    { accessorKey: 'title', header: t('mercatify.requests.table.column.title'), meta: { priority: 1 } },
-    {
-      accessorKey: 'status',
-      header: t('mercatify.requests.table.column.status'),
-      meta: { priority: 2 },
-      cell: ({ getValue }) => {
-        const raw = String(getValue() ?? '')
-        if (!isKnownStatus(raw)) return <span className="text-muted-foreground">—</span>
-        return <StatusBadge variant={statusVariants[raw]} dot>{t(statusLabelKeys[raw])}</StatusBadge>
-      },
-    },
-    {
-      accessorKey: 'whoseTurn',
-      header: t('mercatify.requests.table.column.whoseTurn'),
-      meta: { priority: 2 },
-      cell: ({ getValue }) => {
-        const raw = String(getValue() ?? '')
-        if (!isWhoseTurn(raw)) return <span className="text-muted-foreground">—</span>
-        return (
-          <StatusBadge variant={turnVariants[raw]} dot>
-            {t(raw === 'client' ? 'mercatify.requests.turn.client' : 'mercatify.requests.turn.mercatify')}
-          </StatusBadge>
-        )
-      },
-    },
-    {
-      accessorKey: 'submittedAt',
-      header: t('mercatify.requests.table.column.submittedAt'),
-      meta: { priority: 3 },
-      cell: ({ getValue }) => {
-        const formatted = formatDate(getValue() as string | null)
-        return <span>{formatted ?? '—'}</span>
-      },
-    },
-  ], [t])
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['mercatify-requests', page],
-    queryFn: async () => fetchCrudList<RequestRow>('mercatify/cases', { page, pageSize: PAGE_SIZE, mine: true }),
+    queryKey: ['mercatify-requests', 1],
+    queryFn: async () => fetchCrudList<ClientCase>('mercatify/cases', { page: 1, pageSize: PAGE_SIZE, mine: true }),
   })
 
   if (error) {
     const status = (error as { status?: number }).status
     const message = status === 401 || status === 403
-      ? t('mercatify.requests.table.error.forbidden')
-      : t('mercatify.requests.table.error.generic')
+      ? t('mercatify.client.requests.error.forbidden', 'You do not have permission to view your requests.')
+      : t('mercatify.client.requests.error.generic', 'Unable to load your requests. Please try again.')
     return (
       <Alert status="error">
         <AlertDescription>{message}</AlertDescription>
@@ -121,49 +52,118 @@ export default function RequestsTable() {
     )
   }
 
+  const items = data?.items ?? []
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground">{t('mercatify.client.requests.loading', 'Loading your requests…')}</p>
+  }
+
+  if (!items.length) {
+    return (
+      <div className="space-y-5">
+        <PageHeader
+          title={t('mercatify.client.requests.title', 'Your requests')}
+          description={t('mercatify.client.requests.empty.lead', 'Nothing here yet.')}
+        />
+        <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
+          {t(
+            'mercatify.client.requests.empty.body',
+            'You have not sent us a stack yet. It takes about four minutes and you keep the map whether or not you go ahead with us.',
+          )}
+          <div className="mt-3.5">
+            <Button asChild>
+              <Link href={CREATE_HREF}>{t('mercatify.client.requests.empty.cta', 'Map my stack')}</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <DataTable
-      title={t('mercatify.requests.table.title')}
-      columns={columns}
-      data={data?.items ?? []}
-      entityId={ENTITY_ID}
-      extensionTableId={`${ENTITY_ID}:requests`}
-      isLoading={isLoading}
-      actions={(
-        <Button asChild>
-          <Link href="/backend/cases/create">{t('mercatify.requests.table.actions.create')}</Link>
-        </Button>
-      )}
-      emptyState={(
-        <EmptyState
-          title={t('mercatify.requests.table.empty')}
-          description={t('mercatify.requests.table.emptyDescription')}
-        />
-      )}
-      rowActions={(row) => (
-        <RowActions
-          items={[
-            { id: 'mercatify.requests.open', label: t('mercatify.requests.table.actions.open'), href: `/backend/requests/${row.id}` },
-            // Only offered once the report is actually out — the route 404s
-            // before that anyway, but a dead action is not an empty state.
-            ...(isReportReadyStatus(row.status)
-              ? [{
-                id: 'mercatify.requests.openReport',
-                label: t('mercatify.requests.table.actions.openReport'),
-                href: `/backend/requests/${row.id}/report`,
-              }]
-              : []),
-          ]}
-        />
-      )}
-      onRowClick={(row) => router.push(`/backend/requests/${row.id}`)}
-      pagination={{
-        page,
-        pageSize: PAGE_SIZE,
-        total: data?.total ?? 0,
-        totalPages: data?.totalPages ?? 0,
-        onPageChange: setPage,
-      }}
-    />
+    <div className="space-y-5">
+      <PageHeader
+        title={t('mercatify.client.requests.title', 'Your requests')}
+        description={t(
+          'mercatify.client.requests.lead',
+          'Everything you have sent us, and where each one got to. Open one to see what you sent and to read the report when it comes back.',
+        )}
+        actions={(
+          <Button asChild variant="outline">
+            <Link href={CREATE_HREF}>{t('mercatify.client.requests.actions.another', 'Send another stack')}</Link>
+          </Button>
+        )}
+      />
+
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
+        {items.map((item) => {
+          const status = String(item.status ?? 'new')
+          const answered = isAnsweredStatus(status)
+          const ready = isReportReadyStatus(status) && !answered
+          const href = `/backend/requests/${item.id}`
+          // The report-sent and answer dates are not on the case JSON; `updatedAt`
+          // is the closest stand-in the list API gives us.
+          const changedAt = shortDate(item.updatedAt)
+
+          const state = ready
+            ? t('mercatify.client.requests.state.ready', 'Your report came back on {date}.', { date: changedAt })
+            : status === 'accepted'
+              ? t('mercatify.client.requests.state.accepted', 'You accepted it on {date}.', { date: changedAt })
+              : status === 'consult'
+                ? t('mercatify.client.requests.state.consult', 'You asked for a call on {date}.', { date: changedAt })
+                : t('mercatify.client.requests.state.waiting', 'With a consultant. We usually come back within two working days.')
+
+          return (
+            <div
+              key={item.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => router.push(href)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(href) } }}
+              className={`flex cursor-pointer flex-col gap-2.5 rounded-xl border p-[18px] shadow-sm transition-colors hover:border-foreground ${
+                ready
+                  ? 'border-status-success-border bg-status-success-bg'
+                  : 'border-border bg-card'
+              }`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-xs text-muted-foreground">{requestRef(item.id)}</span>
+                {isClientStatus(status) ? (
+                  <StatusBadge variant={CLIENT_STATUS_VARIANTS[status]}>
+                    {t(CLIENT_STATUS_LABEL_KEYS[status], CLIENT_STATUS_FALLBACKS[status])}
+                  </StatusBadge>
+                ) : null}
+              </div>
+              <div>
+                <div className="text-lg font-semibold tracking-tight">
+                  {item.companyName || t('mercatify.client.requests.fallbackTitle', 'Your stack')}
+                </div>
+                <div className="text-[0.8125rem] text-muted-foreground">
+                  {t('mercatify.client.requests.meta', '{tools} tools · {amount}/mo · sent {date}', {
+                    tools: (item.tools ?? []).length,
+                    amount: money(monthlyTotal(item.tools), item.currency),
+                    date: shortDate(item.submittedAt),
+                  })}
+                </div>
+              </div>
+              <div className="text-[0.8125rem] text-muted-foreground">{state}</div>
+              <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                {ready ? (
+                  <Button asChild size="sm" onClick={(e) => e.stopPropagation()}>
+                    <Link href={`${href}/report`}>
+                      {t('mercatify.client.requests.actions.readReport', 'Read the report')}
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
+                    <Link href={href}>{t('mercatify.client.requests.actions.seeSent', 'See what you sent')}</Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
