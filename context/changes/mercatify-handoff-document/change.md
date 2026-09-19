@@ -19,6 +19,6 @@ Outcome: the admin sees, while preparing the report, a `.md` configuration docum
 - Prerequisites: S-03 (`mercatify-mapping-summary`)
 - Parallel with: S-04
 
-**Blocked on one cheap decision that changes the whole shape of the change** (PRD Open Question 8, owner: team): does editing the table regenerate the `.md`, or are the two independent artifacts with the `.md` as the only document that travels? A regenerated document needs a serializer and a conflict story for edits made on both sides; an independent document needs neither. Planning before that call is planning two different changes at once.
+**Resolved 2026-09-19** (user decision, PRD Open Question 8): the table and the `.md` are independent artifacts. Editing the mapping table never regenerates or touches the `.md`; the `.md` is the only document that travels to Mercatify Lab. No serializer, no cross-artifact conflict story needed. Unblocked.
 
 - Open (non-blocking): handling of pasted content that may carry sensitive data (PRD Open Question 9).

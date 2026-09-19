@@ -326,6 +326,23 @@
           "enumItems": [],
           "mappedType": "datetime"
         },
+        "handoff_document": {
+          "name": "handoff_document",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
         "id": {
           "name": "id",
           "type": "uuid",
@@ -539,7 +556,7 @@
       ],
       "checks": [],
       "triggers": [],
-      "foreignKeys": [],
+      "foreignKeys": {},
       "comment": null
     },
     {

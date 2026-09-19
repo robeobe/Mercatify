@@ -93,3 +93,26 @@ export type MappingRowUpdateInput = z.infer<typeof mappingRowUpdateSchema>
 export type MappingRowListInput = z.infer<typeof mappingRowListSchema>
 export type MappingGenerateInput = z.infer<typeof mappingGenerateSchema>
 export type MappingConfirmInput = z.infer<typeof mappingConfirmSchema>
+
+/**
+ * The handoff document is independent of the mapping table (PRD Open
+ * Question 8, resolved): `content` is a free-form replacement, never a
+ * derived/serialized view of `MappingRow`.
+ */
+export const handoffDocumentListSchema = z.object({
+  id: z.string().uuid().optional(),
+  ids: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(50),
+})
+
+export const handoffDocumentGenerateSchema = z.object({ caseId: z.string().uuid() })
+
+export const handoffDocumentUpdateSchema = z.object({
+  id: z.string().uuid(),
+  content: z.string().max(200_000),
+})
+
+export type HandoffDocumentListInput = z.infer<typeof handoffDocumentListSchema>
+export type HandoffDocumentGenerateInput = z.infer<typeof handoffDocumentGenerateSchema>
+export type HandoffDocumentUpdateInput = z.infer<typeof handoffDocumentUpdateSchema>

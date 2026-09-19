@@ -80,6 +80,16 @@ export class InterviewCase {
    */
   @Property({ name: 'mapping_confirmed_at', type: Date, nullable: true })
   mappingConfirmedAt?: Date | null
+
+  /**
+   * The `.md` handoff document Mercatify Lab needs for implementation. Seeded
+   * once by `mercatify.handoff.generate` from the confirmed mapping; after
+   * that, independent of `MappingRow` forever (PRD Open Question 8, resolved
+   * 2026-09-19: table and document are independent artifacts — editing one
+   * never touches the other).
+   */
+  @Property({ name: 'handoff_document', type: 'text', nullable: true })
+  handoffDocument?: string | null
 }
 
 /**
