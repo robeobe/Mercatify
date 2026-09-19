@@ -96,6 +96,14 @@
               <option value="GBP">GBP £</option>
             </select>
           </div>
+          <div>
+            <label for="f-contact">Who we should write back to</label>
+            <input type="text" id="f-contact" data-meta="contactName" placeholder="Marta Nowak">
+          </div>
+          <div>
+            <label for="f-contact-role">Their role</label>
+            <input type="text" id="f-contact-role" data-meta="contactRole" placeholder="COO">
+          </div>
         </div>
       </div>
 
@@ -137,6 +145,32 @@
             <textarea id="f-keep" data-meta="mustKeep" placeholder="Accounting stays with our bookkeeper. The e-signature provider is in our contracts."></textarea>
           </div>
         </div>
+      </div>
+
+      <div class="section">
+        <h2>What the report will say it is based on</h2>
+        <p>The report opens by stating what was read, what period the figures cover and what
+           was left out — so nobody has to guess how far the numbers reach. Leave these and
+           we write them after the call.</p>
+      </div>
+      <div class="card">
+        <details class="more" style="margin-top:0;padding-top:0;border-top:0">
+          <summary>Scope and sources</summary>
+          <div class="grid" style="margin-top:12px">
+            <div>
+              <label for="f-read">What we looked at</label>
+              <textarea id="f-read" data-meta="readWhat" placeholder="A 62-minute kick-off call; seven supplier invoices for August; three screen-shares."></textarea>
+            </div>
+            <div>
+              <label for="f-period">What the figures cover</label>
+              <textarea id="f-period" data-meta="period" placeholder="Licence costs as billed in August at 34 seats, at the current team size."></textarea>
+            </div>
+            <div>
+              <label for="f-excl">What is not in scope</label>
+              <textarea id="f-excl" data-meta="exclusions" placeholder="Statutory accounting, payroll, Microsoft 365. None of it was assessed and none of it is in the savings figure."></textarea>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div class="card" style="margin-top:16px">
@@ -183,13 +217,19 @@
 (function () {
   var content = mountPortalShell({});
   content.appendChild(document.getElementById('tpl-form').content.cloneNode(true));
+  ensureIntakeStyles();
   /* Only offer a way back once there is something to go back to. */
   if (readClientRefs().length) document.getElementById('head-actions').hidden = false;
 
+  /* The brief's shape, its defaults and the two v2 controls live in catalog.js,
+     because the consultant's form builds the same brief from the same state and
+     the two must not drift. What is page-specific is the tool card below. */
   var state = {
-    meta: { name: '', industry: '', people: '', currency: 'EUR', pains: '', mustKeep: '' },
-    sel: {},     /* toolId -> { mods:{modId:true}, seats:'', monthly:'' } */
-    custom: []   /* { name, what, seats, monthly } */
+    meta: { name: '', industry: '', people: '', currency: DEFAULT_CURRENCY,
+            contactName: '', contactRole: '', pains: '', mustKeep: '',
+            readWhat: '', period: '', exclusions: '' },
+    sel: {},     /* toolId -> blankToolEntry() */
+    custom: []   /* blankCustomEntry() */
   };
 
   var toolsEl = document.getElementById('tools');
@@ -254,24 +294,32 @@
           isDup ? el('span', { class: 'badge badge--warning m-dup', text: 'also elsewhere' }) : document.createTextNode(''),
           el('span', { class: 'm-desc', text: m.desc })
         ]));
-        list.appendChild(el('li', {}, [label]));
+        var li = el('li', {}, [label]);
+        /* Only a ticked module asks how we know — an untouched card stays as
+           short as it was before v2. Outside the <label> on purpose: a click on
+           the evidence buttons must not toggle the module off. */
+        if (on) {
+          var ev = moduleEvidence(sel, m.id);
+          li.appendChild(evidenceControl({
+            label: 'How we know what ' + m.name + ' is used for',
+            noteLabel: 'What ' + m.name + ' is actually used for',
+            notePlaceholder: '3 pipelines, 11 custom deal properties',
+            kind: ev.kind, note: ev.note,
+            onKind: function (k) { ev.kind = k; sync(false); },
+            onNote: function (n) { ev.note = n; sync(false); }
+          }));
+        }
+        list.appendChild(li);
       });
       body.appendChild(list);
 
-      var cost = el('div', { class: 'tool__cost' });
-      var seatsId = 'seats-' + t.id, costId = 'cost-' + t.id;
-      var seatWrap = el('div', {}, [el('label', { for: seatsId, text: 'Seats' })]);
-      var seatInput = el('input', { type: 'number', min: '0', id: seatsId, placeholder: '0' });
-      seatInput.value = sel ? (sel.seats || '') : '';
-      seatInput.addEventListener('input', function () { state.sel[t.id].seats = seatInput.value; sync(false); });
-      seatWrap.appendChild(seatInput);
-      var costWrap = el('div', {}, [el('label', { for: costId, text: 'Monthly, all seats (' + state.meta.currency + ')' })]);
-      var costInput = el('input', { type: 'number', min: '0', step: '1', id: costId, placeholder: '0' });
-      costInput.value = sel ? (sel.monthly || '') : '';
-      costInput.addEventListener('input', function () { state.sel[t.id].monthly = costInput.value; sync(false); });
-      costWrap.appendChild(costInput);
-      cost.appendChild(seatWrap); cost.appendChild(costWrap);
-      body.appendChild(cost);
+      body.appendChild(toolCostFields(sel || blankToolEntry(), {
+        idPrefix: 'tool-' + t.id,
+        currency: state.meta.currency,
+        planPlaceholder: 'Professional',
+        categoryPlaceholder: t.kind,
+        onChange: function () { sync(false); }
+      }));
 
       card.appendChild(body);
       toolsEl.appendChild(card);
@@ -282,7 +330,7 @@
     /* Nothing is pre-ticked. A module counts as used only when the client says so — a
        default here would put numbers in the mapping nobody confirmed. */
     if (state.sel[id]) delete state.sel[id];
-    else state.sel[id] = { mods: {}, seats: '', monthly: '' };
+    else state.sel[id] = blankToolEntry();
     sync(true);
   }
 
@@ -297,70 +345,27 @@
   function renderCustom() {
     customEl.innerHTML = '';
     state.custom.forEach(function (c, i) {
-      var row = el('div', { class: 'grid grid--2', style: 'margin-bottom:10px' });
-      function field(labelText, key, type, ph) {
-        var id = 'c' + i + '-' + key;
-        var w = el('div', {}, [el('label', { for: id, text: labelText })]);
-        var inp = el('input', { type: type || 'text', id: id, placeholder: ph || '' });
-        inp.value = c[key] || '';
-        inp.addEventListener('input', function () { c[key] = inp.value; sync(false); });
-        w.appendChild(inp);
-        return w;
-      }
-      row.appendChild(field('Tool', 'name', 'text', 'Google Sheets — installer rota'));
-      row.appendChild(field('What it is used for', 'what', 'text', 'Weekly crew planning'));
-      row.appendChild(field('Seats', 'seats', 'number', '0'));
-      var last = el('div', { class: 'row', style: 'align-items:flex-end' });
-      var costWrap = field('Monthly (' + state.meta.currency + ')', 'monthly', 'number', '0');
-      costWrap.style.flex = '1';
-      last.appendChild(costWrap);
-      last.appendChild(el('button', {
-        class: 'btn btn--ghost btn--sm', type: 'button', text: 'Remove',
-        onclick: function () { state.custom.splice(i, 1); renderCustom(); sync(false); }
+      customEl.appendChild(customToolRow(c, {
+        idPrefix: 'c' + i,
+        currency: state.meta.currency,
+        categoryPlaceholder: OFF_CATALOG_KIND,
+        onChange: function () { sync(false); },
+        onRemove: function () { state.custom.splice(i, 1); renderCustom(); sync(false); }
       }));
-      row.appendChild(last);
-      customEl.appendChild(row);
     });
   }
   document.getElementById('add-custom').addEventListener('click', function () {
-    state.custom.push({ name: '', what: '', seats: '', monthly: '' });
+    state.custom.push(blankCustomEntry());
     renderCustom(); sync(false);
   });
 
-  Array.prototype.forEach.call(document.querySelectorAll('[data-meta]'), function (inp) {
-    inp.addEventListener('input', function () {
-      state.meta[inp.getAttribute('data-meta')] = inp.value;
-      if (inp.id === 'f-currency') { render(); renderCustom(); }
-      sync(false);
-    });
+  bindMetaFields(state, function (inp) {
+    if (inp.id === 'f-currency') { render(); renderCustom(); }
+    sync(false);
   });
   document.getElementById('f-search').addEventListener('input', render);
 
-  function brief() {
-    var tools = [];
-    CATALOG.forEach(function (t) {
-      var s = state.sel[t.id]; if (!s) return;
-      var mods = t.modules.filter(function (m) { return s.mods[m.id]; }).map(function (m) {
-        return { id: m.id, name: m.name, desc: m.desc, caps: m.caps };
-      });
-      tools.push({ id: t.id, name: t.name, kind: t.kind, seats: s.seats, monthly: s.monthly, modules: mods });
-    });
-    state.custom.forEach(function (c, i) {
-      if (!c.name) return;
-      tools.push({
-        id: 'custom-' + i, name: c.name, kind: 'off-catalog', seats: c.seats, monthly: c.monthly,
-        custom: true, modules: [{ id: 'use', name: 'What it is used for', desc: c.what || '', caps: [] }]
-      });
-    });
-    return {
-      v: 1, kind: 'mercatify-brief',
-      created: new Date().toISOString().slice(0, 10),
-      company: { name: state.meta.name, industry: state.meta.industry, people: state.meta.people },
-      currency: state.meta.currency,
-      pains: state.meta.pains, mustKeep: state.meta.mustKeep,
-      tools: tools
-    };
-  }
+  function brief() { return buildBrief(state); }
 
   function sync(rerender) {
     if (rerender) render();
@@ -423,31 +428,13 @@
     setTimeout(function () { self.textContent = 'Save draft'; }, 1600);
   });
 
-  /* restore a draft left in this browser */
+  /* Restore a draft left in this browser — any version of it. A v1 draft saved
+     before evidence and contract details existed opens with the defaults it
+     would have got today, rather than failing on fields it never had. */
   var prev = loadCase();
   if (prev && prev.brief && prev.brief.tools && prev.brief.tools.length) {
-    var b = prev.brief;
-    state.meta.name = b.company.name || '';
-    state.meta.industry = b.company.industry || '';
-    state.meta.people = b.company.people || '';
-    state.meta.currency = b.currency || 'EUR';
-    state.meta.pains = b.pains || '';
-    state.meta.mustKeep = b.mustKeep || '';
-    b.tools.forEach(function (t) {
-      if (t.custom) {
-        state.custom.push({ name: t.name, what: (t.modules[0] || {}).desc || '', seats: t.seats, monthly: t.monthly });
-      } else if (findTool(t.id)) {
-        var mods = {};
-        t.modules.forEach(function (m) { mods[m.id] = true; });
-        state.sel[t.id] = { mods: mods, seats: t.seats || '', monthly: t.monthly || '' };
-      }
-    });
-    document.getElementById('f-company').value = state.meta.name;
-    document.getElementById('f-industry').value = state.meta.industry;
-    document.getElementById('f-people').value = state.meta.people;
-    document.getElementById('f-currency').value = state.meta.currency;
-    document.getElementById('f-pains').value = state.meta.pains;
-    document.getElementById('f-keep').value = state.meta.mustKeep;
+    readBriefIntoState(prev.brief, state);
+    fillMetaFields(state);
   }
 
   renderCustom();
