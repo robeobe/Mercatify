@@ -80,6 +80,18 @@ export class InterviewCase {
    */
   @Property({ name: 'mapping_confirmed_at', type: Date, nullable: true })
   mappingConfirmedAt?: Date | null
+
+  /**
+   * Customer-provided inputs to S-04's net-saving formula (never computed by
+   * the analysis — see `lib/savings.ts` and `mercatify-labs`' "iron rule #2").
+   * Admin-entered independently of the intake profile, editable regardless of
+   * `status`.
+   */
+  @Property({ name: 'om_operating_cost', type: 'numeric', precision: 12, scale: 2, nullable: true })
+  omOperatingCost?: string | null
+
+  @Property({ name: 'implementation_cost', type: 'numeric', precision: 12, scale: 2, nullable: true })
+  implementationCost?: string | null
 }
 
 /**
@@ -109,6 +121,10 @@ export class MappingRow {
 
   @Property({ type: 'text' })
   capability!: string
+
+  /** The SaaS product this capability was mapped from. Analysis-owned, drives S-04's saving formula. */
+  @Property({ type: 'text', default: '' })
+  source: string = ''
 
   /** Valid values: 'native' | 'configure' | 'build' | 'integrate' | 'keep'. Admin-editable. */
   @Property({ type: 'text' })

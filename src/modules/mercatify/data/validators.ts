@@ -93,3 +93,17 @@ export type MappingRowUpdateInput = z.infer<typeof mappingRowUpdateSchema>
 export type MappingRowListInput = z.infer<typeof mappingRowListSchema>
 export type MappingGenerateInput = z.infer<typeof mappingGenerateSchema>
 export type MappingConfirmInput = z.infer<typeof mappingConfirmSchema>
+
+/**
+ * S-04: OM operating cost and implementation cost are customer-provided
+ * inputs (never computed by the analysis — see `lib/savings.ts`), entered by
+ * an admin independently of the intake profile, so this is deliberately not
+ * part of `interviewCaseUpdateSchema`.
+ */
+export const interviewCaseCostsSchema = z.object({
+  id: z.string().uuid(),
+  omOperatingCost: z.number().nonnegative().nullable().optional(),
+  implementationCost: z.number().nonnegative().nullable().optional(),
+})
+
+export type InterviewCaseCostsInput = z.infer<typeof interviewCaseCostsSchema>

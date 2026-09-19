@@ -5,7 +5,7 @@ import { isCrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import { OPTIMISTIC_LOCK_HEADER_NAME } from '@open-mercato/shared/lib/crud/optimistic-lock-headers'
 import { registerModules } from '@open-mercato/shared/lib/modules/registry'
 import { getEnabledModuleIds } from '@open-mercato/shared/security/enabledModulesRegistry'
-import { InterviewCase, MappingRow } from '../../data/entities'
+import { InterviewCase, InterviewCaseTool, MappingRow } from '../../data/entities'
 import { registerMercatifyLabPort } from '../../lib/mercatify-lab-port'
 import { scriptedMercatifyLabAdapter } from '../../lib/scripted-mercatify-lab-adapter'
 import { generateMappingCommand, updateMappingRowCommand, confirmMappingCommand } from '../mapping'
@@ -32,12 +32,13 @@ function registerFakeEnabledModules() {
   ])
 }
 
-type Row = InterviewCase | MappingRow
+type Row = InterviewCase | MappingRow | InterviewCaseTool
 
 /** In-memory stand-in for the scoped ORM/data-engine pair the commands resolve. */
 function makeWorld() {
   const cases: InterviewCase[] = []
   const rows: MappingRow[] = []
+  const tools: InterviewCaseTool[] = []
 
   const matches = (row: Record<string, unknown>, where: Record<string, unknown>): boolean =>
     Object.entries(where).every(([key, value]) => {
@@ -46,7 +47,9 @@ function makeWorld() {
     })
 
   function tableFor(entity: unknown): Row[] {
-    return entity === MappingRow ? (rows as unknown as Row[]) : (cases as unknown as Row[])
+    if (entity === MappingRow) return rows as unknown as Row[]
+    if (entity === InterviewCaseTool) return tools as unknown as Row[]
+    return cases as unknown as Row[]
   }
 
   const em = {
@@ -100,7 +103,7 @@ function makeWorld() {
     },
   }
 
-  return { cases, rows, marks, container }
+  return { cases, rows, tools, marks, container }
 }
 
 type World = ReturnType<typeof makeWorld>
@@ -153,6 +156,26 @@ async function seedCase(world: World, ctx: CommandRuntimeContext): Promise<Inter
   })
 }
 
+async function seedTool(
+  world: World,
+  ctx: CommandRuntimeContext,
+  caseId: string,
+  data: { name: string; monthlyCost: string },
+): Promise<InterviewCaseTool> {
+  const de = world.container.resolve('dataEngine') as any
+  return de.createOrmEntity({
+    entity: InterviewCaseTool,
+    data: {
+      interviewCase: caseId,
+      name: data.name,
+      monthlyCost: data.monthlyCost,
+      selectedModuleIds: [],
+      tenantId: (ctx.auth as any).tenantId,
+      organizationId: ctx.selectedOrganizationId,
+    },
+  })
+}
+
 describe('mercatify mapping commands', () => {
   let world: World
 
@@ -174,6 +197,18 @@ describe('mercatify mapping commands', () => {
     const second = await generateMappingCommand.execute({ caseId: created.id }, ctx)
     expect(second.generated).toBe(false)
     expect(second.rows.map((r) => r.id).sort()).toEqual(firstIds)
+  })
+
+  it('sends the case\'s real InterviewCaseTool rows as saasTools, and persists a non-empty source on every generated row', async () => {
+    const ctx = makeCtx(world)
+    const created = await seedCase(world, ctx)
+    await seedTool(world, ctx, created.id, { name: 'Salesforce', monthlyCost: '2000.00' })
+
+    const { rows } = await generateMappingCommand.execute({ caseId: created.id }, ctx)
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(row.source).toBeTruthy()
+    }
   })
 
   it('flags every row naming a module outside the enabled registry, and every unmapped row — never silently drops either', async () => {

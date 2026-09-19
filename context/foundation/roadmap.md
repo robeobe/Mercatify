@@ -38,7 +38,7 @@ The insight the product rests on: *"Your SaaS stack is already your specificatio
 | S-01 | `mercatify-intake-start`        | employee opens Mercatify, builds and sends the interview starting point: company profile and SaaS tools with monthly costs | F-01                        | US-01, FR-001, FR-014, FR-015  | ready    |
 | S-08 | `mercatify-client-requests`     | **client** (employee role) sees a list of their own requests and reopens one to see what was sent and its status *(added 2026-09-19 — gap; revises S-01's "terminal after Send")* | S-01                        | FR-017                         | ready    |
 | S-02 | `mercatify-discovery-wizard`    | *(superseded 2026-09-19 — no client-facing wizard; Send is terminal for the employee, no agent feedback follows)* | S-01, F-02                  | US-01, FR-002, FR-003, FR-004  | superseded |
-| S-04 | `mercatify-savings-breakdown`   | see the net annual saving as three separate lines, with payback measured against net         | S-03                        | US-01, FR-007                  | blocked  |
+| S-04 | `mercatify-savings-breakdown`   | see the net annual saving as three separate lines, with payback measured against net         | S-03                        | US-01, FR-007                  | ready    |
 | S-05 | `mercatify-handoff-document`    | **admin** sees the `.md` configuration document while preparing the report and edits it or pastes their own *(reassigned from client, not shown to the client, 2026-09-19)* | S-03                        | US-01, FR-010, FR-011          | blocked  |
 | S-09 | `mercatify-report-build-send`   | **admin** builds the client-facing report from a confirmed mapping (KPIs, tool table, duplicates, backlog, cash curve) and sends it *(added 2026-09-19 — gap, distinct from S-04's saving lines and S-05's `.md` editor)* | S-03, S-04                  | FR-018                         | blocked  |
 | S-10 | `mercatify-client-offer`        | **client** (employee role) sees the sent report and accepts it or asks for a consult call *(added 2026-09-19 — gap; this is what S-06 assumed already existed)* | S-08, S-09                  | FR-019                         | blocked  |
@@ -53,7 +53,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | A      | Module ground            | `F-01` → `S-01` → `S-08` → `S-02` | The input side: the module exists, the starting point renders, the client can find it again, the interview (superseded) never runs. |
 | B      | Analysis seam & summary  | `F-02` → `S-03` → `S-07`     | Carries the north star. `S-07` (admin queue, added 2026-09-19) is the practical entry point into `S-03`. Runs fully parallel to Stream A once the contract is written. |
 | C      | Handoff to Lab           | `S-05` → `S-09` → `S-10` → `S-06` | Joins Stream B at `S-03`. `S-09`/`S-10` (added 2026-09-19) are the report screen and the client's view of it, both presupposed but never built by the original `S-05`/`S-06`. Starts only after the table-vs-`.md` question resolves. |
-| D      | Money                    | `S-04`                       | Joins Stream B at `S-03`. Starts only after the saving formula and the two cost sources are fixed; also feeds `S-09`'s report. |
+| D      | Money                    | `S-04`                       | Joins Stream B at `S-03`. Saving formula and the two cost sources fixed 2026-09-19 (issue #18); also feeds `S-09`'s report. |
 
 With `main_goal: speed` and `top_blocker: time`, streams A and B are the two tracks to staff first and in parallel — nothing in A blocks anything in B.
 
@@ -179,19 +179,17 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 
 ### S-04: Client sees the savings broken down
 
+> **Amended 2026-09-19** (GitHub issue #18, user decision): business rule confirmed — three-line net formula, payback against net. OM operating cost and implementation cost are **customer-provided** (admin-entered), matching the repo's existing `mercatify-labs/` prototype's `computeScenario.ts` formula exactly ("iron rule #2": these two figures are inputs, never computed by an analysis step). F-02's original "no money in the `MercatifyLabPort` contract" design stands unchanged — see `context/changes/mercatify-savings-breakdown/change.md` for the full two-round decision record.
+
 - **Outcome:** Client can see the net annual saving presented as three separate lines — SaaS saving, OM operating cost and implementation cost, never blended — with payback measured against the net figure.
 - **Change ID:** `mercatify-savings-breakdown`
 - **PRD refs:** US-01, FR-007
 - **Unlocks:** S-09 (the report screen presents these three lines alongside the mapping table)
-- **Prerequisites:** S-03
+- **Prerequisites:** S-03 (done)
 - **Parallel with:** S-05
 - **Blockers:** —
-- **Unknowns:**
-  - The module's one-sentence business rule and the saving formula are still a spec-derived candidate, not a decision (PRD Open Question 1). Owner: user. Block: yes.
-  - Who provides the OM operating cost figure (PRD Open Question 3). Owner: user / team. Block: yes.
-  - Who provides the implementation cost figure (PRD Open Question 4). Owner: user / team. Block: yes.
-- **Risk:** Blocked, but cheaply: confirming the spec's candidate rule ("all costs are customer-provided", the three-line formula, payback against net) answers all three unknowns at once and promotes this slice to ready. Left blocked rather than guessed, because a saving figure derived from an unconfirmed formula is exactly the false precision the PRD's guardrail exists to prevent.
-- **Status:** blocked
+- **Unknowns:** — (PRD Open Questions 1, 3, 4 resolved 2026-09-19; see Amended note)
+- **Status:** ready
 
 ### S-05: Admin sees and edits the handoff document
 
@@ -267,7 +265,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 | S-01       | `mercatify-intake-start`          | Employee builds and sends the interview starting point: profile and SaaS tools with costs | yes | F-01 landed                                                  |
 | S-08       | `mercatify-client-requests`       | Show the client's list of their own requests plus a per-request progress track | yes       | Added 2026-09-19 — gap. Needs S-01; revises S-01's "terminal" claim   |
 | S-02       | `mercatify-discovery-wizard`      | ~~Run the discovery wizard with dynamically injected questions~~    | no                    | **Superseded 2026-09-19** — do not implement                          |
-| S-04       | `mercatify-savings-breakdown`     | Show the three-line net saving and payback                          | no                    | Blocked on the business rule and the two cost sources (Q1, Q3, Q4)    |
+| S-04       | `mercatify-savings-breakdown`     | Show the three-line net saving and payback                          | no                    | Ready 2026-09-19 (issue #18) — OM operating/implementation cost are customer-provided (admin-entered), matching `mercatify-labs/computeScenario.ts`; no F-02 contract change for money |
 | S-05       | `mercatify-handoff-document`      | Show and edit the `.md` handoff document (admin-facing)             | no                    | Blocked on the table-vs-document question (Q8). Reassigned to admin 2026-09-19 |
 | S-09       | `mercatify-report-build-send`     | Admin builds and sends the client-facing report from a confirmed mapping | no       | Added 2026-09-19 — gap. Blocked with S-04 on the money formula        |
 | S-10       | `mercatify-client-offer`          | Client sees the sent report and accepts or asks for a consult call  | no                    | Added 2026-09-19 — gap. Needs S-08 and S-09; is what S-06 assumed already existed |
@@ -277,10 +275,10 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 
 Carried from PRD §Open Questions, plus one surfaced while probing the codebase. Per-slice unknowns stay in their slice.
 
-1. **The module's one-sentence business rule** — confirm or replace the spec-derived candidate (every capability gets exactly one of five decisions; the saving shown is always net of OM's operating cost; the three-line formula with payback against net). Owner: user. Block: S-04. Highest leverage in the list.
-2. **The Mercatify ↔ Mercatify Lab contract** — what the interview sends, what the analysis returns, what the handoff carries, and where the spec's iron rules live. Owner: team. Block: this is F-02's deliverable, so it resolves by being built rather than by being answered.
-3. **Source of the OM operating cost figure.** Owner: user / team. Block: S-04. Answered in one move by Question 1 if the candidate rule stands ("all costs are customer-provided").
-4. **Source of the implementation cost figure.** Owner: user / team. Block: S-04. Same as Question 3.
+1. ~~**The module's one-sentence business rule**~~ — **Resolved 2026-09-19** (issue #18, owner: user): every capability keeps its one of five decisions from S-03's mapping; the saving shown is always net of OM's operating cost and implementation cost; the three-line formula (SaaS saving / OM operating cost / implementation cost, never blended) with payback against net. See `context/changes/mercatify-savings-breakdown/change.md`.
+2. **The Mercatify ↔ Mercatify Lab contract** — what the interview sends, what the analysis returns, what the handoff carries, and where the spec's iron rules live. Owner: team. Block: this is F-02's deliverable, so it resolves by being built rather than by being answered. Amended 2026-09-19: the contract gains additive optional money fields per Question 1's resolution — Lab now also returns OM operating cost and implementation cost as net dollar amounts.
+3. ~~**Source of the OM operating cost figure.**~~ — **Resolved 2026-09-19** (issue #18, owner: user): customer-provided, admin-entered — matches the repo's `mercatify-labs/` prototype, where this figure is an opaque input to `computeScenario`, never computed by Lab.
+4. ~~**Source of the implementation cost figure.**~~ — **Resolved 2026-09-19** (issue #18, owner: user): same as Question 3 — customer-provided, admin-entered.
 5. **Who maintains the SaaS-capability → OM-module map** — narrowed already: not a separate role in v1, no editor in the UI. Owner: team. Block: S-03 (non-blocking).
 6. **Interview depth** — moot; S-02, the mechanism this question concerned, is superseded (2026-09-19). Owner: team. Block: none.
 7. **The question cap in the wizard loop** — moot; S-02 is superseded (2026-09-19). Owner: team. Block: none.
