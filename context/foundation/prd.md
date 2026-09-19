@@ -179,7 +179,7 @@ Derived from decisions the user made in the shaping session:
 5. **Who maintains the SaaS-capability → OM-module map** (from the seed) — narrowed: not a separate role in v1, no editor in the UI. Owner: team.
 6. **Interview depth** (from the seed) — partly shaped as a wizard loop bounded to a few questions; how deep the questions go per tool is open. Owner: team.
 7. **Question cap in the wizard loop (FR-003)** — user said "a few"; exact number to be fixed in planning. Owner: team.
-8. **Table ↔ `.md` file** — does editing the table regenerate the `.md`, or are they independent artifacts (with the `.md` as the only handoff document)? Owner: team.
+8. ~~**Table ↔ `.md` file**~~ — **Resolved 2026-09-19** (user decision): the two are independent artifacts. Editing the mapping table never regenerates or touches the `.md`; the `.md` is the only document that travels to Mercatify Lab. No serializer, no cross-artifact conflict story needed.
 9. **Non-functional requirements not captured** — response-time expectations for the wizard and the analysis round-trip, handling of free-text answers and pasted `.md` content (sensitive data), browser support, retention. Consequence: the PRD has no measurable quality targets beyond the two guardrails. Owner: team.
 10. **Product framing not captured** — `target_scale` (how many tenants / trialing clients), `hard_deadline` (HackOn 2026 date), `after_hours_only`. Consequence: frontmatter carries TODO placeholders. Owner: user.
 11. **Socratic round for FR-004…FR-015** — ended by the user after FR-003; those FRs stand as drafted without a recorded counter-argument. Owner: user (optional).

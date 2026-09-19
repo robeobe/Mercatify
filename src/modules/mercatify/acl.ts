@@ -18,6 +18,18 @@ export const features = [
     module: 'mercatify',
     dependsOn: ['mercatify.mapping.view'],
   },
+  {
+    id: 'mercatify.handoff.view',
+    title: 'View handoff document',
+    module: 'mercatify',
+    dependsOn: ['mercatify.mapping.view'],
+  },
+  {
+    id: 'mercatify.handoff.manage',
+    title: 'Manage handoff document',
+    module: 'mercatify',
+    dependsOn: ['mercatify.handoff.view'],
+  },
 ]
 
 export default features

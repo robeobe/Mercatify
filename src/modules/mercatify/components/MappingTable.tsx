@@ -15,6 +15,7 @@ import { useGuardedMutation } from '@open-mercato/ui/backend/injection/useGuarde
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import Link from 'next/link'
 import EditMappingRowDialog from './EditMappingRowDialog'
 
 const ENTITY_ID = 'mercatify:mapping_row'
@@ -193,13 +194,20 @@ export default function MappingTable({ caseId }: { caseId: string }) {
           ? t('mercatify.mapping.table.titleWithCase', { case: mercatifyCase.title })
           : t('mercatify.mapping.table.title')}
         actions={(
-          <Button
-            type="button"
-            onClick={() => void onConfirmMapping()}
-            disabled={isConfirmed || rows.length === 0 || rowsQuery.isLoading}
-          >
-            {isConfirmed ? t('mercatify.mapping.actions.confirmed') : t('mercatify.mapping.actions.confirm')}
-          </Button>
+          <>
+            {isConfirmed ? (
+              <Button asChild variant="outline">
+                <Link href={`/backend/cases/${caseId}/handoff`}>{t('mercatify.mapping.actions.viewHandoff')}</Link>
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              onClick={() => void onConfirmMapping()}
+              disabled={isConfirmed || rows.length === 0 || rowsQuery.isLoading}
+            >
+              {isConfirmed ? t('mercatify.mapping.actions.confirmed') : t('mercatify.mapping.actions.confirm')}
+            </Button>
+          </>
         )}
         columns={columns}
         data={rows}

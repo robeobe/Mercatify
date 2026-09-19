@@ -75,6 +75,15 @@ export const mappingRowListItemSchema = z
   })
   .passthrough()
 
+export const handoffDocumentListItemSchema = z
+  .object({
+    id: z.string(),
+    handoffDocument: z.string().nullable().optional(),
+    mappingConfirmedAt: z.string().nullable().optional(),
+    updatedAt: z.string().nullable().optional(),
+  })
+  .passthrough()
+
 export function createMercatifyPagedListResponseSchema(itemSchema: ZodTypeAny) {
   return createSharedPagedListResponseSchema(itemSchema, { paginationMetaOptional: true })
 }
