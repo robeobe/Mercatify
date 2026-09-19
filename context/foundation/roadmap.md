@@ -31,10 +31,10 @@ The insight the product rests on: *"Your SaaS stack is already your specificatio
 
 | ID   | Change ID                       | Outcome (user can …)                                                                        | Prerequisites               | PRD refs                       | Status   |
 | ---- | ------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------ | -------- |
-| F-01 | `mercatify-module-scaffold`     | (foundation) Mercatify installs as a standard OM module with one seeded interview case       | —                           | FR-014, FR-015                 | ready    |
-| F-02 | `mercatify-lab-analysis-contract` | (foundation) the Mercatify ↔ Lab interface is fixed, with a deterministic scripted adapter  | —                           | FR-003, FR-012, FR-013, OQ-2   | ready    |
-| S-03 | `mercatify-mapping-summary`     | see the analysis-filled mapping table, with unmapped items flagged, and edit it              | F-01, F-02                  | US-01, FR-005, FR-006, FR-008  | proposed |
-| S-01 | `mercatify-intake-start`        | open Mercatify and see the starting point: company profile and SaaS tools with monthly costs | F-01                        | US-01, FR-001, FR-014, FR-015  | proposed |
+| F-01 | `mercatify-module-scaffold`     | (foundation) Mercatify installs as a standard OM module with one seeded interview case       | —                           | FR-014, FR-015                 | done     |
+| F-02 | `mercatify-lab-analysis-contract` | (foundation) the Mercatify ↔ Lab interface is fixed, with a deterministic scripted adapter  | —                           | FR-003, FR-012, FR-013, OQ-2   | done     |
+| S-03 | `mercatify-mapping-summary`     | see the analysis-filled mapping table, with unmapped items flagged, and edit it              | F-01, F-02                  | US-01, FR-005, FR-006, FR-008  | ready    |
+| S-01 | `mercatify-intake-start`        | open Mercatify and see the starting point: company profile and SaaS tools with monthly costs | F-01                        | US-01, FR-001, FR-014, FR-015  | ready    |
 | S-02 | `mercatify-discovery-wizard`    | answer discovery questions step by step until the analysis says nothing is missing           | S-01, F-02                  | US-01, FR-002, FR-003, FR-004  | proposed |
 | S-04 | `mercatify-savings-breakdown`   | see the net annual saving as three separate lines, with payback measured against net         | S-03                        | US-01, FR-007                  | blocked  |
 | S-05 | `mercatify-handoff-document`    | see the `.md` configuration document below the table and edit it or paste their own          | S-03                        | US-01, FR-010, FR-011          | blocked  |
@@ -82,7 +82,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Unknowns:**
   - Which demo dataset — the concrete company profile, tool list and monthly costs were never captured. Owner: user. Block: no (placeholder content is enough to scaffold; S-01 is where it becomes visible).
 - **Risk:** Sequenced first because nothing else can render or persist until the module passes auto-discovery. The risk is scope creep — this must stay the smallest legal module plus one case entity; every slice below still adds its own fields, APIs and screens.
-- **Status:** ready
+- **Status:** done
 
 ### F-02: The Mercatify ↔ Mercatify Lab interface is fixed
 
@@ -96,7 +96,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Unknowns:**
   - Where the spec's iron rules live (catalog used as a lookup; money computed deterministically rather than by the analysis) — inside Lab, or as a requirement this contract imposes on Lab. Owner: team. Block: no (this foundation is the place the decision gets recorded).
 - **Risk:** Sequenced first alongside F-01 because it is the seam two teams work across at the same time; if it lands late, the wizard and the summary are each built against a guess and neither fits Lab. Kept minimal on purpose — one port plus one scripted adapter, not an analysis implementation.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -112,7 +112,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
   - Which module registry the table may name — the 11 modules enabled in this app, or the full core + enterprise catalog quoted in the PRD. Owner: team. Block: no (either reading produces a demonstrable table; the choice changes the lookup source, not the slice's shape).
   - Who maintains the SaaS-capability → OM-module map, given that v1 has no editor for it in the UI (PRD Open Question 5). Owner: team. Block: no.
 - **Risk:** Placed before the intake and wizard slices deliberately — it is the north star and its Prerequisites are only the two foundations, so deferring it behind the interview would delay the one thing that proves the product. The risk is that it is built against a fixture that drifts from what the wizard actually collects; F-02's contract is what keeps them aligned.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-01: Client sees the interview starting point
 
@@ -125,7 +125,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Unknowns:**
   - The demo dataset's actual content (which tools, which costs) was not captured in shaping. Owner: user. Block: no.
 - **Risk:** This is the first slice where auto-discovery, the module's feature flags and tenant scoping become observable to a person rather than to a test, so it doubles as the live check on FR-014 and FR-015. Low risk; the main failure mode is building a bespoke screen where installed admin primitives already do the job.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-02: Client answers the discovery questions
 
@@ -190,8 +190,8 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 | ---------- | --------------------------------- | ------------------------------------------------------------------ | --------------------- | --------------------------------------------------------------------- |
 | F-01       | `mercatify-module-scaffold`       | Install Mercatify as a standard OM module with one seeded case      | yes                   | Start here — unlocks everything, including the north star             |
 | F-02       | `mercatify-lab-analysis-contract` | Fix the Mercatify ↔ Lab contract and ship a scripted adapter        | yes                   | Staff in parallel with F-01; it is the seam two teams work across     |
-| S-03       | `mercatify-mapping-summary`       | Show the analysis-filled mapping table with flagged unmapped items  | no                    | North star. Ready once F-01 and F-02 land                             |
-| S-01       | `mercatify-intake-start`          | Show the interview starting point: profile and SaaS tools with costs| no                    | Ready once F-01 lands                                                 |
+| S-03       | `mercatify-mapping-summary`       | Show the analysis-filled mapping table with flagged unmapped items  | yes                   | North star. F-01 and F-02 landed                                      |
+| S-01       | `mercatify-intake-start`          | Show the interview starting point: profile and SaaS tools with costs| yes                   | F-01 landed                                                           |
 | S-02       | `mercatify-discovery-wizard`      | Run the discovery wizard with dynamically injected questions        | no                    | Ready once S-01 and F-02 land; fix the question cap during planning   |
 | S-04       | `mercatify-savings-breakdown`     | Show the three-line net saving and payback                          | no                    | Blocked on the business rule and the two cost sources (Q1, Q3, Q4)    |
 | S-05       | `mercatify-handoff-document`      | Show and edit the `.md` handoff document                            | no                    | Blocked on the table-vs-document question (Q8)                        |
@@ -231,4 +231,5 @@ Carried from PRD §Open Questions, plus one surfaced while probing the codebase.
 
 ## Done
 
-(Empty on first generation. `/10x-archive` appends entries here.)
+- **F-01: (foundation) Mercatify is installed as a standard OM module — its own feature flags, its own tenant- and organization-scoped interview case, the demo dataset seeded into that case, and the broad validation gates still green with no change to the core or enterprise packages.** — Archived 2026-09-19 → `context/archive/2026-09-19-mercatify-module-scaffold/`. Lesson: —.
+- **F-02: (foundation) the interface between this module and Mercatify Lab is written down as a versioned contract — what the interview sends, what the analysis returns (further questions, mappings, decisions, confidence bands, amounts), and what the handoff carries — with one deterministic scripted adapter behind it, so every downstream slice can be built, demoed and tested without Lab existing.** — Archived 2026-09-19 → `context/archive/2026-09-19-mercatify-lab-analysis-contract/`. Lesson: —.
