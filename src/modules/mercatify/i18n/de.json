@@ -7,6 +7,8 @@
   "mercatify.audit.mapping.confirm": "Fähigkeiten-Zuordnung bestätigen",
   "mercatify.audit.mapping.generate": "Fähigkeiten-Zuordnung erzeugen",
   "mercatify.audit.mapping.row.update": "Zeile der Fähigkeiten-Zuordnung aktualisieren",
+  "mercatify.audit.report.save": "Kundenbericht speichern",
+  "mercatify.audit.report.send": "Bericht an den Kunden senden",
   "mercatify.cases.create.title": "Neuer Intake",
   "mercatify.cases.detail.title": "Interview-Fall",
   "mercatify.cases.form.actions.addCustomTool": "Tool hinzufügen",

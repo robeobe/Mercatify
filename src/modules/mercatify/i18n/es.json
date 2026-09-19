@@ -7,6 +7,8 @@
   "mercatify.audit.mapping.confirm": "Confirmar mapeo de capacidades",
   "mercatify.audit.mapping.generate": "Generar mapeo de capacidades",
   "mercatify.audit.mapping.row.update": "Actualizar fila del mapeo de capacidades",
+  "mercatify.audit.report.save": "Guardar informe del cliente",
+  "mercatify.audit.report.send": "Enviar el informe al cliente",
   "mercatify.cases.create.title": "Nuevo intake",
   "mercatify.cases.detail.title": "Caso de entrevista",
   "mercatify.cases.form.actions.addCustomTool": "Añadir una herramienta",

@@ -7,6 +7,8 @@
   "mercatify.audit.mapping.confirm": "Confirm capability mapping",
   "mercatify.audit.mapping.generate": "Generate capability mapping",
   "mercatify.audit.mapping.row.update": "Update capability mapping row",
+  "mercatify.audit.report.save": "고객 리포트 저장",
+  "mercatify.audit.report.send": "고객에게 리포트 발송",
   "mercatify.cases.create.title": "새 인테이크",
   "mercatify.cases.detail.title": "인터뷰 케이스",
   "mercatify.cases.form.actions.addCustomTool": "도구 추가",

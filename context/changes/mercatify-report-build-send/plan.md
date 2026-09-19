@@ -650,27 +650,27 @@ applied** by this change.
 
 #### Automated
 
-- [x] 1.1 Types compile: `yarn typecheck`
-- [x] 1.2 Lint passes: `yarn lint`
-- [x] 1.3 New model tests pass: `yarn test src/modules/mercatify/lib/report.test.ts`
-- [x] 1.4 Migration generated and scoped to the new table only
+- [x] 1.1 Types compile: `yarn typecheck` — ef97f66
+- [x] 1.2 Lint passes: `yarn lint` — ef97f66
+- [x] 1.3 New model tests pass: `yarn test src/modules/mercatify/lib/report.test.ts` — ef97f66
+- [x] 1.4 Migration generated and scoped to the new table only — ef97f66
 
 #### Manual
 
-- [x] 1.5 Generated SQL touches `mercatify_case_reports` only; no shipped migration edited
+- [x] 1.5 Generated SQL touches `mercatify_case_reports` only; no shipped migration edited — ef97f66
 
 ### Phase 2: Commands, the `sent` invariant, ACL and events
 
 #### Automated
 
-- [ ] 2.1 Discovery regenerates cleanly: `yarn generate`
-- [ ] 2.2 Types compile: `yarn typecheck`
-- [ ] 2.3 Lint passes: `yarn lint`
-- [ ] 2.4 Module tests pass: `yarn test src/modules/mercatify`
+- [x] 2.1 Discovery regenerates cleanly: `yarn generate`
+- [x] 2.2 Types compile: `yarn typecheck`
+- [x] 2.3 Lint passes: `yarn lint`
+- [x] 2.4 Module tests pass: `yarn test src/modules/mercatify`
 
 #### Manual
 
-- [ ] 2.5 New features appear in the role editor under the Mercatify module
+- [x] 2.5 New features appear in the role editor under the Mercatify module
 
 ### Phase 3: API routes
 

@@ -7,6 +7,8 @@
   "mercatify.audit.mapping.confirm": "Zatwierdź mapowanie możliwości",
   "mercatify.audit.mapping.generate": "Wygeneruj mapowanie możliwości",
   "mercatify.audit.mapping.row.update": "Zaktualizuj wiersz mapowania możliwości",
+  "mercatify.audit.report.save": "Zapisz raport dla klienta",
+  "mercatify.audit.report.send": "Wyślij raport do klienta",
   "mercatify.cases.create.title": "Nowy intake",
   "mercatify.cases.detail.title": "Przypadek wywiadu",
   "mercatify.cases.form.actions.addCustomTool": "Dodaj narzędzie",
