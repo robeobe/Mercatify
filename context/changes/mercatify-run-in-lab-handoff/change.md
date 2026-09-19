@@ -11,7 +11,9 @@ archived_at: null
 
 Roadmap item **S-06** — see `context/foundation/roadmap.md`.
 
-Outcome: the client clicks "Run in Mercatify Lab" and exactly the current content of the `.md` — as they last left it, edited or pasted — is handed to Lab; when Lab is not installed they see what would have been handed over instead of an error.
+**Amended 2026-09-19** (`mercatify-intake-start` follow-up, user decision): "when the client accepts, you send it to Lab" — the trigger is the client's existing **Accept** action on the report (`client/offer.html`), not a separate client-facing "Run in Mercatify Lab" button (no such button exists in the evolved mockups).
+
+Outcome: when the client accepts the report, exactly the current content of the `.md` — as the admin last left it, edited or pasted — is handed to Lab; when Lab is not installed, what would have been handed over is shown instead of an error.
 
 - PRD refs: US-01, FR-012, FR-013
 - Prerequisites: S-05 (`mercatify-handoff-document`), F-02 (`mercatify-lab-analysis-contract`)

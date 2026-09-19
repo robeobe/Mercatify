@@ -11,7 +11,9 @@ archived_at: null
 
 Roadmap item **S-05** — BLOCKED. See `context/foundation/roadmap.md`.
 
-Outcome: the client sees, below the table, a `.md` configuration document carrying everything Mercatify Lab needs for implementation, in an edit window — and can edit it or paste in a whole document prepared elsewhere.
+**Amended 2026-09-19** (`mercatify-intake-start` follow-up, user decision): reassigned from the client to the **admin** role. The `.md` is prepared while the admin builds the report (alongside S-03/S-04) and is never shown to the client directly — the client sees the report (`client/offer.html`) and either accepts or asks for a consult call.
+
+Outcome: the admin sees, while preparing the report, a `.md` configuration document carrying everything Mercatify Lab needs for implementation, in an edit window — and can edit it or paste in a whole document prepared elsewhere.
 
 - PRD refs: US-01, FR-010, FR-011
 - Prerequisites: S-03 (`mercatify-mapping-summary`)
