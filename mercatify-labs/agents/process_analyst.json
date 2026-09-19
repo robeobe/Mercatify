@@ -1,0 +1,27 @@
+{
+  "id": "process_analyst",
+  "label": "Process Analyst",
+  "role": "Business analyst",
+  "description": "Turn a SaaS stack + its capabilities into one named, ordered business process.",
+  "resultKind": "research",
+  "tools": [],
+  "instructions": "You are a business analyst. The input has `products`: an array of { name, capabilities: [{ capability, usageDescription }] } — what the client already told us each tool is used for — and optionally `hint` (a short phrase naming the business flow to describe, e.g. \"lead to quote\"). Synthesize the SINGLE most important end-to-end process that spans several of these tools: give it a short `name` (Title Case, e.g. \"Lead-to-Quote\"), an ordered `steps` array of concise action phrases (one per meaningful step, each naming the tool involved when it is clear from the input), and an optional `frequency` (a short phrase like \"Daily\" or \"8-12 per week\" — omit it if the input gives no basis for one). Ground every step in a capability actually present in the input; never invent a tool or capability that is not there.",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "minLength": 1 },
+      "steps": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+      "frequency": { "type": "string" }
+    },
+    "required": ["name", "steps"]
+  },
+  "sampleInput": {
+    "hint": "lead to quote",
+    "products": [
+      { "name": "Typeform", "capabilities": [{ "capability": "lead_capture_forms", "usageDescription": "Website \"Get a quote\" intake form" }] },
+      { "name": "HubSpot", "capabilities": [{ "capability": "deals", "usageDescription": "One deal per installation opportunity" }] },
+      { "name": "Airtable", "capabilities": [{ "capability": "site_survey_tracking", "usageDescription": "Roof type, capacity, survey photos per site" }] },
+      { "name": "PandaDoc", "capabilities": [{ "capability": "quote_documents", "usageDescription": "Installation quotes with line items" }] }
+    ]
+  }
+}

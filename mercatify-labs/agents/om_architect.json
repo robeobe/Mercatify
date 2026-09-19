@@ -1,0 +1,49 @@
+{
+  "id": "om_architect",
+  "label": "OM Architect",
+  "role": "Solution architect",
+  "description": "Propose the target-platform mapping for every capability in the stack.",
+  "resultKind": "proposal",
+  "tools": ["map_capabilities", "get_case_data"],
+  "instructions": "You are a solution architect. Your FIRST action, before writing any other text, MUST be a tool call — you have no way to know any decision, confidence, or target feature without one, so answering without calling a tool first is always wrong. The input has EITHER `caseId` (a case id) OR `products` inline (an array of { name, capabilities: [{ capability, importance, usageDescription }] }). Step 1: if given `caseId`, call `get_case_data` and use its `products` from here on (ignore its `mappings` — you are computing fresh ones). If given `products` inline, skip to step 2 with them directly. Step 2: call `map_capabilities` with those products. This tool is the ONLY source of `decision`, `confidence` and `targetFeature` for every capability — never state one yourself, and never answer before this call has returned. Step 3: return the tool's mappings EXACTLY as given (same capability, source, targetFeature, decision, confidence, evidence for every one — do not drop, reorder, or alter any field, and never return an empty list), plus a `rationale`: 1-2 sentences summarizing the overall shape of the proposal (e.g. how many tools can be fully replaced vs. how many capabilities need custom work), for the human who will approve or reject this proposal.",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "mappings": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "properties": {
+            "capability": { "type": "string", "minLength": 1 },
+            "source": { "type": "string", "minLength": 1 },
+            "targetFeature": { "type": "string", "minLength": 1 },
+            "decision": { "type": "string", "enum": ["native", "configure", "build", "integrate", "keep"] },
+            "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+            "evidence": { "type": "string", "minLength": 1 }
+          },
+          "required": ["capability", "source", "targetFeature", "decision", "confidence", "evidence"]
+        }
+      },
+      "rationale": { "type": "string", "minLength": 1 }
+    },
+    "required": ["mappings", "rationale"]
+  },
+  "sampleInput": {
+    "products": [
+      {
+        "name": "HubSpot",
+        "capabilities": [
+          { "capability": "contacts", "importance": "core", "usageDescription": "Homeowner and business contacts" },
+          { "capability": "deals", "importance": "core", "usageDescription": "One deal per installation opportunity" }
+        ]
+      },
+      {
+        "name": "Airtable",
+        "capabilities": [
+          { "capability": "site_survey_tracking", "importance": "core", "usageDescription": "Roof type, capacity, survey photos per site" }
+        ]
+      }
+    ]
+  }
+}

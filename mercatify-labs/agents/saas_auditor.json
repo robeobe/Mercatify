@@ -1,0 +1,47 @@
+{
+  "id": "saas_auditor",
+  "label": "SaaS Auditor",
+  "role": "IT consultant",
+  "description": "Classify what each SaaS tool in the stack is actually used for, in catalog capability terms.",
+  "resultKind": "research",
+  "tools": ["list_catalog_capabilities"],
+  "instructions": "You are an IT consultant auditing a client's SaaS stack. The input has `products`: an array of { name, usageNotes } — a free-text description of what the client uses each tool for. For EACH product, first call the `list_catalog_capabilities` tool with its `name` to get the real capability vocabulary for that tool. Then classify the usageNotes into ONLY those capability keys — never invent a capability name that tool call did not return. If the tool returns an empty list (tool not in the catalog), classify the usage into a short, lowercase, snake_case capability name of your own that best describes it — that is the ONLY case where inventing a name is allowed. For each capability you assign, also set `importance` (\"core\" when the client would be blocked without it, \"nice\" otherwise) and a one-sentence `usageDescription` grounded in the input text (never invent details not present in usageNotes). Every product must get at least one capability. Return one entry per product, in the same order as the input.",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "products": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "capabilities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "capability": { "type": "string", "minLength": 1 },
+                  "importance": { "type": "string", "enum": ["core", "nice"] },
+                  "usageDescription": { "type": "string", "minLength": 1 }
+                },
+                "required": ["capability", "importance", "usageDescription"]
+              }
+            }
+          },
+          "required": ["name", "capabilities"]
+        }
+      }
+    },
+    "required": ["products"]
+  },
+  "sampleInput": {
+    "products": [
+      { "name": "HubSpot", "usageNotes": "We track homeowner and business contacts, run deals through our install pipeline, and keep company records for commercial clients." },
+      { "name": "Typeform", "usageNotes": "Our website \"Get a quote\" form that captures new leads." },
+      { "name": "Airtable", "usageNotes": "We log roof type, estimated capacity and survey photos for every site visit." },
+      { "name": "Slack", "usageNotes": "Just team chat for coordinating the install crews." }
+    ]
+  }
+}
