@@ -118,6 +118,13 @@ export const reportInputsItemSchema = z.object({
 
 export const reportResponseSchema = z.object({
   report: reportModelSchema,
+  /** The raw inputs the model was derived from, so the builder can re-derive the preview locally. */
+  derivation: z.object({
+    profile: z.object({}).passthrough(),
+    rows: z.array(z.object({ id: z.string(), capability: z.string() }).passthrough()),
+    stack: z.array(z.object({ name: z.string(), monthlyCost: z.number().nullable(), seats: z.number().nullable() })),
+    costs: z.object({ omOperatingCost: z.number().nullable(), implementationCost: z.number().nullable() }),
+  }),
   inputs: reportInputsItemSchema,
   status: z.string(),
   mappingConfirmedAt: z.string().nullable(),

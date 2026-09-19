@@ -120,6 +120,7 @@ export default function CasesTable() {
             { id: 'mercatify.cases.open', label: t('mercatify.cases.table.actions.open'), href: `/backend/cases/${row.id}` },
             { id: 'mercatify.cases.viewMapping', label: t('mercatify.cases.table.actions.viewMapping'), href: `/backend/cases/${row.id}/mapping` },
             { id: 'mercatify.cases.viewHandoff', label: t('mercatify.cases.table.actions.viewHandoff'), href: `/backend/cases/${row.id}/handoff` },
+            { id: 'mercatify.cases.buildReport', label: t('mercatify.cases.table.actions.buildReport'), href: `/backend/cases/${row.id}/report` },
           ]}
         />
       )}

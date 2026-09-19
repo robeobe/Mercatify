@@ -676,10 +676,10 @@ applied** by this change.
 
 #### Automated
 
-- [x] 3.1 Discovery regenerates cleanly: `yarn generate`
-- [x] 3.2 Types compile: `yarn typecheck`
-- [x] 3.3 Lint passes: `yarn lint`
-- [x] 3.4 Full unit suite passes: `yarn test`
+- [x] 3.1 Discovery regenerates cleanly: `yarn generate` — bfe815c
+- [x] 3.2 Types compile: `yarn typecheck` — bfe815c
+- [x] 3.3 Lint passes: `yarn lint` — bfe815c
+- [x] 3.4 Full unit suite passes: `yarn test` — bfe815c
 
 #### Manual
 
@@ -690,13 +690,13 @@ applied** by this change.
 
 #### Automated
 
-- [ ] 4.1 Discovery regenerates cleanly: `yarn generate`
-- [ ] 4.2 Types compile: `yarn typecheck`
-- [ ] 4.3 Lint passes: `yarn lint`
-- [ ] 4.4 Design-system check passes: `yarn ds:check`
-- [ ] 4.5 No hard-coded strings: `yarn i18n:check-hardcoded`
-- [ ] 4.6 Full unit suite passes: `yarn test`
-- [ ] 4.7 Production build succeeds: `yarn build`
+- [x] 4.1 Discovery regenerates cleanly: `yarn generate`
+- [x] 4.2 Types compile: `yarn typecheck`
+- [x] 4.3 Lint passes: `yarn lint`
+- [x] 4.4 Design-system check passes: `yarn ds:check`
+- [x] 4.5 No hard-coded strings: `yarn i18n:check-hardcoded`
+- [x] 4.6 Full unit suite passes: `yarn test`
+- [x] 4.7 Production build succeeds: `yarn build`
 
 #### Manual
 

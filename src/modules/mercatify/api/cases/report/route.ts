@@ -64,7 +64,10 @@ export async function GET(req: Request) {
       buildEstimates: report?.buildEstimates ?? {},
     }
 
-    const model = buildReportModel({
+    // Returned alongside the model so the builder screen can re-derive the
+    // preview locally on every keystroke through the very same pure function
+    // — "what I am about to send" and "what they get" cannot drift.
+    const derivation = {
       profile: {
         companyName: interviewCase.companyName ?? null,
         industry: interviewCase.industry ?? null,
@@ -94,6 +97,10 @@ export async function GET(req: Request) {
         omOperatingCost: monthlyCostToNumber(interviewCase.omOperatingCost),
         implementationCost: monthlyCostToNumber(interviewCase.implementationCost),
       },
+    }
+
+    const model = buildReportModel({
+      ...derivation,
       authored: {
         ...inputs,
         sentAt: report?.sentAt ? report.sentAt.toISOString() : null,
@@ -103,6 +110,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       report: model,
+      derivation,
       inputs,
       status: interviewCase.status,
       mappingConfirmedAt: interviewCase.mappingConfirmedAt?.toISOString() ?? null,
