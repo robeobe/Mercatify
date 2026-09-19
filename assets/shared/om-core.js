@@ -1141,7 +1141,7 @@ function mountConsoleShell(opts) {
         '<span class="avatar" aria-hidden="true">' + initials(user.name) + '</span>' +
         '<span style="min-width:0"><span class="userchip__name">' + user.name + '</span>' +
         '<span class="userchip__mail">' + user.email + '</span></span>' +
-        '<a class="btn btn--ghost btn--sm" style="margin-left:auto" href="login.html" ' +
+        '<a class="btn btn--muted btn--sm" style="margin-left:auto" href="login.html" ' +
         'id="om-signout" title="Sign out">Out</a>' +
       '</div></div>' +
     '</aside>' +
@@ -1149,7 +1149,7 @@ function mountConsoleShell(opts) {
       '<header class="topbar"><nav class="crumbs" aria-label="Breadcrumb">' + trail + '</nav>' +
         '<div class="topbar__right">' +
           '<span class="badge badge--outline">' + CONSOLE_ORG + '</span>' +
-          '<button class="btn btn--ghost btn--sm" type="button" id="om-theme">Theme</button>' +
+          '<button class="btn btn--muted btn--sm" type="button" id="om-theme">Theme</button>' +
         '</div>' +
       '</header>' +
       '<main class="content" id="content"></main>' +
@@ -1185,7 +1185,7 @@ function mountPortalShell(opts) {
         nav +
         '<div class="portal__right">' +
           '<span class="small muted">Signed in as ' + user.name + '</span>' +
-          '<button class="btn btn--ghost btn--sm" type="button" id="om-theme">Theme</button>' +
+          '<button class="btn btn--muted btn--sm" type="button" id="om-theme">Theme</button>' +
           '<a class="btn btn--outline btn--sm" href="login.html" id="om-signout">Sign out</a>' +
         '</div>' +
       '</div>' +
