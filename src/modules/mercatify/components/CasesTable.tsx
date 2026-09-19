@@ -118,6 +118,7 @@ export default function CasesTable() {
         <RowActions
           items={[
             { id: 'mercatify.cases.open', label: t('mercatify.cases.table.actions.open'), href: `/backend/cases/${row.id}` },
+            { id: 'mercatify.cases.viewMapping', label: t('mercatify.cases.table.actions.viewMapping'), href: `/backend/cases/${row.id}/mapping` },
           ]}
         />
       )}

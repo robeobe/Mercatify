@@ -41,6 +41,28 @@ export const interviewCaseListItemSchema = z
     organization_id: z.string().nullable().optional(),
     updatedAt: z.string().nullable().optional(),
     tools: z.array(interviewCaseToolItemSchema).optional(),
+    mappingConfirmedAt: z.string().nullable().optional(),
+  })
+  .passthrough()
+
+export const mappingRowListItemSchema = z
+  .object({
+    id: z.string(),
+    caseId: z.string(),
+    position: z.number(),
+    capability: z.string(),
+    decision: z.string(),
+    targetKind: z.string(),
+    targetModuleId: z.string().nullable().optional(),
+    targetToolName: z.string().nullable().optional(),
+    targetLabel: z.string().nullable().optional(),
+    justification: z.string(),
+    confidence: z.string(),
+    flagged: z.boolean(),
+    flagReason: z.string().nullable().optional(),
+    tenant_id: z.string().nullable().optional(),
+    organization_id: z.string().nullable().optional(),
+    updatedAt: z.string().nullable().optional(),
   })
   .passthrough()
 

@@ -33,7 +33,7 @@ The insight the product rests on: *"Your SaaS stack is already your specificatio
 | ---- | ------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------ | -------- |
 | F-01 | `mercatify-module-scaffold`     | (foundation) Mercatify installs as a standard OM module with one seeded interview case       | —                           | FR-014, FR-015                 | done     |
 | F-02 | `mercatify-lab-analysis-contract` | (foundation) the Mercatify ↔ Lab interface is fixed, with a deterministic scripted adapter  | —                           | FR-003, FR-012, FR-013, OQ-2   | done     |
-| S-03 | `mercatify-mapping-summary`     | **admin** sees the analysis-filled mapping table, with unmapped items flagged, and edits it *(reassigned from client, 2026-09-19)* | F-01, F-02                  | US-01, FR-005, FR-006, FR-008  | ready    |
+| S-03 | `mercatify-mapping-summary`     | **admin** sees the analysis-filled mapping table, with unmapped items flagged, and edits it *(reassigned from client, 2026-09-19)* | F-01, F-02                  | US-01, FR-005, FR-006, FR-008  | done     |
 | S-07 | `mercatify-request-queue`       | **admin** sees a queue of every submitted request, filterable by status, with the one next action per row *(added 2026-09-19 — gap)* | F-01                        | FR-016                         | ready    |
 | S-01 | `mercatify-intake-start`        | employee opens Mercatify, builds and sends the interview starting point: company profile and SaaS tools with monthly costs | F-01                        | US-01, FR-001, FR-014, FR-015  | ready    |
 | S-08 | `mercatify-client-requests`     | **client** (employee role) sees a list of their own requests and reopens one to see what was sent and its status *(added 2026-09-19 — gap; revises S-01's "terminal after Send")* | S-01                        | FR-017                         | ready    |
@@ -115,10 +115,10 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Parallel with:** S-01
 - **Blockers:** —
 - **Unknowns:**
-  - Which module registry the table may name — the 11 modules enabled in this app, or the full core + enterprise catalog quoted in the PRD. Owner: team. Block: no (either reading produces a demonstrable table; the choice changes the lookup source, not the slice's shape).
+  - Which module registry the table may name — resolved 2026-09-19 (issue #14 acceptance criteria): the 11 modules this app actually enables, checked at generation time via `getEnabledModuleIds()`. Any row naming a module outside that set is treated as flagged the same way an unmapped capability is — this is what the demo's `customers`/`sales` rows now exercise.
   - Who maintains the SaaS-capability → OM-module map, given that v1 has no editor for it in the UI (PRD Open Question 5). Owner: team. Block: no.
 - **Risk:** Placed before the intake and wizard slices deliberately — it is the north star and its Prerequisites are only the two foundations, so deferring it behind the interview would delay the one thing that proves the product. The risk is that it is built against a fixture that drifts from what the wizard actually collects; F-02's contract is what keeps them aligned. This slice can be built and demoed against a directly-linked case before `S-07` exists (its entry point is a URL, matching `console/modules.html?ref=`); `S-07` only matters for the admin persona reaching it without a link in hand.
-- **Status:** ready
+- **Status:** done
 
 ### S-07: Admin sees the request queue
 > **Added 2026-09-19** (gap found reviewing `assets/console/requests.html` against this roadmap while planning `mercatify-intake-start`'s follow-up work — no slice built the list an admin actually lands on before `S-03`'s mapping table).
