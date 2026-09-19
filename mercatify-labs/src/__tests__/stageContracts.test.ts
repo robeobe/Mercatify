@@ -3,7 +3,7 @@ import { STAGE_NAMES, getStageContract, isStageName } from '../critic/stageContr
 import type { ContractRule, StageName } from '../critic/stageContracts'
 
 describe('stage contracts', () => {
-  it('covers all seven stages', () => {
+  it('covers all eight stages', () => {
     expect(STAGE_NAMES).toEqual([
       'audit',
       'mappings',
@@ -12,6 +12,7 @@ describe('stage contracts', () => {
       'preview',
       'migration-plan',
       'om-requirements',
+      'report',
     ])
   })
 
@@ -58,7 +59,7 @@ describe('zamkniętość kontraktu', () => {
 
   it('nie da się dopisać etapu do STAGE_NAMES', () => {
     expect(() => (STAGE_NAMES as StageName[]).push('invoicing' as StageName)).toThrow()
-    expect(STAGE_NAMES).toHaveLength(7)
+    expect(STAGE_NAMES).toHaveLength(8)
   })
 
   it.each(['__proto__', 'constructor', 'toString', 'valueOf', 'hasOwnProperty'])(
@@ -69,8 +70,57 @@ describe('zamkniętość kontraktu', () => {
   )
 })
 
+/**
+ * Ósmy etap - `report`. Krytykowanym artefaktem jest CAŁY `ReportModel`, więc
+ * te pięć reguł musi nazwać dokładnie te obietnice, których nie pilnuje już
+ * żadna czysta funkcja: podział `facts` / `prose`, realność fal, zgodność obu
+ * miejsc, w których stoi break-even, i uczciwość luki katalogowej.
+ */
+describe('etap report (REP-1..5)', () => {
+  const rules = () => getStageContract('report').rules
+
+  it('ma dokładnie pięć reguł, po jednej na obietnicę warstwy raportu', () => {
+    expect(rules().map((rule) => rule.id)).toEqual(['REP-1', 'REP-2', 'REP-3', 'REP-4', 'REP-5'])
+  })
+
+  it('pilnuje, że liczby pochodzą z faktów, a proza ich nie niesie', () => {
+    const [rep1, rep2] = rules()
+    expect(rep1.text).toMatch(/facts/)
+    expect(rep1.text).toMatch(/prose/)
+    // REP-2 wymienia trzy postacie liczby, bo `assertNoFigures` łapie tylko
+    // CYFRĘ - "roughly two thousand a month" przechodzi przez strażnika i
+    // zatrzymuje się dopiero tutaj, na czytającym człowieku.
+    expect(rep2.text).toMatch(/amount/i)
+    expect(rep2.text).toMatch(/percentage/i)
+    expect(rep2.text).toMatch(/duration/i)
+    expect(rep2.text).toMatch(/slot/i)
+  })
+
+  it('pilnuje fal, break-evenu i luk katalogowych', () => {
+    const [, , rep3, rep4, rep5] = rules()
+    expect(rep3.text).toMatch(/wave/i)
+    expect(rep3.text).toMatch(/mapping/i)
+    // Dwa pola, jedna liczba: `kpis.breakEvenMonth` jest kopią z serii i
+    // rozjazd między nimi to dwa różne zdania o tym samym miesiącu.
+    expect(rep4.text).toMatch(/kpis\.breakEvenMonth/)
+    expect(rep4.text).toMatch(/cash\.breakEvenMonth/)
+    expect(rep5.text).toMatch(/catalog/i)
+    expect(rep5.text).toMatch(/amount/i)
+  })
+
+  it('jest zamknięty tak samo jak pozostałe siedem', () => {
+    expect(() => (rules() as ContractRule[]).push({ id: 'REP-6', text: 'wstrzyknięta' })).toThrow()
+    expect(() => ((rules()[0] as ContractRule).text = 'podmienione')).toThrow()
+    expect(rules().map((rule) => rule.id)).not.toContain('REP-6')
+  })
+
+  it('jest rozpoznawany przez `isStageName`, więc `critique()` go przyjmie', () => {
+    expect(isStageName('report')).toBe(true)
+  })
+})
+
 describe('isStageName', () => {
-  it('przepuszcza każdy z siedmiu etapów', () => {
+  it('przepuszcza każdy z ośmiu etapów', () => {
     for (const stage of STAGE_NAMES) expect(isStageName(stage)).toBe(true)
   })
 
