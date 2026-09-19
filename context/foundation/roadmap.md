@@ -31,7 +31,7 @@ The insight the product rests on: *"Your SaaS stack is already your specificatio
 
 | ID   | Change ID                       | Outcome (user can …)                                                                        | Prerequisites               | PRD refs                       | Status   |
 | ---- | ------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------ | -------- |
-| F-01 | `mercatify-module-scaffold`     | (foundation) Mercatify installs as a standard OM module with one seeded interview case       | —                           | FR-014, FR-015                 | ready    |
+| F-01 | `mercatify-module-scaffold`     | (foundation) Mercatify installs as a standard OM module with one seeded interview case       | —                           | FR-014, FR-015                 | done     |
 | F-02 | `mercatify-lab-analysis-contract` | (foundation) the Mercatify ↔ Lab interface is fixed, with a deterministic scripted adapter  | —                           | FR-003, FR-012, FR-013, OQ-2   | ready    |
 | S-03 | `mercatify-mapping-summary`     | see the analysis-filled mapping table, with unmapped items flagged, and edit it              | F-01, F-02                  | US-01, FR-005, FR-006, FR-008  | proposed |
 | S-01 | `mercatify-intake-start`        | open Mercatify and see the starting point: company profile and SaaS tools with monthly costs | F-01                        | US-01, FR-001, FR-014, FR-015  | proposed |
@@ -82,7 +82,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 - **Unknowns:**
   - Which demo dataset — the concrete company profile, tool list and monthly costs were never captured. Owner: user. Block: no (placeholder content is enough to scaffold; S-01 is where it becomes visible).
 - **Risk:** Sequenced first because nothing else can render or persist until the module passes auto-discovery. The risk is scope creep — this must stay the smallest legal module plus one case entity; every slice below still adds its own fields, APIs and screens.
-- **Status:** ready
+- **Status:** done
 
 ### F-02: The Mercatify ↔ Mercatify Lab interface is fixed
 
@@ -231,4 +231,4 @@ Carried from PRD §Open Questions, plus one surfaced while probing the codebase.
 
 ## Done
 
-(Empty on first generation. `/10x-archive` appends entries here.)
+- **F-01: (foundation) Mercatify is installed as a standard OM module — its own feature flags, its own tenant- and organization-scoped interview case, the demo dataset seeded into that case, and the broad validation gates still green with no change to the core or enterprise packages.** — Archived 2026-09-19 → `context/archive/2026-09-19-mercatify-module-scaffold/`. Lesson: —.

@@ -1,10 +1,10 @@
 ---
 change_id: mercatify-module-scaffold
 title: Install Mercatify as a standard OM module with one seeded case
-status: implemented
+status: archived
 created: 2026-09-19
 updated: 2026-09-19
-archived_at: null
+archived_at: 2026-09-19T14:15:24Z
 ---
 
 ## Notes
