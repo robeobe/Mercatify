@@ -44,4 +44,9 @@ describe('agents/om_prototyper.json', () => {
   it('is strict-mode compatible', () => {
     assertStrictModeCompatible(getAgent('om_prototyper').resultSchema)
   })
+
+  it('requires every screen to cite at least one storyIds entry', () => {
+    const schema = getAgent('om_prototyper').resultSchema as any
+    expect(schema.properties.screens.items.properties.storyIds.minItems).toBe(1)
+  })
 })

@@ -51,7 +51,7 @@
               "enum": ["data-table", "crud-form", "kanban", "detail-drawer"]
             },
             "states": { "type": "array", "items": { "type": "string" } },
-            "storyIds": { "type": "array", "items": { "type": "string" } },
+            "storyIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
             "sectionRefs": { "type": "array", "items": { "type": "string" } }
           },
           "required": ["id", "name", "task", "archetype", "states", "storyIds", "sectionRefs"],
