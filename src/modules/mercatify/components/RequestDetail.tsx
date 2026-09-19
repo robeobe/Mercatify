@@ -1,13 +1,20 @@
 "use client"
 
 import * as React from 'react'
+import Link from 'next/link'
 import { ErrorMessage, RecordNotFoundState } from '@open-mercato/ui/backend/detail'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { Alert, AlertDescription, AlertTitle } from '@open-mercato/ui/primitives/alert'
+import { Button } from '@open-mercato/ui/primitives/button'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { CaseForm, toCaseFormValues, type CaseRecord } from './CaseForm'
 import { RequestProgressTrack } from './RequestProgressTrack'
-import { isReportReadyStatus, isSubmittedCaseStatus, type ClientProgressStep } from '../lib/request-progress'
+import {
+  isAnsweredStatus,
+  isReportReadyStatus,
+  isSubmittedCaseStatus,
+  type ClientProgressStep,
+} from '../lib/request-progress'
 
 const LIST_HREF = '/backend/requests'
 
@@ -71,15 +78,33 @@ export function RequestDetailLoader({ id }: { id: string }) {
 
   const status = record?.status ?? 'new'
   const reportReady = isReportReadyStatus(status)
+  const answered = isAnsweredStatus(status)
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
       <div className="min-w-0 space-y-4 lg:col-span-2">
         {reportReady ? (
-          <Alert status="information">
-            <AlertTitle>{t('mercatify.requests.detail.reportReady.title')}</AlertTitle>
-            <AlertDescription>{t('mercatify.requests.detail.reportReady.body')}</AlertDescription>
-          </Alert>
+          <div className="space-y-3">
+            <Alert status={answered ? 'success' : 'information'}>
+              <AlertTitle>
+                {t(answered
+                  ? `mercatify.requests.detail.answered.${status}.title`
+                  : 'mercatify.requests.detail.reportReady.title')}
+              </AlertTitle>
+              <AlertDescription>
+                {t(answered
+                  ? `mercatify.requests.detail.answered.${status}.body`
+                  : 'mercatify.requests.detail.reportReady.body')}
+              </AlertDescription>
+            </Alert>
+            <Button asChild size="sm">
+              <Link href={`${LIST_HREF}/${id}/report`}>
+                {t(answered
+                  ? 'mercatify.requests.detail.actions.viewReport'
+                  : 'mercatify.requests.detail.actions.openReport')}
+              </Link>
+            </Button>
+          </div>
         ) : null}
         <CaseForm
           mode="view"

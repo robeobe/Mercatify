@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
+import type { EntityManager } from '@mikro-orm/postgresql'
 import type { CommandBus } from '@open-mercato/shared/lib/commands'
-import { isCrudHttpError, notFound } from '@open-mercato/shared/lib/crud/errors'
+import { isCrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import { readJsonSafe } from '@open-mercato/shared/lib/http/readJsonSafe'
 import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-mutation-guard'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import { createLogger } from '@open-mercato/shared/lib/logger'
-import { CaseReport, InterviewCase, InterviewCaseTool, MappingRow } from '../../../data/entities'
+import type { CaseReport } from '../../../data/entities'
 import { reportInputsSchema, reportQuerySchema } from '../../../data/validators'
-import { monthlyCostToNumber } from '../../../lib/case-tools'
 import { buildReportModel } from '../../../lib/report'
 import { resolveMappingActionContext, MERCATIFY_CASE_RESOURCE_KIND } from '../../mapping-rows/shared'
 import { reportResponseSchema } from '../../openapi'
+import { loadReportBundle } from './shared'
 
 const logger = createLogger('mercatify')
 
@@ -40,65 +40,11 @@ export async function GET(req: Request) {
     const em = context.ctx.container.resolve('em') as EntityManager
     const scope = { tenantId: context.tenantId, organizationId: context.organizationId }
 
-    const interviewCase = await em.findOne(InterviewCase, {
-      id: caseId,
-      ...scope,
-      deletedAt: null,
-    } as FilterQuery<InterviewCase>)
-    if (!interviewCase) throw notFound('Interview case not found')
-
-    const [rows, tools, report] = await Promise.all([
-      em.find(MappingRow, { caseId, ...scope } as FilterQuery<MappingRow>),
-      em.find(InterviewCaseTool, { interviewCase: caseId, ...scope } as FilterQuery<InterviewCaseTool>),
-      em.findOne(CaseReport, { caseId, ...scope } as FilterQuery<CaseReport>),
-    ])
-
-    const hourlyRate = monthlyCostToNumber(report?.hourlyRate)
-    const inputs = {
-      headline: report?.headline ?? null,
-      notes: report?.notes ?? null,
-      analyst: report?.analyst ?? null,
-      openQuestions: report?.openQuestions ?? null,
-      hourlyRate,
-      implementationMonths: report?.implementationMonths ?? null,
-      buildEstimates: report?.buildEstimates ?? {},
-    }
-
-    // Returned alongside the model so the builder screen can re-derive the
-    // preview locally on every keystroke through the very same pure function
-    // — "what I am about to send" and "what they get" cannot drift.
-    const derivation = {
-      profile: {
-        companyName: interviewCase.companyName ?? null,
-        industry: interviewCase.industry ?? null,
-        peopleCount: interviewCase.peopleCount ?? null,
-        currency: interviewCase.currency ?? null,
-        pains: interviewCase.pains ?? null,
-        mustKeep: interviewCase.mustKeep ?? null,
-      },
-      rows: rows.map((row) => ({
-        id: String(row.id),
-        position: row.position,
-        capability: row.capability,
-        source: row.source,
-        decision: row.decision,
-        targetLabel: row.targetLabel ?? null,
-        targetModuleId: row.targetModuleId ?? null,
-        confidence: row.confidence,
-        justification: row.justification,
-        flagged: row.flagged,
-        flagReason: (row.flagReason ?? null) as 'unmapped' | 'module_not_enabled' | null,
-      })),
-      stack: tools.map((tool) => ({
-        name: tool.name,
-        monthlyCost: monthlyCostToNumber(tool.monthlyCost),
-        seats: tool.seats ?? null,
-      })),
-      costs: {
-        omOperatingCost: monthlyCostToNumber(interviewCase.omOperatingCost),
-        implementationCost: monthlyCostToNumber(interviewCase.implementationCost),
-      },
-    }
+    // `derivation` is returned alongside the model so the builder screen can
+    // re-derive the preview locally on every keystroke through the very same
+    // pure function — "what I am about to send" and "what they get" cannot
+    // drift. S-10's client route reads the same bundle.
+    const { interviewCase, report, derivation, inputs } = await loadReportBundle(em, caseId, scope)
 
     const model = buildReportModel({
       ...derivation,

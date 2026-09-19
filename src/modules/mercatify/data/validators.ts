@@ -160,3 +160,15 @@ export const reportSendSchema = z.object({ caseId: z.string().uuid() })
 export type ReportInputsInput = z.infer<typeof reportInputsSchema>
 export type ReportQueryInput = z.infer<typeof reportQuerySchema>
 export type ReportSendInput = z.infer<typeof reportSendSchema>
+
+/**
+ * S-10: the client's answer to a sent report. Only the answer itself is
+ * accepted from the client — no status string, so `mercatify.cases.answer`
+ * stays the only path that can produce `accepted`/`consult`.
+ */
+export const caseAnswerSchema = z.object({
+  caseId: z.string().uuid(),
+  answer: z.enum(['accepted', 'consult']),
+})
+
+export type CaseAnswerInput = z.infer<typeof caseAnswerSchema>
