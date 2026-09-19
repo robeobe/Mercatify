@@ -330,4 +330,23 @@ describe('mercatify case commands', () => {
     )
     expect(world.rows[0].companyName).toBe('Sent')
   })
+
+  // S-09 / issue #20: sending the report is the only thing that may produce
+  // `sent`. The schema still accepts the value (the BC contract forbids
+  // narrowing a published validator), so the refusal has to live here.
+  it('refuses to move a case to sent — only mercatify.report.send may do that', async () => {
+    const created = await createCaseCommand.execute(
+      {
+        companyName: 'Awaiting report',
+        status: 'new',
+        tools: [{ name: 'HubSpot', catalogToolId: 'hubspot', selectedModuleIds: ['sales'] }],
+      },
+      makeCtx(world),
+    )
+    await expectCrudStatus(
+      () => updateCaseCommand.execute({ id: created.id, status: 'sent' }, makeCtx(world)),
+      400,
+    )
+    expect(world.rows[0].status).toBe('new')
+  })
 })

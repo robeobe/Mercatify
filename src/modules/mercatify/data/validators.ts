@@ -131,3 +131,32 @@ export const handoffDocumentUpdateSchema = z.object({
 export type HandoffDocumentListInput = z.infer<typeof handoffDocumentListSchema>
 export type HandoffDocumentGenerateInput = z.infer<typeof handoffDocumentGenerateSchema>
 export type HandoffDocumentUpdateInput = z.infer<typeof handoffDocumentUpdateSchema>
+
+/**
+ * S-09: the report's inputs are only what a human types while composing it.
+ * Every figure the client reads is derived on read (`lib/report.ts`), so no
+ * KPI, saving line or total is ever accepted from a client here.
+ *
+ * `hourlyRate` turns backlog hours into money and is deliberately separate
+ * from S-04's customer-provided `implementationCost` — the two are never
+ * blended.
+ */
+export const reportInputsSchema = z.object({
+  caseId: z.string().uuid(),
+  headline: z.string().max(300).nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
+  analyst: z.string().max(200).nullable().optional(),
+  openQuestions: z.string().max(5000).nullable().optional(),
+  hourlyRate: z.number().nonnegative().nullable().optional(),
+  implementationMonths: z.number().int().min(1).max(24).nullable().optional(),
+  // Keyed by `MappingRow.id`; a null or missing value means "to estimate",
+  // which is not the same as zero hours.
+  buildEstimates: z.record(z.string().uuid(), z.number().nonnegative().nullable()).optional(),
+})
+
+export const reportQuerySchema = z.object({ caseId: z.string().uuid() })
+export const reportSendSchema = z.object({ caseId: z.string().uuid() })
+
+export type ReportInputsInput = z.infer<typeof reportInputsSchema>
+export type ReportQueryInput = z.infer<typeof reportQuerySchema>
+export type ReportSendInput = z.infer<typeof reportSendSchema>

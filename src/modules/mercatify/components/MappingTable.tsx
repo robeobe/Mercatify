@@ -196,9 +196,15 @@ export default function MappingTable({ caseId }: { caseId: string }) {
         actions={(
           <>
             {isConfirmed ? (
-              <Button asChild variant="outline">
-                <Link href={`/backend/cases/${caseId}/handoff`}>{t('mercatify.mapping.actions.viewHandoff')}</Link>
-              </Button>
+              <>
+                <Button asChild variant="outline">
+                  <Link href={`/backend/cases/${caseId}/handoff`}>{t('mercatify.mapping.actions.viewHandoff')}</Link>
+                </Button>
+                {/* S-09: the report only opens once somebody has stood behind a mapping. */}
+                <Button asChild variant="outline">
+                  <Link href={`/backend/cases/${caseId}/report`}>{t('mercatify.mapping.actions.buildReport')}</Link>
+                </Button>
+              </>
             ) : null}
             <Button
               type="button"

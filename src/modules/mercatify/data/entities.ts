@@ -201,6 +201,90 @@ export class MappingRow {
   updatedAt: Date = new Date()
 }
 
+/**
+ * S-09: the client-facing report for one case. Holds ONLY what a human typed
+ * while composing it — every figure the client reads (KPIs, saving lines,
+ * backlog totals, cash curve) is derived on read by `lib/report.ts`, so an
+ * edited cost input or a re-generated mapping can never leave a stale number
+ * in the document.
+ *
+ * Scalar `caseId`, no ORM relation — same rule as `MappingRow`.
+ */
+@Index({
+  name: 'mercatify_case_reports_org_tenant_case_idx',
+  properties: ['organizationId', 'tenantId', 'caseId'],
+})
+@Entity({ tableName: 'mercatify_case_reports' })
+export class CaseReport {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Property({ name: 'case_id', type: 'uuid' })
+  caseId!: string
+
+  /** Optional override for the computed opening line. Null = use the computed one. */
+  @Property({ type: 'text', nullable: true })
+  headline?: string | null
+
+  /** The consultant's closing note, printed under their name. */
+  @Property({ type: 'text', nullable: true })
+  notes?: string | null
+
+  /** Who reviewed the report; printed on it. */
+  @Property({ type: 'text', nullable: true })
+  analyst?: string | null
+
+  /** Free-text open questions, one per line, printed above the low-confidence rows. */
+  @Property({ name: 'open_questions', type: 'text', nullable: true })
+  openQuestions?: string | null
+
+  /**
+   * Turns backlog hours into money. Deliberately NOT one of S-04's three
+   * saving lines: `hours × rate` is a build-effort estimate and is never
+   * blended with the customer-provided implementation cost.
+   */
+  @Property({ name: 'hourly_rate', type: 'numeric', precision: 12, scale: 2, nullable: true })
+  hourlyRate?: string | null
+
+  /** How many months before the old licences start dropping off; shapes the cash curve. */
+  @Property({ name: 'implementation_months', type: 'integer', nullable: true })
+  implementationMonths?: number | null
+
+  /**
+   * Per-backlog-item hour estimates, keyed by `MappingRow.id`. A map rather
+   * than a child entity: mapping rows are immutable once confirmed, and these
+   * are report-time scratch values that are never queried or aggregated in
+   * SQL. A missing key prints "to estimate", never a zero.
+   */
+  @Property({ name: 'build_estimates', type: 'json' })
+  buildEstimates: Record<string, number> = {}
+
+  /**
+   * Set by `mercatify.report.send`, which is the only writer of the case's
+   * `sent` status. Re-sending overwrites this: the client keeps the version
+   * they were given until a new one is sent on purpose.
+   */
+  @Property({ name: 'sent_at', type: Date, nullable: true })
+  sentAt?: Date | null
+
+  /**
+   * Organization-owned business data: both scope columns are required,
+   * mirroring `InterviewCase` — a report is never system-scoped.
+   */
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  /** The optimistic-lock version, as on `InterviewCase`. */
+  @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+}
+
 @Index({
   name: 'mercatify_interview_case_tools_scope_idx',
   properties: ['interviewCase', 'organizationId', 'tenantId'],

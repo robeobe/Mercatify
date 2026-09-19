@@ -240,6 +240,15 @@ const updateCaseCommand: CommandHandler<Record<string, unknown>, InterviewCase> 
       throw badRequest('A sent interview case cannot be edited')
     }
 
+    // S-09: `mercatify.report.send` is the only writer of `sent` — that action
+    // is what first makes anything visible to the client, so nothing else may
+    // produce the status. The schema still accepts the value
+    // (BACKWARD_COMPATIBILITY: a published `data/validators.ts` export must not
+    // be narrowed); the command refuses it.
+    if (parsed.status === 'sent' && entity.status !== 'sent') {
+      throw badRequest('Send the report to move an interview case to sent')
+    }
+
     const nextStatus = parsed.status ?? entity.status
     const resultingToolCount = parsed.tools !== undefined ? parsed.tools.length : existingTools.length
     if (nextStatus === 'new' && resultingToolCount === 0) {
