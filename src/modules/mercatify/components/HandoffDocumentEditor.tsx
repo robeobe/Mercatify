@@ -11,6 +11,7 @@ import { apiCallOrThrow } from '@open-mercato/ui/backend/utils/apiCall'
 import { useGuardedMutation } from '@open-mercato/ui/backend/injection/useGuardedMutation'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import LabHandoffOutcome from './LabHandoffOutcome'
 
 const ENTITY_ID = 'mercatify:interview_case'
 const CONTENT_MAX_LENGTH = 200_000
@@ -20,6 +21,9 @@ type HandoffDocumentDto = {
   handoffDocument: string | null
   mappingConfirmedAt: string | null
   updatedAt: string | null
+  labHandoffStatus: string | null
+  labHandoffDocument: string | null
+  labHandoffAt: string | null
 }
 
 type FormValues = {
@@ -112,7 +116,15 @@ export default function HandoffDocumentEditor({ caseId }: { caseId: string }) {
   }
 
   return (
-    <CrudForm<FormValues>
+    <>
+      {/* S-06: what happened when the client accepted — shown here, on the
+          admin's screen, because the `.md` is admin-only (S-05). */}
+      <LabHandoffOutcome
+        status={record?.labHandoffStatus ?? null}
+        document={record?.labHandoffDocument ?? null}
+        at={record?.labHandoffAt ?? null}
+      />
+      <CrudForm<FormValues>
       title={t('mercatify.handoff.editor.title')}
       backHref={`/backend/cases/${caseId}`}
       entityId={ENTITY_ID}
@@ -128,6 +140,7 @@ export default function HandoffDocumentEditor({ caseId }: { caseId: string }) {
         flash(t('mercatify.handoff.flash.saved'), 'success')
         queryClient.invalidateQueries({ queryKey: ['mercatify-handoff-document', caseId] })
       }}
-    />
+      />
+    </>
   )
 }
