@@ -378,12 +378,12 @@ No existing data is moved or transformed — the module introduces one new table
 ### Phase 1: Module skeleton, ACL and registration
 
 #### Automated
-- [x] 1.1 `yarn generate` completes and creates `.mercato/generated/` for the first time
-- [x] 1.2 The generated enabled-module registry lists `mercatify`
-- [x] 1.3 `yarn typecheck` passes
-- [x] 1.4 `yarn lint` passes
-- [x] 1.5 `yarn i18n:check-hardcoded` reports no hard-coded strings in `src/modules/mercatify/`
-- [x] 1.6 `git diff --stat src/modules.ts` shows exactly one added line
+- [x] 1.1 `yarn generate` completes and creates `.mercato/generated/` for the first time — d506e51
+- [x] 1.2 The generated enabled-module registry lists `mercatify` — d506e51
+- [x] 1.3 `yarn typecheck` passes — d506e51
+- [x] 1.4 `yarn lint` passes — d506e51
+- [x] 1.5 `yarn i18n:check-hardcoded` reports no hard-coded strings in `src/modules/mercatify/` — d506e51
+- [x] 1.6 `git diff --stat src/modules.ts` shows exactly one added line — d506e51
 
 #### Manual
 - [ ] 1.7 No file outside `src/modules/mercatify/` and `src/modules.ts` appears in `git status`
@@ -392,10 +392,10 @@ No existing data is moved or transformed — the module introduces one new table
 ### Phase 2: Interview case entity and reviewed migration
 
 #### Automated
-- [ ] 2.1 `yarn generate` completes and the generated entity-ID map contains `mercatify:interview_case`
-- [ ] 2.2 `yarn db:generate` emits exactly one migration touching only `mercatify_interview_cases`
-- [ ] 2.3 `yarn typecheck` passes
-- [ ] 2.4 `yarn lint` passes
+- [x] 2.1 `yarn generate` completes and the generated entity-ID map contains `mercatify:interview_case`
+- [x] 2.2 `yarn db:generate` emits exactly one migration touching only `mercatify_interview_cases`
+- [x] 2.3 `yarn typecheck` passes
+- [x] 2.4 `yarn lint` passes
 
 #### Manual
 - [ ] 2.5 The emitted SQL creates `tenant_id` and `organization_id` as `not null`, and the composite scope index exists
