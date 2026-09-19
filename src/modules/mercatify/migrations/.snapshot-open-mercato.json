@@ -292,6 +292,23 @@
           "enumItems": [],
           "mappedType": "datetime"
         },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
         "currency": {
           "name": "currency",
           "type": "text",
@@ -496,6 +513,23 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
         "tenant_id": {
           "name": "tenant_id",
           "type": "uuid",
@@ -557,6 +591,18 @@
           "composite": true,
           "constraint": false,
           "keyName": "mercatify_interview_cases_org_tenant_idx",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "organization_id",
+            "tenant_id",
+            "created_by_user_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "mercatify_interview_cases_org_tenant_owner_idx",
           "primary": false,
           "unique": false
         },

@@ -17,6 +17,10 @@ export type InterviewCaseStatus =
  * `InterviewCaseTool` and are written only as part of a case save.
  */
 @Index({ name: 'mercatify_interview_cases_org_tenant_idx', properties: ['organizationId', 'tenantId'] })
+@Index({
+  name: 'mercatify_interview_cases_org_tenant_owner_idx',
+  properties: ['organizationId', 'tenantId', 'createdByUserId'],
+})
 @Entity({ tableName: 'mercatify_interview_cases' })
 export class InterviewCase {
   @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
@@ -63,6 +67,17 @@ export class InterviewCase {
 
   @Property({ name: 'organization_id', type: 'uuid' })
   organizationId!: string
+
+  /**
+   * Staff user who created the intake. Scalar id only — no cross-module ORM
+   * relation to auth. Null on historical rows seeded before S-08.
+   */
+  @Property({ name: 'created_by_user_id', type: 'uuid', nullable: true })
+  createdByUserId?: string | null
+
+  /** Set once when the case first leaves `draft`. */
+  @Property({ name: 'submitted_at', type: Date, nullable: true })
+  submittedAt?: Date | null
 
   @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
   createdAt: Date = new Date()
