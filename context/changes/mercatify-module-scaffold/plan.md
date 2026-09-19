@@ -392,10 +392,10 @@ No existing data is moved or transformed — the module introduces one new table
 ### Phase 2: Interview case entity and reviewed migration
 
 #### Automated
-- [x] 2.1 `yarn generate` completes and the generated entity-ID map contains `mercatify:interview_case`
-- [x] 2.2 `yarn db:generate` emits exactly one migration touching only `mercatify_interview_cases`
-- [x] 2.3 `yarn typecheck` passes
-- [x] 2.4 `yarn lint` passes
+- [x] 2.1 `yarn generate` completes and the generated entity-ID map contains `mercatify:interview_case` — 3a93462
+- [x] 2.2 `yarn db:generate` emits exactly one migration touching only `mercatify_interview_cases` — 3a93462
+- [x] 2.3 `yarn typecheck` passes — 3a93462
+- [x] 2.4 `yarn lint` passes — 3a93462
 
 #### Manual
 - [ ] 2.5 The emitted SQL creates `tenant_id` and `organization_id` as `not null`, and the composite scope index exists
@@ -405,11 +405,11 @@ No existing data is moved or transformed — the module introduces one new table
 ### Phase 3: Commands and the CRUD API contract
 
 #### Automated
-- [ ] 3.1 `yarn generate` completes and the generated route metadata lists `/api/mercatify/cases`
-- [ ] 3.2 `yarn typecheck` passes
-- [ ] 3.3 `yarn lint` passes
-- [ ] 3.4 `yarn test` passes and reports the new command tests actually ran
-- [ ] 3.5 The route file contains no flat `create:`/`update:`/`del:` factory keys and no top-level `requireAuth`
+- [x] 3.1 `yarn generate` completes and the generated route metadata lists `/api/mercatify/cases`
+- [x] 3.2 `yarn typecheck` passes
+- [x] 3.3 `yarn lint` passes
+- [x] 3.4 `yarn test` passes and reports the new command tests actually ran
+- [x] 3.5 The route file contains no flat `create:`/`update:`/`del:` factory keys and no top-level `requireAuth`
 
 #### Manual
 - [ ] 3.6 The OpenAPI document includes the four `/api/mercatify/cases` methods with their feature gates

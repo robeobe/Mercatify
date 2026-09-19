@@ -1,4 +1,7 @@
 {
+  "mercatify.audit.cases.create": "Interview-Fall erstellen",
+  "mercatify.audit.cases.delete": "Interview-Fall löschen",
+  "mercatify.audit.cases.update": "Interview-Fall aktualisieren",
   "mercatify.cases.page.title": "Interview-Fälle",
   "mercatify.cases.status.completed": "Abgeschlossen",
   "mercatify.cases.status.draft": "Entwurf",

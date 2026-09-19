@@ -1,4 +1,7 @@
 {
+  "mercatify.audit.cases.create": "Utwórz przypadek wywiadu",
+  "mercatify.audit.cases.delete": "Usuń przypadek wywiadu",
+  "mercatify.audit.cases.update": "Zaktualizuj przypadek wywiadu",
   "mercatify.cases.page.title": "Przypadki wywiadu",
   "mercatify.cases.status.completed": "Zakończony",
   "mercatify.cases.status.draft": "Szkic",
