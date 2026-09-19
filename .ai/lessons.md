@@ -1,6 +1,6 @@
 # Lessons
 
-This catalog indexes 0 focused lessons without loading their full text. Route the task first, then read only records whose **modules**, standalone-harness **areas**, or **topics** match the work.
+This catalog indexes 2 focused lessons without loading their full text. Route the task first, then read only records whose **modules**, standalone-harness **areas**, or **topics** match the work.
 
 ## How to use this catalog
 
@@ -25,3 +25,8 @@ rg -l '"<area>"|"<module>"|"<topic>"' .ai/lessons/*.md
 - Run `node scripts/check-lessons.mjs` before committing.
 
 ## Catalog
+
+### testing
+
+- [Guard an invariant with an allowlist of what is permitted, never a denylist of shapes](lessons/guard-invariants-with-allowlists.md) — area:testing,ai-workflow; module:mercatify_labs; topic:allowlist-validation,llm-output-validation,test-design,report-pipeline
+- [Prove a cross-cutting invariant on the composed artifact, not on the component that states it](lessons/prove-cross-cutting-invariants-on-the-composed-artifact.md) — area:testing,debugging; module:mercatify_labs; topic:test-design,integration-coverage,golden-master,report-pipeline
