@@ -266,11 +266,11 @@ Additive API keys (`mine`, `createdByUserId`, `submittedAt`, `whoseTurn`, `progr
 
 ## Acceptance Criteria
 
-- [ ] **AC-001** — Client sees a list of their own submitted requests only (scoped to their tenant, not a separate portal).
-- [ ] **AC-002** — Each list row shows current status and whose turn it is.
-- [ ] **AC-003** — Reopening a request shows what was originally sent (read-only) plus a progress track.
-- [ ] **AC-004** — No editing is possible on an already-sent request from this screen.
-- [ ] **AC-005** — Progress track renders correctly for every status a request can be in at this point (sent, in mapping, with the client, answered).
+- [x] **AC-001** — Client sees a list of their own submitted requests only (scoped to their tenant, not a separate portal).
+- [x] **AC-002** — Each list row shows current status and whose turn it is.
+- [x] **AC-003** — Reopening a request shows what was originally sent (read-only) plus a progress track.
+- [x] **AC-004** — No editing is possible on an already-sent request from this screen.
+- [x] **AC-005** — Progress track renders correctly for every status a request can be in at this point (sent, in mapping, with the client, answered).
 - [ ] Every listed backend surface matches its recorded Open Mercato reference and uses the canonical shell/components, shared API helpers, semantic tokens, and complete loading, empty, error, conflict, keyboard, accessibility, responsive, light-mode, and dark-mode states.
 - [ ] Every affected API and UI path has self-contained integration coverage and the configured validation gate passes.
 
@@ -289,7 +289,7 @@ Verdict: Ready for implementation
 
 ## Implementation Status
 
-Phase 1 is in progress: owner columns, `mine` list filters, My requests pages, and Jest oracles for filters/progress/send-lock.
+Phase 1 is complete: owner columns, `mine` list filters, My requests pages, and Jest oracles for filters/progress/send-lock. Validation: generate, typecheck, lint, ds:check, test, build.
 
 ## Open Questions
 
