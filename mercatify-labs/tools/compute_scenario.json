@@ -1,0 +1,56 @@
+{
+  "name": "compute_scenario",
+  "kind": "pure",
+  "backedBy": "src/computeScenario.ts#computeScenario",
+  "description": "Pure ROI formula (no reasoning): given the capability mappings and the SaaS stack costs, returns grossAnnualSaving, netAnnualSaving (net of omOperatingCost), netPaybackMonths, and which tools are removed vs retained. This is the ONLY source of money figures — the calling agent must never state a euro amount or a payback period itself.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "mappings": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "properties": {
+            "capability": { "type": "string" },
+            "source": { "type": "string" },
+            "targetFeature": { "type": "string" },
+            "decision": { "type": "string", "enum": ["native", "configure", "build", "integrate", "keep"] },
+            "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+            "evidence": { "type": "string" }
+          },
+          "required": ["capability", "source", "decision"]
+        }
+      },
+      "stack": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "monthlyCost": { "type": "number", "minimum": 0 }
+          },
+          "required": ["name", "monthlyCost"]
+        }
+      },
+      "omOperatingCost": { "type": "number", "minimum": 0 },
+      "implementationCost": { "type": "number", "minimum": 0 }
+    },
+    "required": ["mappings", "stack", "omOperatingCost", "implementationCost"],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "removedSaaS": { "type": "array", "items": { "type": "string" } },
+      "retainedSaaS": { "type": "array", "items": { "type": "string" } },
+      "grossAnnualSaving": { "type": "number" },
+      "omOperatingCost": { "type": "number" },
+      "netAnnualSaving": { "type": "number" },
+      "implementationCost": { "type": "number" },
+      "netPaybackMonths": { "type": "number", "description": "Infinity when netAnnualSaving <= 0." }
+    },
+    "required": ["removedSaaS", "retainedSaaS", "grossAnnualSaving", "omOperatingCost", "netAnnualSaving", "implementationCost", "netPaybackMonths"]
+  }
+}

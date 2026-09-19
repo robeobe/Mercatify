@@ -1,0 +1,51 @@
+{
+  "id": "finops",
+  "label": "FinOps",
+  "role": "CFO / FinOps lead",
+  "description": "Present the net-savings scenario for a case — never computes a euro amount itself.",
+  "resultKind": "research",
+  "tools": ["compute_scenario", "get_case_data"],
+  "instructions": "You are a CFO / FinOps lead. The input has `omOperatingCost` and `implementationCost` (customer-provided, in the local currency) plus EITHER `caseId` (call `get_case_data` and use its `products` and `mappings`) OR `mappings` and `stack` inline (`stack` is an array of { name, monthlyCost }). Call the `compute_scenario` tool with the mappings, the stack, and the two costs. That tool is the ONLY source of every number in your answer — never state a money figure or a payback period yourself, and never blend gross saving, operating cost and implementation cost into one number. Return the tool's scenario EXACTLY as given, plus a `summary`: 1-2 plain-language sentences for a business stakeholder, stating the net annual saving and the payback period (say \"payback not reached\" instead of a number when netPaybackMonths is not finite or is very large).",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "scenario": {
+        "type": "object",
+        "properties": {
+          "removedSaaS": { "type": "array", "items": { "type": "string" } },
+          "retainedSaaS": { "type": "array", "items": { "type": "string" } },
+          "grossAnnualSaving": { "type": "number" },
+          "omOperatingCost": { "type": "number" },
+          "netAnnualSaving": { "type": "number" },
+          "implementationCost": { "type": "number" },
+          "netPaybackMonths": { "type": "number" }
+        },
+        "required": ["removedSaaS", "retainedSaaS", "grossAnnualSaving", "omOperatingCost", "netAnnualSaving", "implementationCost", "netPaybackMonths"]
+      },
+      "summary": { "type": "string", "minLength": 1 }
+    },
+    "required": ["scenario", "summary"]
+  },
+  "sampleInput": {
+    "omOperatingCost": 8400,
+    "implementationCost": 12000,
+    "stack": [
+      { "name": "HubSpot", "monthlyCost": 1600 },
+      { "name": "Typeform", "monthlyCost": 60 },
+      { "name": "Airtable", "monthlyCost": 250 },
+      { "name": "Zapier", "monthlyCost": 140 },
+      { "name": "PandaDoc", "monthlyCost": 350 },
+      { "name": "Calendly", "monthlyCost": 50 },
+      { "name": "Slack", "monthlyCost": 70 }
+    ],
+    "mappings": [
+      { "capability": "contacts", "source": "HubSpot", "targetFeature": "CRM", "decision": "native", "confidence": "high", "evidence": "" },
+      { "capability": "lead_capture_forms", "source": "Typeform", "targetFeature": "Forms / Lead intake", "decision": "native", "confidence": "high", "evidence": "" },
+      { "capability": "site_survey_tracking", "source": "Airtable", "targetFeature": "Custom Entity (Site Survey)", "decision": "build", "confidence": "medium", "evidence": "" },
+      { "capability": "cross_app_automation", "source": "Zapier", "targetFeature": "Workflows", "decision": "native", "confidence": "high", "evidence": "" },
+      { "capability": "quote_documents", "source": "PandaDoc", "targetFeature": "Sales Quotes", "decision": "native", "confidence": "high", "evidence": "" },
+      { "capability": "site_survey_scheduling", "source": "Calendly", "targetFeature": "Scheduler", "decision": "configure", "confidence": "medium", "evidence": "" },
+      { "capability": "team_chat", "source": "Slack", "targetFeature": "Slack", "decision": "keep", "confidence": "high", "evidence": "" }
+    ]
+  }
+}

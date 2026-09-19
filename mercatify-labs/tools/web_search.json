@@ -1,0 +1,34 @@
+{
+  "name": "web_search",
+  "kind": "external",
+  "backedBy": "src/webSearch.ts#firecrawlSearch (via src/toolExecutor.ts#createToolExecutor)",
+  "description": "Search the public web and return a short list of results (url, title, snippet). Used ONLY by the Catalog Curator to research a SaaS tool that is not yet in the catalog — never on the core analysis path. Every finding you use MUST be attributed to the sourceUrl it came from; never state a fact this tool did not return.",
+  "note": "Requires FIRECRAWL_API_KEY (see .env.example). Free Firecrawl access was provided for the HackOn 2026 AI Company track — get your own key at https://www.firecrawl.dev if reusing this outside that track. Never commit a real key to this repo.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": { "type": "string", "minLength": 1, "description": "Focused search query, e.g. \"Notion API pricing plans\" rather than just \"Notion\"." },
+      "limit": { "type": "integer", "minimum": 1, "maximum": 10, "default": 5 }
+    },
+    "required": ["query"],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "url": { "type": "string" },
+            "title": { "type": "string" },
+            "snippet": { "type": "string" }
+          },
+          "required": ["url", "title", "snippet"]
+        }
+      }
+    },
+    "required": ["results"]
+  }
+}

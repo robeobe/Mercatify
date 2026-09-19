@@ -1,0 +1,52 @@
+{
+  "HubSpot": {
+    "capabilities": {
+      "contacts": { "target": "OM CRM", "decision": "native", "confidence": "high" },
+      "companies": { "target": "OM CRM", "decision": "native", "confidence": "high" },
+      "deals": { "target": "OM CRM", "decision": "native", "confidence": "high" },
+      "pipeline": { "target": "OM CRM / Workflow", "decision": "native", "confidence": "high" },
+      "email_sequences": { "target": "HubSpot", "decision": "keep", "confidence": "high" }
+    }
+  },
+  "Typeform": {
+    "capabilities": {
+      "lead_capture_forms": { "target": "OM Forms / Lead intake", "decision": "native", "confidence": "high" },
+      "nps_surveys": { "target": "OM Forms", "decision": "configure", "confidence": "medium" },
+      "conversational_branching": { "target": "Typeform", "decision": "keep", "confidence": "medium" }
+    }
+  },
+  "Airtable": {
+    "capabilities": {
+      "custom_trackers": { "target": "OM Custom Entities", "decision": "native", "confidence": "high" },
+      "site_survey_tracking": { "target": "OM Custom Entity (Site Survey)", "decision": "build", "confidence": "medium" },
+      "spreadsheet_views": { "target": "OM DataTable", "decision": "configure", "confidence": "medium" },
+      "external_sharing_grid": { "target": "Airtable", "decision": "keep", "confidence": "low" }
+    }
+  },
+  "Zapier": {
+    "capabilities": {
+      "cross_app_automation": { "target": "OM Workflows", "decision": "native", "confidence": "high" },
+      "webhook_relays": { "target": "OM Webhooks", "decision": "native", "confidence": "high" },
+      "long_tail_app_connectors": { "target": "Zapier", "decision": "integrate", "confidence": "medium" }
+    }
+  },
+  "PandaDoc": {
+    "capabilities": {
+      "quote_documents": { "target": "OM Sales Quotes", "decision": "native", "confidence": "high" },
+      "quote_approval_flow": { "target": "OM Workflows", "decision": "native", "confidence": "high" },
+      "e_signature": { "target": "PandaDoc", "decision": "integrate", "confidence": "high" }
+    }
+  },
+  "Calendly": {
+    "capabilities": {
+      "site_survey_scheduling": { "target": "OM Scheduler", "decision": "configure", "confidence": "medium" },
+      "external_booking_page": { "target": "Calendly", "decision": "keep", "confidence": "medium" }
+    }
+  },
+  "Slack": {
+    "capabilities": {
+      "internal_notifications": { "target": "OM Notifications", "decision": "native", "confidence": "high" },
+      "team_chat": { "target": "Slack", "decision": "keep", "confidence": "high" }
+    }
+  }
+}
