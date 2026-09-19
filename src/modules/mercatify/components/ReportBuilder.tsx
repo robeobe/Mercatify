@@ -526,7 +526,7 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
       ) : null}
 
       <div
-        className="sticky bottom-0 z-[5] mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur"
+        className="sticky bottom-0 z-10 mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur"
         data-testid="mercatify-report-send-bar"
       >
         <p className="min-w-0 flex-1 text-sm text-muted-foreground" data-testid="mercatify-report-send-state">

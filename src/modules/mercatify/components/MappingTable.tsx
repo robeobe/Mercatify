@@ -337,7 +337,7 @@ export default function MappingTable({ caseId, children }: { caseId: string; chi
                       {t(`mercatify.mapping.confidence.${row.confidence}`)}
                     </StatusBadge>
                   </TableCell>
-                  <TableCell className="max-w-[320px] align-top whitespace-normal text-sm text-muted-foreground">
+                  <TableCell className="max-w-xs align-top whitespace-normal text-sm text-muted-foreground">
                     {row.justification}
                   </TableCell>
                   <TableCell className="align-top">

@@ -32,7 +32,7 @@ export function ConsolePageHead({
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
       <div className="min-w-0">
         <h1 className="text-xl font-semibold leading-tight sm:text-2xl">{title}</h1>
-        {lead ? <p className="mt-1 max-w-[76ch] text-sm text-muted-foreground">{lead}</p> : null}
+        {lead ? <p className="mt-1 max-w-prose text-sm text-muted-foreground">{lead}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
@@ -111,7 +111,7 @@ export function CaseContextCard({ mercatifyCase }: { mercatifyCase: ConsoleCaseD
 export function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="text-xs uppercase tracking-[0.05em] text-muted-foreground">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="mt-1 text-2xl font-semibold tracking-tight">{value}</div>
       <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>
     </div>
@@ -125,7 +125,7 @@ export function StatGrid({ children }: { children: React.ReactNode }) {
 /** `.actionbar`: sticks to the bottom of the viewport, text on the left. */
 export function StickyActionBar({ text, children }: { text: string; children: React.ReactNode }) {
   return (
-    <div className="sticky bottom-0 z-[5] mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur">
+    <div className="sticky bottom-0 z-10 mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur">
       <p className="min-w-0 flex-1 text-sm text-muted-foreground">{text}</p>
       {children}
     </div>
