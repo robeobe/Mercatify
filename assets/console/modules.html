@@ -61,6 +61,7 @@
       <a class="btn btn--outline" href="requests.html">Back to queue</a>
       <button class="btn btn--outline" type="button" id="to-edit">Edit the mapping</button>
       <a class="btn" id="to-report">Build the report →</a>
+      <button class="btn btn--outline" type="button" id="reopen" hidden>Reopen mapping</button>
     </div>
   </div>
 
@@ -109,11 +110,17 @@
   </section>
 
   <section id="view-capability" hidden>
-    <div class="alert" style="margin-bottom:12px">
+    <div class="alert" style="margin-bottom:12px" id="edit-hint">
       <div>
         <strong>Every row here is editable.</strong>
         <span>The agent's pass is a starting point — change the module or the verdict where it
-          got it wrong, and the report picks the change up. Edited rows are marked.</span>
+          got it wrong. Changes save as you make them. Edited rows are marked.</span>
+      </div>
+    </div>
+    <div class="alert alert--warning" style="margin-bottom:12px" id="locked-hint" hidden>
+      <div>
+        <strong id="locked-title">This mapping is closed.</strong>
+        <span id="locked-body"></span>
       </div>
     </div>
     <div class="tablewrap">
@@ -135,6 +142,11 @@
       <div class="tablefoot"><span id="capfoot">—</span><span id="capedits">no rows edited</span></div>
     </div>
   </section>
+
+  <div class="actionbar" id="mapbar">
+    <div class="actionbar__text" id="mapstate">—</div>
+    <button class="btn" type="button" id="confirm">Confirm mapping</button>
+  </div>
 </template>
 
 <script src="../stack-tool/catalog.js"></script>
@@ -170,7 +182,79 @@
   pick.addEventListener('change', function () {
     window.location.search = '?ref=' + encodeURIComponent(pick.value);
   });
-  document.getElementById('to-report').href = 'report.html?ref=' + encodeURIComponent(current.ref);
+  /* Arriving here from the queue's Map action IS the act of starting, so a new
+     request becomes "in mapping" on open. That is what gives the status a life
+     longer than a moment, and gives the consultant something to close. */
+  startMapping(current);
+
+  /* Locking is the point of the whole state machine: the report is built from a
+     mapping somebody confirmed, and a confirmed mapping does not drift under it. */
+  function setLock() {
+    var locked = !mappingOpen(current);
+    Array.prototype.forEach.call(
+      document.querySelectorAll('#caprows select, #caprows input, #caprows button'),
+      function (el) { el.disabled = locked; }
+    );
+    document.getElementById('edit-hint').hidden = locked;
+    document.getElementById('locked-hint').hidden = !locked;
+    document.getElementById('reopen').hidden = !locked;
+    document.getElementById('mapbar').hidden = locked;
+    /* When nothing can be changed, the button is not offering an edit. */
+    document.getElementById('to-edit').textContent = locked ? 'View the mapping' : 'Edit the mapping';
+    var tab = document.querySelector('.tab[data-view="capability"]');
+    if (tab) tab.childNodes[0].nodeValue = locked ? 'The mapping' : 'Edit the mapping';
+
+    var report = document.getElementById('to-report');
+    if (canReport(current)) {
+      report.href = 'report.html?ref=' + encodeURIComponent(current.ref);
+      report.removeAttribute('aria-disabled');
+      report.style.pointerEvents = '';
+      report.style.opacity = '';
+      report.textContent = isSent(current) ? 'Open the report →' : 'Build the report →';
+      report.title = '';
+    } else {
+      /* An anchor cannot be disabled, so it is made inert and says why. */
+      report.removeAttribute('href');
+      report.setAttribute('aria-disabled', 'true');
+      report.style.pointerEvents = 'none';
+      report.style.opacity = '.45';
+      report.textContent = 'Build the report →';
+      report.title = 'Confirm the mapping first';
+    }
+
+    if (locked) {
+      document.getElementById('locked-title').textContent = isSent(current)
+        ? 'This mapping went out to the client.'
+        : 'This mapping is closed.';
+      document.getElementById('locked-body').textContent = isSent(current)
+        ? 'The report was sent on ' + current.sentAt + '. Reopen the mapping to change it — ' +
+          'the client keeps the version they were given until a new report is sent.'
+        : 'Confirmed on ' + (current.mappedAt || 'an earlier date') +
+          '. Reopen it if something needs correcting.';
+    }
+  }
+
+  function setMapState(msg) {
+    var edits = requestCaps(current).filter(function (c) { return c.edited; }).length;
+    document.getElementById('mapstate').textContent = msg || (edits
+      ? edits + (edits === 1 ? ' row has' : ' rows have') + ' been corrected. Changes save as you make them.'
+      : 'Nothing corrected yet. Changes save as you make them.');
+  }
+
+  document.getElementById('confirm').addEventListener('click', function () {
+    confirmMapping(current);
+    renderHeader(current);
+    setLock();
+    window.alert('Mapping confirmed. You can build the report now.');
+  });
+
+  document.getElementById('reopen').addEventListener('click', function () {
+    reopenMapping(current);
+    renderHeader(current);
+    renderCaps(current);
+    setLock();
+    setMapState('Reopened. Changes save as you make them.');
+  });
 
   function capChip(c) {
     var chip = node('button', {
@@ -226,7 +310,7 @@
           node('span', { class: 'badge ' + meta.badge, text: meta.label }),
           node('span', { class: 'small muted', text: r.caps.length + ' job' + (r.caps.length === 1 ? '' : 's') }),
           r.duplicates
-            ? node('span', { class: 'badge badge--warning', text: r.duplicates + ' done twice' })
+            ? node('span', { class: 'badge badge--warning', text: r.duplicates + ' paid twice' })
             : node('span', { class: 'small muted', text: meta.hint })
         ]);
         wrap.appendChild(node('div', { class: 'modrow' + (outside ? ' modrow--outside' : '') }, [left, caps, right]));
@@ -274,6 +358,11 @@
     renderHeader(req);
     renderModules(req);
     renderCaps(req);
+    setLock();
+    /* Autosave with nothing to show for it reads as "did that work?" — so the
+       bar says so on every change, then settles back to the running count. */
+    setMapState('Saved.');
+    setTimeout(function () { setMapState(); }, 1400);
   }
 
   function renderCaps(req) {
@@ -299,6 +388,9 @@
       noteInput.addEventListener('change', function () {
         setCapOverride(req, c.cap, { module: c.module, status: c.status, note: noteInput.value });
         renderCaps(req);
+        setLock();
+        setMapState('Saved.');
+        setTimeout(function () { setMapState(); }, 1400);
       });
 
       var reset = node('button', {
@@ -412,6 +504,8 @@
   renderHeader(current);
   renderModules(current);
   renderCaps(current);
+  setLock();
+  setMapState();
   if (window.location.hash === '#edit') showView('capability');
 })();
 </script>

@@ -39,6 +39,11 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 
+  /* Figma disabled tokens, same values the platform uses */
+  --bg-disabled: #f7f7f7;
+  --text-disabled: #d1d1d1;
+  --border-disabled: #ebebeb;
+
   --brand-lime: #b4f372;
   --brand-yellow: #eefb63;
   --brand-violet: #bc9aff;
@@ -68,6 +73,9 @@
   --sidebar: #0a0a0a;
   --sidebar-border: rgb(255 255 255 / .10);
   --sidebar-accent: #262626;
+  --bg-disabled: #1a1a1a;
+  --text-disabled: #4d4d4d;
+  --border-disabled: rgb(255 255 255 / .07);
 
   --status-error-bg: #2a1416;   --status-error-text: #fca5a5;   --status-error-border: #5b1d1d;
   --status-success-bg: #10251a; --status-success-text: #86efac; --status-success-border: #1c4d31;
@@ -232,8 +240,8 @@ code, .mono, .num { font-family: var(--font-mono); }
 .portal__right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
 /* ─────────────── request tiles ───────────────
-   The client's own list. One tile per request she has sent, carrying the one
-   thing she actually came back for: where it got to. */
+   The client's own list. One tile per request sent, carrying the one thing
+   they actually came back for: where it got to. */
 .tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 .tile {
   display: flex; flex-direction: column; gap: 10px;
@@ -249,7 +257,7 @@ code, .mono, .num { font-family: var(--font-mono); }
 .tile__foot { margin-top: auto; padding-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* ─────────────── progress ───────────────
-   Four steps, so she can see at a glance whether the ball is with her or us. */
+   Four steps, so it is clear at a glance whether the ball is with us or them. */
 .track { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 .track li { position: relative; padding: 0 0 18px 30px; }
 .track li:last-child { padding-bottom: 0; }
@@ -325,6 +333,13 @@ input[type="text"], input[type="email"], input[type="password"], input[type="num
   box-shadow: var(--shadow-xs); transition: border-color .15s;
 }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--foreground); }
+/* A locked control has to read as locked, or the mapping looks editable when
+   it is not. Same tokens the platform's disabled state uses. */
+input:disabled, select:disabled, textarea:disabled {
+  background: var(--bg-disabled); color: var(--text-disabled);
+  border-color: var(--border-disabled); box-shadow: none; cursor: not-allowed;
+}
+.btn:disabled, button:disabled { cursor: not-allowed; }
 textarea { height: auto; min-height: 76px; padding: 8px 12px; resize: vertical; line-height: 1.5; }
 input::placeholder, textarea::placeholder { color: var(--muted-foreground); }
 .field__hint { font-size: 0.75rem; color: var(--muted-foreground); margin-top: 4px; }

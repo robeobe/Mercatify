@@ -1,7 +1,7 @@
 /* Mercatify — mocked Open Mercato surfaces: shared data, helpers and shells.
    Classic script, loaded by both apps in assets/:
 
-     client/   what Ola sees — her own request form, and nothing else
+     client/   what a client sees — their own requests, and nothing else
      console/  what Mercatify sees — every request that came in, and the mapping
 
    They are separate products sharing one design system and one capability
@@ -46,7 +46,7 @@ function currentUser(app) {
 }
 
 /* ─────────────── the client's own requests ───────────────
-   She can send more than one over time, so the portal keeps a list of her refs
+   A client can send more than one over time, so the portal keeps a list of refs
    and never reads the queue. Everything the client app shows is filtered
    through this list — that is what keeps one tenant out of another's data. */
 var CLIENT_REFS_KEY = 'mercatify.client.refs.v1';
@@ -72,20 +72,20 @@ function addClientRef(ref) {
   try { localStorage.removeItem(CLIENT_REF_KEY); } catch (e) {}
   return refs;
 }
-/* Her requests, newest first, with the ones that no longer resolve dropped. */
+/* The client's requests, newest first, dropping any that no longer resolve. */
 function clientRequests() {
   return readClientRefs()
     .map(function (ref) { return findRequest(ref); })
     .filter(Boolean)
     .sort(function (a, b) { return String(b.ref).localeCompare(String(a.ref)); });
 }
-/* Strict: a ref she does not own returns null, whatever the URL says. */
+/* Strict: a ref this client does not own returns null, whatever the URL says. */
 function clientRequest(ref) {
   if (!ref) return null;
   return readClientRefs().indexOf(ref) === -1 ? null : findRequest(ref);
 }
 
-/* The steps she sees, in order, with the one she is on marked. Derived from the
+/* The steps the client sees, in order, with the current one marked. Derived from the
    request rather than stored, so it cannot fall out of step with the status. */
 function clientProgress(req) {
   var steps = [
@@ -465,6 +465,75 @@ function statusBadge(req) {
 }
 function today() { return new Date().toISOString().slice(0, 10); }
 
+/* ─────────────── what you can do to a request ───────────────
+   The two verbs, mapping and reporting, are not available at the same time and
+   never were — showing both on every row invited sending a report on a mapping
+   nobody had confirmed. One rule, read by the queue, the mapping screen and the
+   report screen alike:
+
+     new       mapping has not started      -> map, no report
+     mapping   open, being corrected        -> keep mapping; report is locked
+     mapped    closed by a consultant       -> report; mapping reopens on request
+     sent      the client has it            -> report; remapping is deliberate
+     accepted  the client answered          -> report is read-only history
+     consult   the client wants a call      -> same
+
+   `mapped` is the gate: a report can only be built from a mapping somebody
+   confirmed, which is also what gives the consultant something to confirm. */
+function mappingOpen(req) {
+  return req.status === 'new' || req.status === 'mapping';
+}
+function mappingStarted(req) {
+  return req.status !== 'new';
+}
+function canReport(req) {
+  return req.status === 'mapped' || req.status === 'sent' ||
+         req.status === 'accepted' || req.status === 'consult';
+}
+function isSent(req) { return !!req.sentAt; }
+
+function startMapping(req) {
+  if (req.status !== 'new') return req;
+  req.status = 'mapping';
+  patchRequest(req.ref, { status: 'mapping' });
+  return req;
+}
+function confirmMapping(req) {
+  if (!mappingOpen(req)) return req;
+  req.status = 'mapped';
+  req.mappedAt = today();
+  patchRequest(req.ref, { status: 'mapped', mappedAt: req.mappedAt });
+  return req;
+}
+/* Reopening a sent report does not un-send it: the client keeps the version
+   they were given until a new one is sent on purpose. */
+function reopenMapping(req) {
+  req.status = 'mapping';
+  patchRequest(req.ref, { status: 'mapping' });
+  return req;
+}
+
+/* The one action a queue row should offer, plus anything secondary. Keeping
+   this here means the row, the mapping screen and the report screen cannot
+   disagree about what is possible next. */
+function requestActions(req) {
+  var mapHref = 'modules.html?ref=' + encodeURIComponent(req.ref);
+  var reportHref = 'report.html?ref=' + encodeURIComponent(req.ref);
+  switch (req.status) {
+    case 'new':
+      return [{ label: 'Map', href: mapHref, primary: true }];
+    case 'mapping':
+      return [{ label: 'Continue mapping', href: mapHref, primary: true }];
+    case 'mapped':
+      return [
+        { label: 'Build report', href: reportHref, primary: true },
+        { label: 'Mapping', href: mapHref }
+      ];
+    default:
+      return [{ label: 'Report', href: reportHref, primary: true }];
+  }
+}
+
 /* ─────────────── the offer ───────────────
    Derived from the mapping as it stands, overrides included, so a consultant's
    edit shows up in the report without a separate "regenerate" step.
@@ -517,7 +586,7 @@ function buildOffer(req) {
 }
 
 /* Renders the offer body. The console preview and the client's page both call
-   this, so "what I am about to send" and "what she gets" cannot drift. */
+   this, so "what I am about to send" and "what they get" cannot drift. */
 function renderOffer(offer) {
   var wrap = node('div', { class: 'offer' });
 
@@ -540,9 +609,9 @@ function renderOffer(offer) {
       node('div', { class: 'stat__s', text: 'before the build cost below' })
     ]),
     node('div', { class: 'stat' }, [
-      node('div', { class: 'stat__k', text: 'Jobs done twice' }),
+      node('div', { class: 'stat__k', text: 'Paid for twice' }),
       node('div', { class: 'stat__v', text: String(offer.duplicates) }),
-      node('div', { class: 'stat__s', text: 'paid for in more than one tool' })
+      node('div', { class: 'stat__s', text: 'the same job, two licences' })
     ])
   ]);
   wrap.appendChild(kpis);
@@ -734,8 +803,8 @@ function mountConsoleShell(opts) {
 function mountPortalShell(opts) {
   opts = opts || {};
   var user = currentUser('client');
-  /* One link, and only once she has something to come back to. An empty
-     "My requests" would be a dead end on her very first visit. */
+  /* One link, and only once there is something to come back to. An empty
+     "My requests" would be a dead end on a first visit. */
   var nav = readClientRefs().length
     ? '<a class="portal__link' + (opts.active === 'requests' ? ' is-on' : '') +
       '" href="requests.html">My requests</a>'

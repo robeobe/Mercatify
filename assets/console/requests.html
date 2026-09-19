@@ -18,7 +18,7 @@
          open it to see which Open Mercato modules pick the work up.</p>
     </div>
     <div class="pagehead__actions">
-      <a class="btn" href="modules.html" id="open-newest">Map the newest →</a>
+      <a class="btn" href="modules.html" id="open-newest">Pick up the newest →</a>
     </div>
   </div>
 
@@ -54,7 +54,7 @@
             <th>Company</th>
             <th>Tools</th>
             <th class="num">Jobs</th>
-            <th class="num">Done twice</th>
+            <th class="num">Paid twice</th>
             <th class="num">Monthly</th>
             <th>Received</th>
             <th>Status</th>
@@ -87,7 +87,10 @@
   var statusEl = document.getElementById('status');
 
   if (all.length) {
-    document.getElementById('open-newest').href = 'modules.html?ref=' + encodeURIComponent(all[0].ref);
+    var newest = requestActions(all[0])[0];
+    var btn = document.getElementById('open-newest');
+    btn.href = newest.href;
+    btn.textContent = newest.label + ' — ' + all[0].ref;
   }
 
   /* Header figures are declared spend, not a saving — the saving only exists
@@ -124,7 +127,8 @@
     shown.forEach(function (r) {
       var caps = requestCaps(r);
       var dups = caps.filter(function (c) { return c.duplicate; }).length;
-      var href = 'modules.html?ref=' + encodeURIComponent(r.ref);
+      /* The ref opens wherever the row's own primary action leads. */
+      var href = requestActions(r)[0].href;
       var toolNames = (r.tools || []).map(function (t) { return t.name; });
 
       var tr = node('tr', {}, [
@@ -149,14 +153,16 @@
             ? (r.clientResponse.kind === 'accepted' ? 'client accepted' : 'client wants a call')
             : (r.owner ? 'owner: ' + r.owner : 'unassigned') })
         ]),
-        node('td', { class: 'nowrap' }, [
-          node('a', { class: 'btn btn--outline btn--sm', href: href, text: 'Map' }),
-          node('a', {
-            class: 'btn btn--outline btn--sm', style: 'margin-left:6px',
-            href: 'report.html?ref=' + encodeURIComponent(r.ref),
-            text: r.sentAt ? 'Report ✓' : 'Report'
-          })
-        ])
+        /* One action per row, chosen by where the request actually is. A new
+           request cannot be reported on, and a sent one is not re-mapped from
+           the queue — that is a deliberate step taken inside it. */
+        node('td', { class: 'nowrap' }, requestActions(r).map(function (a, i) {
+          return node('a', {
+            class: 'btn btn--sm' + (a.primary ? '' : ' btn--outline'),
+            style: i ? 'margin-left:6px' : '',
+            href: a.href, text: a.label
+          });
+        }))
       ]);
       rowsEl.appendChild(tr);
     });

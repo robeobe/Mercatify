@@ -58,8 +58,8 @@
     var ready = !!req.sentAt && !req.clientResponse;
     var href = 'request.html?ref=' + encodeURIComponent(req.ref);
 
-    /* The tile says the one thing she came back for: is the ball with us or
-       with her. The call to action changes with it. */
+    /* The tile says the one thing the client came back for: is the ball with
+       us or with them. The call to action changes with it. */
     var cta = ready
       ? node('a', { class: 'btn btn--sm', href: 'offer.html?ref=' + encodeURIComponent(req.ref), text: 'Read your map' })
       : node('a', { class: 'btn btn--outline btn--sm', href: href, text: 'See what you sent' });

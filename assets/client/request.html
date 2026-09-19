@@ -102,7 +102,7 @@
 (function () {
   var content = mountPortalShell({ active: 'requests' });
 
-  /* A ref that is not hers must say so, not quietly show her a different
+  /* A ref the client does not own must say so, not quietly show a different
      request — silently substituting one would make the URL lie. The newest is
      a fallback only when no ref was asked for at all. */
   var asked = qs('ref');
@@ -153,7 +153,7 @@
   });
 
   /* The map card only appears once a consultant has actually sent it. The
-     earlier statuses are Mercatify's own and say nothing to her. */
+     earlier statuses are Mercatify's own and say nothing to the client. */
   if (req.report && req.sentAt) {
     var ready = document.getElementById('map-ready');
     var badge = document.getElementById('ready-badge');
