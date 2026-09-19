@@ -139,7 +139,7 @@ Relevant gap: the app currently enables 11 OM modules (auth, directory, configs,
 
 > **Amended 2026-09-19** (gap-analysis follow-up): the in-flight plan for this change (`context/changes/mercatify-intake-start/plan.md`) describes Send as terminal — "the employee sees a read-only confirmation and nothing else … no further status appears to them." That stands for *this slice's own build*, but it is superseded as a roadmap-wide claim by `S-08`/`S-10`: once a report is sent, the client must be able to come back and see it. The plan's own scope is unaffected (it still only builds create/edit/send/lock); the false claim is that nothing further ever gets built for that role, which `S-08`/`S-10` now do.
 
-- **Outcome:** Client can open Mercatify inside the OM admin of their tenant and see the starting point: their company profile and the set of SaaS tools in use with their monthly costs.
+- **Outcome:** Client (employee role) can open Mercatify inside the OM admin of their tenant, build the interview starting point (company profile plus SaaS tools with monthly costs, including catalog picks and custom tools), save a draft, and send it — after which this slice locks the case to a read-only confirmation.
 - **Change ID:** `mercatify-intake-start`
 - **PRD refs:** US-01, FR-001, FR-015, FR-014
 - **Prerequisites:** F-01

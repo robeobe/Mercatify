@@ -362,60 +362,60 @@ No existing data is moved or transformed. The Phase 2 migration only adds nullab
 ### Phase 1: Align PRD, roadmap and change identity with the mockup-as-source-of-truth decision
 
 #### Automated
-- [ ] 1.1 `git diff --stat` shows exactly `prd.md`, `roadmap.md`, `change.md`, `setup.ts` changed
+- [x] 1.1 `git diff --stat` shows exactly `prd.md`, `roadmap.md`, `change.md`, `setup.ts` changed — landed with later phases in one PR
 
 #### Manual
-- [ ] 1.2 FR-001's original text is preserved with a dated amendment note
-- [ ] 1.3 The Non-Goals bullet is marked superseded with a reference to this change
-- [ ] 1.4 Roadmap's S-01 outcome and `## At a glance` row agree with the amended FR-001
-- [ ] 1.5 `change.md` frontmatter shows `status: planned` and today's date
-- [ ] 1.6 Access Control Changes carries a dated amendment noting the employee/admin split, and `employee` in `setup.ts` holds `.view` + `.manage`
+- [x] 1.2 FR-001's original text is preserved with a dated amendment note
+- [x] 1.3 The Non-Goals bullet is marked superseded with a reference to this change
+- [x] 1.4 Roadmap's S-01 outcome and `## At a glance` row agree with the amended FR-001
+- [x] 1.5 `change.md` frontmatter shows `status: planned` and today's date
+- [x] 1.6 Access Control Changes carries a dated amendment noting the employee/admin split, and `employee` in `setup.ts` holds `.view` + `.manage`
 
 ### Phase 2: SaaS catalog data, case profile columns, and the InterviewCaseTool entity
 
 #### Automated
-- [ ] 2.1 `yarn generate` completes; generated entity-ID map contains `mercatify:interview_case_tool`
-- [ ] 2.2 `yarn db:generate` emits exactly one new migration touching only the two named tables
-- [ ] 2.3 `yarn typecheck` passes
-- [ ] 2.4 `yarn lint` passes
+- [x] 2.1 `yarn generate` completes; generated entity-ID map contains `mercatify:interview_case_tool`
+- [x] 2.2 `yarn db:generate` emits exactly one new migration touching only the two named tables
+- [x] 2.3 `yarn typecheck` passes
+- [x] 2.4 `yarn lint` passes
 
 #### Manual
-- [ ] 2.5 New `InterviewCase` columns are nullable with no surprising defaults beyond `currency`; new table has required scope columns, FK, and composite index
-- [ ] 2.6 The migration touches no other module's table
-- [ ] 2.7 `yarn db:migrate` has not been run; the database is unchanged
+- [x] 2.5 New `InterviewCase` columns are nullable with no surprising defaults beyond `currency`; new table has required scope columns, FK, and composite index
+- [x] 2.6 The migration touches no other module's table
+- [x] 2.7 `yarn db:migrate` has not been run; the database is unchanged
 
 ### Phase 3: Commands and the CRUD API contract
 
 #### Automated
-- [ ] 3.1 `yarn generate` completes
-- [ ] 3.2 `yarn typecheck` passes
-- [ ] 3.3 `yarn lint` passes
-- [ ] 3.4 `yarn test` passes and the extended/new command tests actually ran
-- [ ] 3.5 The route file has no flat `create:`/`update:`/`del:` factory keys
+- [x] 3.1 `yarn generate` completes
+- [x] 3.2 `yarn typecheck` passes
+- [x] 3.3 `yarn lint` passes
+- [x] 3.4 `yarn test` passes and the extended/new command tests actually ran
+- [x] 3.5 The route file has no flat `create:`/`update:`/`del:` factory keys
 
 #### Manual
-- [ ] 3.6 OpenAPI document includes the new request/response fields
-- [ ] 3.7 No request schema accepts `tenantId` or `organizationId`
-- [ ] 3.8 A manual `PUT` changing `companyName` on a `new` case is rejected
+- [x] 3.6 OpenAPI document includes the new request/response fields
+- [x] 3.7 No request schema accepts `tenantId` or `organizationId`
+- [x] 3.8 A manual `PUT` changing `companyName` on a `new` case is rejected — covered by command test "rejects editing profile or tools on a non-draft case"
 
 ### Phase 4: Backend UI, list wiring, i18n, and the full gate
 
 #### Automated
-- [ ] 4.1 `yarn generate` completes; backend-route manifest lists `/backend/cases/create` and `/backend/cases/[id]`
-- [ ] 4.2 `yarn typecheck` passes
-- [ ] 4.3 `yarn lint` passes
-- [ ] 4.4 `yarn ds:check` passes
-- [ ] 4.5 `yarn test` passes
-- [ ] 4.6 `yarn build` completes
-- [ ] 4.7 `yarn i18n:check-hardcoded` reports no hard-coded strings in the module's UI chrome
-- [ ] 4.8 `git status` shows changes confined to the expected paths
+- [x] 4.1 `yarn generate` completes; backend-route manifest lists `/backend/cases/create` and `/backend/cases/[id]`
+- [x] 4.2 `yarn typecheck` passes
+- [x] 4.3 `yarn lint` passes
+- [x] 4.4 `yarn ds:check` passes
+- [x] 4.5 `yarn test` passes
+- [x] 4.6 `yarn build` completes
+- [x] 4.7 `yarn i18n:check-hardcoded` reports no hard-coded strings in the module's UI chrome
+- [x] 4.8 `git status` shows changes confined to the expected paths
 
 #### Manual
-- [ ] 4.9 `/backend/cases` shows "New intake" and links through to case detail
-- [ ] 4.10 Create page renders profile, catalog picker, duplicate badges, custom tools, summary rail
-- [ ] 4.11 Save draft persists and survives reopening `/backend/cases/[id]`
-- [ ] 4.12 Send blocks on zero tools, transitions status to `new` and locks the case on success with a plain confirmation (no wizard/agent response), offers a corrected resubmission
-- [ ] 4.13 A sent case cannot be edited from the UI or via a direct API call
+- [ ] 4.9 `/backend/cases` shows "New intake" and links through to case detail — needs a running app with the new migration applied
+- [ ] 4.10 Create page renders profile, catalog picker, duplicate badges, custom tools, summary rail — needs a running app
+- [ ] 4.11 Save draft persists and survives reopening `/backend/cases/[id]` — needs a running app
+- [ ] 4.12 Send blocks on zero tools, transitions status to `new` and locks the case on success with a plain confirmation (no wizard/agent response), offers a corrected resubmission — client guard + command tests; browser walkthrough pending
+- [ ] 4.13 A sent case cannot be edited from the UI or via a direct API call — command test covers API; browser pending
 - [ ] 4.14 Loading/empty/error/permission-denied/conflict states render localized copy via shared components
 - [ ] 4.15 Light/dark/narrow rendering and keyboard reachability confirmed
 - [ ] 4.16 Every pre-existing backend page and API still behaves as before (FR-014)

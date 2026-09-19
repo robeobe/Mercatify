@@ -6,7 +6,7 @@ export const setup: ModuleSetupConfig = {
   defaultRoleFeatures: {
     superadmin: ['mercatify.*'],
     admin: ['mercatify.*'],
-    employee: ['mercatify.cases.view'],
+    employee: ['mercatify.cases.view', 'mercatify.cases.manage'],
   },
 
   // `seedExamples`, not `seedDefaults`: this is demo domain data, so
