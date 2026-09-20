@@ -259,10 +259,10 @@ export default function MappingTable({ caseId, children }: { caseId: string; chi
           has, so it gives way to the locked notice rather than sitting above it. */}
       {!isConfirmed ? (
         <Alert status="information" className="mb-3">
-          <AlertTitle>{t('mercatify.console.mapping.hint.title', "This is the agent's pass, not a verdict.")}</AlertTitle>
+          <AlertTitle>{t('mercatify.console.mapping.hint.title.lab', "This is Mercatify Lab's first pass, not a verdict.")}</AlertTitle>
           <AlertDescription>
             {t(
-              'mercatify.console.mapping.hint.body',
+              'mercatify.console.mapping.hint.body.lab',
               'Click Edit on any job below to change which module takes it over and how hard it is. The report is built from whatever you leave here.',
             )}
           </AlertDescription>

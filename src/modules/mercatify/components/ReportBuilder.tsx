@@ -15,6 +15,7 @@ import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import ReportPreview from './ReportPreview'
+import { LabBadge } from './LabBadge'
 import { CaseRefBadge, ConsolePageHead, StaffStatusBadge } from './console/ConsoleParts'
 import {
   buildReportModel,
@@ -357,6 +358,7 @@ export default function ReportBuilder({ caseId }: { caseId: string }) {
               <h2 className="text-base font-semibold">{profile.companyName ?? t('mercatify.report.compose.title')}</h2>
               <CaseRefBadge caseId={caseId} />
               <StaffStatusBadge status={data.status} />
+              <LabBadge />
               {headMeta.length > 0 ? (
                 <p className="ml-auto text-sm text-muted-foreground">{headMeta.join(' · ')}</p>
               ) : null}

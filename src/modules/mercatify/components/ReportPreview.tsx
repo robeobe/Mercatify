@@ -7,6 +7,7 @@ import { Separator } from '@open-mercato/ui/primitives/separator'
 import { formatCurrency } from '@open-mercato/ui/utils/format'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import CashCurveChart from './CashCurveChart'
+import { LabBadge } from './LabBadge'
 import { REPORT_DECISION_ORDER, type ReportModel } from '../lib/report'
 import {
   confidenceVariants,
@@ -71,7 +72,10 @@ export default function ReportPreview({ report }: { report: ReportModel }) {
   return (
     <article className="space-y-6" data-testid="mercatify-report-preview">
       <header className="space-y-2">
-        <h2 className="text-lg font-semibold">{headline}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold">{headline}</h2>
+          <LabBadge />
+        </div>
         <p className="text-sm">
           {report.summary.map((clause) => t(`mercatify.report.summary.${clause.key}`, {
             ...clause.params,

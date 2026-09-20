@@ -11,6 +11,7 @@ import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { apiFetch } from '@open-mercato/ui/backend/utils/api'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { CaseForm, toCaseFormValues, type CaseFormValues, type CaseRecord } from '../CaseForm'
+import { LabBadge } from '../LabBadge'
 import { LabAnalysisCard } from './LabAnalysisCard'
 
 const QUEUE_HREF = '/backend/cases'
@@ -112,6 +113,7 @@ export function CaseDetailView({ id }: { id: string }) {
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="font-mono">{caseRef(id)}</Badge>
             <StatusBadge variant={staffStatus.variant} dot>{t(staffStatus.key, staffStatus.fallback)}</StatusBadge>
+            <LabBadge />
           </div>
         </div>
         {canSeeMapping ? (
