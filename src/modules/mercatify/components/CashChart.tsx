@@ -5,29 +5,30 @@ import { buildCashCurve, fmtMoney, type Offer } from '../lib/offer'
 import { CASH_HORIZON } from '../lib/offer'
 
 /**
- * Cumulative saving, month by month — ported from assets/shared/om-core.js
- * renderCashChart, simplified once hourly build estimates left the model:
- * there is no up-front cost to spend down, so the curve only ever holds flat
- * through the implementation ramp, then climbs by the monthly saving.
+ * Cumulative net cash position, month by month — ported from
+ * assets/shared/om-core.js renderCashChart. The one-off switching cost is a
+ * single entered figure (not a per-capability hourly build-up); when it is
+ * left blank the curve simply never dips and the caption says so.
  */
 export default function CashChart({ offer }: { offer: Offer }) {
   const t = useT()
-  if (offer.monthlySaving <= 0) return null
+  if (!offer.oneOff && offer.monthlySaving <= 0) return null
   const curve = buildCashCurve(offer)
   const cur = offer.currency
 
   const W = 720, H = 290, L = 56, R = 700, T = 24, B = 250
   const vals = curve.points.map((p) => p.v)
   let hi = Math.max(0, ...vals)
-  let lo = 0
+  let lo = Math.min(0, ...vals)
 
   const raw = (hi - lo) / 5 || 1
   const mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10))
   const step = ([1, 2, 5, 10].find((m) => m * mag >= raw) ?? 10) * mag
+  lo = Math.floor(lo / step) * step
   hi = Math.ceil(hi / step) * step
 
   const x = (m: number) => L + (R - L) * (m / CASH_HORIZON)
-  const y = (v: number) => B - (B - T) * ((v - lo) / (hi - lo || 1))
+  const y = (v: number) => B - (B - T) * ((v - lo) / (hi - lo))
 
   const gridValues: number[] = []
   for (let gv = lo; gv <= hi + step / 2; gv += step) gridValues.push(gv)
@@ -35,13 +36,25 @@ export default function CashChart({ offer }: { offer: Offer }) {
   const d = curve.points.map((p, i) => `${i ? 'L' : 'M'}${x(p.m).toFixed(2)},${y(p.v).toFixed(2)}`).join(' ')
   const areaD = `${d} L${x(CASH_HORIZON).toFixed(2)},${y(0).toFixed(2)} L${x(0).toFixed(2)},${y(0).toFixed(2)} Z`
 
-  const caption = t('mercatify.report.chart.captionStarts', 'The saving starts in month {month} and runs at {amount} a month.', {
-    month: curve.savingsStartMonth, amount: fmtMoney(offer.monthlySaving, cur),
-  })
+  let caption: string
+  if (curve.payback === 'none') {
+    caption = offer.monthlySaving > 0
+      ? t('mercatify.report.chart.captionNoneSaving', 'There is nothing to pay back — no switching cost was entered. The saving starts in month {month} and runs at {amount} a month.', { month: curve.ramp + 1, amount: fmtMoney(offer.monthlySaving, cur) })
+      : t('mercatify.report.chart.captionNoneNothing', 'Nothing to pay back, and nothing saved yet either on these numbers.')
+  } else if (curve.payback) {
+    caption = t('mercatify.report.chart.captionPayback', 'The whole move pays for itself in month {month}. After that it is {amount} a month you keep.', { month: curve.payback, amount: fmtMoney(offer.monthlySaving, cur) })
+  } else {
+    caption = t('mercatify.report.chart.captionNever', 'On these numbers it does not pay for itself inside {horizon} months. Worth saying out loud before anything moves.', { horizon: CASH_HORIZON })
+  }
 
   const ariaLabel = [
-    t('mercatify.report.chart.ariaIntro', 'Cumulative saving over {horizon} months.', { horizon: CASH_HORIZON }),
-    caption,
+    t('mercatify.report.chart.ariaIntro', 'Cumulative net cash position over {horizon} months.', { horizon: CASH_HORIZON }),
+    t('mercatify.report.chart.ariaTrough', 'Falls to {amount} at month {month}.', { amount: fmtMoney(curve.trough, cur), month: curve.troughMonth }),
+    curve.payback === 'none'
+      ? t('mercatify.report.chart.ariaNeverSpent', 'Never goes negative — nothing was spent up front.')
+      : curve.payback
+        ? t('mercatify.report.chart.ariaCrosses', 'Crosses zero in month {month}.', { month: curve.payback })
+        : t('mercatify.report.chart.ariaDoesNotCross', 'Does not cross zero within {horizon} months.', { horizon: CASH_HORIZON }),
     t('mercatify.report.chart.ariaEnds', 'Ends at {amount}.', { amount: fmtMoney(curve.end, cur) }),
   ].join(' ')
 
@@ -54,7 +67,7 @@ export default function CashChart({ offer }: { offer: Offer }) {
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block w-full h-auto overflow-visible">
         <rect x={L} y={T} width={x(curve.ramp) - L} height={B - T} fill="var(--muted)" />
         <text x={L + 8} y={T + 14} fontFamily="ui-monospace, monospace" fontSize={10} fill="var(--muted-foreground)">
-          {t('mercatify.report.chart.transition', 'transition')}
+          {t('mercatify.report.chart.building', 'switching over')}
         </text>
 
         {gridValues.map((gv) => (
@@ -75,7 +88,21 @@ export default function CashChart({ offer }: { offer: Offer }) {
         <path d={areaD} fill="var(--chart-line, #3f7d20)" opacity={0.08} />
         <path d={d} fill="none" stroke="var(--chart-line, #3f7d20)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
-        <Marker x={x(curve.ramp)} y={y(0)} label={t('mercatify.report.chart.markStarts', 'saving starts · M{month}', { month: curve.savingsStartMonth })} anchor="start" dy={-10} />
+        {curve.trough < 0 ? (
+          <Marker
+            x={x(curve.troughMonth)} y={y(curve.trough)}
+            label={t('mercatify.report.chart.markTrough', '{amount} — most you are ever out', { amount: fmtMoney(curve.trough, cur) })}
+            // Below the dot, not above: the payback marker's label sits just above the
+            // zero line, and the trough is often only a few months earlier on the same
+            // chart — placing both labels above their dots crowds them into the same
+            // narrow band. Keeping this one below the trough dot (and the zero line)
+            // clears that band regardless of how close the two months are.
+            anchor={curve.troughMonth > CASH_HORIZON * 0.6 ? 'end' : 'start'} dy={16}
+          />
+        ) : null}
+        {curve.payback && curve.payback !== 'none' ? (
+          <Marker x={x(curve.payback)} y={y(0)} label={t('mercatify.report.chart.markPayback', 'paid for itself · M{month}', { month: curve.payback })} anchor="end" dy={-10} />
+        ) : null}
         <Marker x={x(CASH_HORIZON)} y={y(curve.end)} label={fmtMoney(curve.end, cur)} anchor="end" dy={-10} />
 
         {curve.points.map((p) => (
@@ -87,7 +114,7 @@ export default function CashChart({ offer }: { offer: Offer }) {
             height={B - T}
             fill="transparent"
           >
-            <title>{`Month ${p.m}: ${fmtMoney(p.v, cur)}${p.m <= curve.ramp ? ' — transition' : ''}`}</title>
+            <title>{`Month ${p.m}: ${fmtMoney(p.v, cur)}${p.m <= curve.ramp ? ' — switching over' : ''}`}</title>
           </rect>
         ))}
       </svg>

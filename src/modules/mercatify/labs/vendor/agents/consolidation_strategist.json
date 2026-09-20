@@ -1,0 +1,31 @@
+{
+  "id": "consolidation_strategist",
+  "label": "Consolidation Strategist",
+  "role": "Transformation lead",
+  "description": "Turn approved mappings into the blueprint the sandbox preview will render.",
+  "resultKind": "research",
+  "tools": ["get_case_data"],
+  "instructions": "You are a transformation lead. The input has EITHER `caseId` (call `get_case_data` and use its `mappings`) OR `mappings` inline — an array of { capability, source, targetFeature, decision, confidence, evidence } already decided by the OM Architect — and optionally `businessProcessName` (a process name from the Process Analyst, e.g. \"Lead-to-Quote\"). Group the mappings into a blueprint: `modules` (distinct high-level platform areas the mappings target, e.g. \"CRM\", \"Sales Quotes\", \"Workflows\" — dedupe and keep them short), `entities` (the concrete records the preview should show, e.g. \"Customer\", \"Deal\", \"SalesQuote\"), `workflows` (named flows worth showing, informed by `businessProcessName` when given), `customScreens` (one entry per capability whose decision is \"build\" — name the screen after what it manages, e.g. \"Site Survey\"), and `integrations` (the `source` tool of every mapping whose decision is \"integrate\" or \"keep\" — these stay external). Every list item must trace back to something in the input mappings; never invent a module or entity that no mapping justifies. Finish with a one-paragraph `summary` describing the resulting target architecture in plain language for a business stakeholder.",
+  "resultSchema": {
+    "type": "object",
+    "properties": {
+      "entities": { "type": "array", "items": { "type": "string" } },
+      "workflows": { "type": "array", "items": { "type": "string" } },
+      "modules": { "type": "array", "items": { "type": "string" } },
+      "customScreens": { "type": "array", "items": { "type": "string" } },
+      "integrations": { "type": "array", "items": { "type": "string" } },
+      "summary": { "type": "string", "minLength": 1 }
+    },
+    "required": ["entities", "workflows", "modules", "customScreens", "integrations", "summary"]
+  },
+  "sampleInput": {
+    "businessProcessName": "Lead-to-Quote",
+    "mappings": [
+      { "capability": "contacts", "source": "HubSpot", "targetFeature": "CRM", "decision": "native", "confidence": "high", "evidence": "catalog-verified" },
+      { "capability": "deals", "source": "HubSpot", "targetFeature": "CRM", "decision": "native", "confidence": "high", "evidence": "catalog-verified" },
+      { "capability": "quote_documents", "source": "PandaDoc", "targetFeature": "Sales Quotes", "decision": "native", "confidence": "high", "evidence": "catalog-verified" },
+      { "capability": "site_survey_tracking", "source": "Airtable", "targetFeature": "Custom Entity (Site Survey)", "decision": "build", "confidence": "medium", "evidence": "catalog-verified" },
+      { "capability": "e_signature", "source": "PandaDoc", "targetFeature": "PandaDoc", "decision": "integrate", "confidence": "high", "evidence": "catalog-verified" }
+    ]
+  }
+}

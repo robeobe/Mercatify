@@ -23,6 +23,7 @@ import {
 import { mappingOpen, canReport, type RequestStatus } from '../lib/status'
 import { refFor } from '../lib/ref'
 import type { MercatifyCapOverride } from '../data/entities'
+import LabsPanel from './LabsPanel'
 
 type RequestDetail = {
   id: string
@@ -64,7 +65,7 @@ export default function RequestCoverage({ id }: { id: string }) {
   const t = useT()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [tab, setTab] = React.useState<'module' | 'capability'>('module')
+  const [tab, setTab] = React.useState<'module' | 'capability' | 'labs'>('module')
   const [flashCap, setFlashCap] = React.useState<string | null>(null)
   const [transientMsg, setTransientMsg] = React.useState<string | null>(null)
   const startedRef = React.useRef(false)
@@ -250,12 +251,13 @@ export default function RequestCoverage({ id }: { id: string }) {
         <Stat label={t('mercatify.coverage.stat.build', 'To build')} value={String(counts.build)} sub={t('mercatify.coverage.stat.estimate', 'goes on the estimate')} />
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as 'module' | 'capability')}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as 'module' | 'capability' | 'labs')}>
         <TabsList aria-label={t('mercatify.coverage.tabs.label', 'Coverage view')}>
           <TabsTrigger value="module">{t('mercatify.coverage.tab.overview', 'Overview by module')}</TabsTrigger>
           <TabsTrigger value="capability" count={edits || undefined}>
             {locked ? t('mercatify.coverage.tab.mapping', 'The mapping') : t('mercatify.coverage.tab.edit', 'Edit the mapping')}
           </TabsTrigger>
+          <TabsTrigger value="labs">{t('mercatify.coverage.tab.labs', 'Mercatify Labs')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="module">
@@ -363,6 +365,10 @@ export default function RequestCoverage({ id }: { id: string }) {
                 : t('mercatify.coverage.edit.footClean', "no rows edited — all verdicts still the agent's")}
             </span>
           </div>
+        </TabsContent>
+
+        <TabsContent value="labs">
+          <LabsPanel id={request.id} />
         </TabsContent>
       </Tabs>
 

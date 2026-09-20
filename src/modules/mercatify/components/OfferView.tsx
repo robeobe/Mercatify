@@ -53,10 +53,19 @@ export default function OfferView({ offer }: { offer: Offer }) {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         <Kpi label={t('mercatify.report.kpi.licencesToday', 'Licences today')} value={fmtMoney(offer.monthlyNow, cur)} sub={t('mercatify.report.kpi.licencesToday.sub', 'per month · {count} tools', { count: toolCount })} />
         <Kpi label={t('mercatify.report.kpi.licencesAfter', 'Licences after')} value={fmtMoney(offer.monthlyAfter, cur)} sub={offer.hosting ? t('mercatify.report.kpi.licencesAfter.subHosting', 'per month · incl. {amount} hosting', { amount: fmtMoney(offer.hosting, cur) }) : t('mercatify.report.kpi.licencesAfter.subNoHosting', 'per month · hosting not costed')} />
         <Kpi accent label={t('mercatify.report.kpi.netSaving', 'Net saving')} value={fmtMoney(offer.annualSaving, cur)} sub={t('mercatify.report.kpi.netSaving.sub', 'per year · {count} tools switched off', { count: offer.retire.length })} />
+        <Kpi
+          label={t('mercatify.report.kpi.switchingCost', 'Switching cost')}
+          value={offer.oneOff ? fmtMoney(offer.oneOff, cur) : t('mercatify.report.notCosted', 'not costed')}
+          sub={offer.breakEven
+            ? t('mercatify.report.kpi.switchingCost.subBreakEven', 'break-even month {month}', { month: offer.breakEven })
+            : offer.oneOff
+              ? t('mercatify.report.kpi.switchingCost.subNoSaving', 'no saving to pay it back')
+              : t('mercatify.report.kpi.switchingCost.subNothing', 'nothing entered yet')}
+        />
       </div>
 
       {decided ? (
@@ -159,6 +168,12 @@ export default function OfferView({ offer }: { offer: Offer }) {
           <Line k={t('mercatify.report.line.after', 'Monthly after')} basis={t('mercatify.report.line.after.basis', 'retained + hosting')} val={t('mercatify.common.perMonth', '{amount}/mo', { amount: fmtMoney(offer.monthlyAfter, cur) })} />
           <Line k={t('mercatify.report.line.saving', 'Monthly saving')} basis={t('mercatify.report.line.saving.basis', 'today − after')} val={t('mercatify.common.perMonth', '{amount}/mo', { amount: fmtMoney(offer.monthlySaving, cur) })} />
           <Line strong k={t('mercatify.report.line.annual', 'Annual saving')} basis={t('mercatify.report.line.annual.basis', 'monthly saving × 12')} val={t('mercatify.report.perYear', '{amount}/yr', { amount: fmtMoney(offer.annualSaving, cur) })} />
+          {offer.oneOff ? (
+            <>
+              <Line k={t('mercatify.report.line.oneOff', 'One-off switching cost')} basis={t('mercatify.report.line.oneOff.basis', 'entered directly, not itemised')} val={fmtMoney(offer.oneOff, cur)} />
+              <Line strong k={t('mercatify.report.line.breakEven', 'Break-even')} basis={offer.breakEven ? t('mercatify.report.line.breakEven.basisSet', 'one-off ÷ monthly saving') : t('mercatify.report.line.breakEven.basisUnset', 'no saving to pay it back')} val={offer.breakEven ? t('mercatify.report.month', 'month {month}', { month: offer.breakEven }) : '—'} />
+            </>
+          ) : null}
         </Table>
         <CashChart offer={offer} />
       </Section>

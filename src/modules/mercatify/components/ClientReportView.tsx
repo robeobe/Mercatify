@@ -6,7 +6,7 @@ import { apiCallOrThrow } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { buildOffer } from '../lib/offer'
-import type { MercatifyCapOverride, MercatifyClientResponse, MercatifyReport, MercatifyRequestTool } from '../data/entities'
+import type { MercatifyCapOverride, MercatifyClientResponse, MercatifyReport, MercatifyRequestTool, MercatifyWorkspacePreview } from '../data/entities'
 import type { RequestStatus } from '../lib/status'
 import OfferView from './OfferView'
 
@@ -24,6 +24,7 @@ type RequestDetail = {
   report: MercatifyReport | null
   sent_at: string | null
   client_response: MercatifyClientResponse | null
+  workspace_preview: MercatifyWorkspacePreview | null
   updatedAt: string | null
 }
 
@@ -40,6 +41,7 @@ export default function ClientReportView({ id, onBack }: { id: string; onBack: (
   const [kind, setKind] = React.useState<'accepted' | 'consult'>('accepted')
   const [message, setMessage] = React.useState('')
   const [sending, setSending] = React.useState(false)
+  const [showWorkspacePreview, setShowWorkspacePreview] = React.useState(false)
 
   async function submitAnswer(e: React.FormEvent) {
     e.preventDefault()
@@ -134,6 +136,26 @@ export default function ClientReportView({ id, onBack }: { id: string; onBack: (
       ) : null}
 
       <OfferView offer={offer} />
+
+      {response?.kind === 'accepted' && request.workspace_preview?.sentAt ? (
+        <div className="section">
+          <h2>{t('mercatify.requests.client.preview.heading', 'A first look at your workspace')}</h2>
+          <p>{t('mercatify.requests.client.preview.body', "A static mockup — your name where the brand mark sits, and only the modules your accepted stack turns on. Nothing here is live yet.")}</p>
+          <button type="button" className="btn btn--outline" onClick={() => setShowWorkspacePreview((v) => !v)}>
+            {showWorkspacePreview
+              ? t('mercatify.requests.client.preview.hide', 'Hide the preview')
+              : t('mercatify.requests.client.preview.show', 'Show the preview')}
+          </button>
+          {showWorkspacePreview ? (
+            <iframe
+              title={t('mercatify.requests.client.preview.frameTitle', 'Your workspace preview')}
+              srcDoc={request.workspace_preview.html}
+              sandbox=""
+              className="workspace-preview-frame"
+            />
+          ) : null}
+        </div>
+      ) : null}
 
       {!response ? (
         <>

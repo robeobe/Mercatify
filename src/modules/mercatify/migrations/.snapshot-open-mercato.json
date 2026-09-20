@@ -127,6 +127,23 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "labs_result": {
+          "name": "labs_result",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
         "mapped_at": {
           "name": "mapped_at",
           "type": "timestamptz(6)",
@@ -381,6 +398,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "datetime"
+        },
+        "workspace_preview": {
+          "name": "workspace_preview",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
         }
       },
       "indexes": [

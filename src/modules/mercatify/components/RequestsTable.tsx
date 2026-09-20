@@ -44,6 +44,7 @@ const ACTION_LABEL_KEY: Record<AdminRequestAction['key'], [string, string]> = {
   buildReport: ['mercatify.requests.table.action.buildReport', 'Build report'],
   mapping: ['mercatify.requests.table.action.mapping', 'Mapping'],
   report: ['mercatify.requests.table.action.report', 'Report'],
+  preview: ['mercatify.requests.table.action.preview', 'Preview workspace'],
 }
 
 export default function RequestsTable() {

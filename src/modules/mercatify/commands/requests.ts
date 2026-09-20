@@ -8,6 +8,14 @@ import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import { z } from 'zod'
 import { MercatifyRequest, type MercatifyCapOverride } from '../data/entities'
 import { canReport, mappingOpen, type RequestStatus } from '../lib/status'
+import { buildLabsInput } from '../labs/adapter'
+import { buildReport } from '../labs/vendor/src/report/buildReport'
+import { OpenAiCompatibleLlmClient } from '../labs/vendor/src/llmClient'
+import { renderReport } from '../labs/vendor/src/report/renderReport'
+import { createTracingLlmClient, deterministicStep, type LabsTraceStep } from '../labs/tracing'
+import { startTrackedRun, recordTrackedStep, finishTrackedRun } from '../labs/runTracker'
+import { requestModules } from '../lib/moduleMap'
+import { buildWorkspacePreviewHtml } from '../lib/workspacePreview'
 
 const RESOURCE_KIND = 'mercatify:mercatify_request' as const
 
@@ -55,6 +63,7 @@ export const setCapOverrideSchema = z.object({
 
 const reportAssumptionsSchema = z.object({
   analyst: z.string().max(200).optional(),
+  switchingCost: z.number().min(0).optional(),
   hosting: z.number().min(0).optional(),
   months: z.number().min(1).max(24).optional(),
   notes: z.string().max(4000).optional(),
@@ -74,6 +83,43 @@ export const respondSchema = z.object({
   message: z.string().max(2000).optional(),
   expected_updated_at: z.string().min(1).optional(),
 })
+
+const labsConsultantFieldsSchema = z.object({
+  readWhat: z.string().max(2000).optional(),
+  period: z.string().max(2000).optional(),
+  exclusions: z.string().max(2000).optional(),
+})
+
+export const labsAnalyzeSchema = labsConsultantFieldsSchema.extend({
+  id: z.string().uuid(),
+  /** Client-generated id it can start polling `labs-run?runId=` with before this POST resolves. */
+  runId: z.string().uuid().optional(),
+})
+
+export const labsAnalyzeWithAiSchema = labsConsultantFieldsSchema.extend({
+  id: z.string().uuid(),
+  /**
+   * Pasted by the consultant at click time — never persisted (see buildLog
+   * below). Optional for now: a demo/dev key can be set once via the
+   * OPENROUTER_API_KEY env var and reused server-side, so a consultant
+   * doesn't have to paste a key on every run. Ask before removing that
+   * fallback for a real deployment — see the command's own comment.
+   */
+  openRouterApiKey: z.string().min(10).max(300).optional(),
+  model: z.string().min(1).max(200).default('openai/gpt-5.6-luna'),
+  /**
+   * Explicit cap forwarded to `OpenAiCompatibleLlmClient`. Optional — defaults
+   * to the client's own 8000. Exposed so a consultant on a well-funded key can
+   * raise it for a very large-context model; see llmClient.ts's own comment
+   * for why omitting `max_tokens` entirely 402s modest-balance OpenRouter keys.
+   */
+  maxTokens: z.number().int().min(256).max(128000).optional(),
+  /** Client-generated id it can start polling `labs-run?runId=` with before this POST resolves. */
+  runId: z.string().uuid().optional(),
+})
+
+export const buildWorkspacePreviewSchema = z.object({ id: z.string().uuid() })
+export const sendWorkspacePreviewSchema = z.object({ id: z.string().uuid() })
 
 function requireTenant(ctx: CommandRuntimeContext): string {
   const tenantId = ctx.auth?.tenantId ?? null
@@ -119,6 +165,23 @@ async function loadForManage(em: EntityManager, ctx: CommandRuntimeContext, id: 
 
 function lockCheck(id: string, expected: string | undefined, current: Date) {
   assertOptimisticLock({ resourceKind: RESOURCE_KIND, resourceId: id, expected, current })
+}
+
+/** `renderReport` is documented pure/never-throwing for a valid `ReportModel`,
+ * but `buildReport` is the only thing that ever produces one — never trust an
+ * upstream "never throws" claim enough to let it take the whole analysis down. */
+function renderReportHtmlSafe(model: Parameters<typeof renderReport>[0]): string {
+  try {
+    return renderReport(model)
+  } catch (err) {
+    return `<!doctype html><meta charset="utf-8"><p>Mercatify Labs produced facts but the HTML renderer failed: ${
+      escapeForHtmlAttribute(err instanceof Error ? err.message : String(err))
+    }</p>`
+  }
+}
+
+function escapeForHtmlAttribute(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 const createRequestCommand: CommandHandler<z.infer<typeof requestCreateSchema>, MercatifyRequest> = {
@@ -415,9 +478,302 @@ const respondCommand: CommandHandler<z.infer<typeof respondSchema>, MercatifyReq
   },
 }
 
+/**
+ * Runs the vendored mercatify-labs `buildReport()` against this request's
+ * current stack — deterministic only, no `llmClient`. Experimental and
+ * additive: writes to `labsResult` alone, never touches `report`/`overrides`/
+ * `status`, and carries no gate on the request's lifecycle status (a
+ * consultant can try it at any point, including on a brand-new request).
+ */
+const labsAnalyzeCommand: CommandHandler<z.infer<typeof labsAnalyzeSchema>, MercatifyRequest> = {
+  id: 'mercatify.requests.labsAnalyze',
+  async execute(input, ctx) {
+    const parsed = labsAnalyzeSchema.parse(input)
+    const tenantId = requireTenant(ctx)
+    const orgFilter = resolveManageOrgFilter(ctx)
+    const em = ctx.container.resolve('em') as EntityManager
+    const current = await loadForManage(em, ctx, parsed.id)
+
+    const { brief, consultant, excludedTools } = buildLabsInput(
+      {
+        company: current.company,
+        industry: current.industry,
+        peopleCount: current.peopleCount,
+        currency: current.currency,
+        tools: current.tools,
+      },
+      {
+        analyst: current.report?.assumptions?.analyst,
+        hostingMonthly: current.report?.assumptions?.hosting,
+        implementationCost: current.report?.assumptions?.switchingCost,
+        readWhat: parsed.readWhat,
+        period: parsed.period,
+        exclusions: parsed.exclusions,
+      },
+    )
+
+    if (parsed.runId) startTrackedRun(parsed.runId, 'deterministic')
+    const runStartedAt = Date.now()
+    let built: Awaited<ReturnType<typeof buildReport>>
+    try {
+      built = await buildReport({ brief, consultant })
+    } catch (err) {
+      if (parsed.runId) finishTrackedRun(parsed.runId, 'error')
+      throw new CrudHttpError(502, { error: err instanceof Error ? err.message : 'Mercatify Labs analysis failed' })
+    }
+    const html = renderReportHtmlSafe(built.model)
+    const trace: LabsTraceStep[] = [deterministicStep(Date.now() - runStartedAt)]
+    if (parsed.runId) {
+      recordTrackedStep(parsed.runId, trace[0])
+      finishTrackedRun(parsed.runId, 'done')
+    }
+
+    const de = ctx.container.resolve('dataEngine') as DataEngine
+    const updated = await de.updateOrmEntity({
+      entity: MercatifyRequest,
+      where: {
+        id: parsed.id,
+        tenantId,
+        ...(orgFilter ? { organizationId: orgFilter } : {}),
+        deletedAt: null,
+      } as FilterQuery<MercatifyRequest>,
+      apply: (rec) => {
+        rec.labsResult = { mode: 'deterministic', ranAt: new Date().toISOString(), excludedTools, result: built, html, trace }
+      },
+    })
+    if (!updated) throw new CrudHttpError(404, { error: 'Request not found' })
+    return updated
+  },
+  buildLog: async ({ result }) => {
+    const { translate } = await resolveTranslations()
+    return {
+      actionLabel: translate('mercatify.audit.requests.labsAnalyze', 'Run Mercatify Labs analysis'),
+      resourceKind: RESOURCE_KIND,
+      resourceId: String(result.id),
+      tenantId: result.tenantId,
+      organizationId: result.organizationId,
+    }
+  },
+}
+
+/**
+ * Same as `labsAnalyzeCommand`, but with an `llmClient` built from a key and
+ * model the consultant pastes in at click time — an OpenRouter-compatible
+ * `/v1/chat/completions` endpoint. The key is validated by zod, used once to
+ * construct the client, and deliberately never placed in `context`/`payload`
+ * below, so it never reaches `command_payload` in the action log.
+ *
+ * Key fallback (temporary, demo/dev only): when the consultant leaves the
+ * field blank, this falls back to `OPENROUTER_API_KEY` from the server's own
+ * `.env` (gitignored, never committed — see vendor/README.md's existing
+ * convention). Ask before shipping this fallback to a real deployment: it
+ * means every consultant on this tenant shares one billed key by default.
+ *
+ * `maxTokens` defaults to 8000 (matches the vendored client's own default —
+ * see llmClient.ts). Earlier this account's real OpenRouter balance was
+ * nearly zero (observed: as low as ~460 affordable tokens), which needed a
+ * much smaller default to avoid a 402 on every call; the account has since
+ * been topped up ($10 total credits, ~$4.80 free after prior usage), and a
+ * verified live run with 8000 completed with full agent-authored prose and
+ * zero real failures. A consultant can still override it per run via
+ * `parsed.maxTokens` if a future model/account needs something smaller.
+ */
+const labsAnalyzeWithAiCommand: CommandHandler<z.infer<typeof labsAnalyzeWithAiSchema>, MercatifyRequest> = {
+  id: 'mercatify.requests.labsAnalyzeWithAi',
+  async execute(input, ctx) {
+    const parsed = labsAnalyzeWithAiSchema.parse(input)
+    const tenantId = requireTenant(ctx)
+    const orgFilter = resolveManageOrgFilter(ctx)
+    const em = ctx.container.resolve('em') as EntityManager
+    const current = await loadForManage(em, ctx, parsed.id)
+
+    const apiKey = parsed.openRouterApiKey || process.env.OPENROUTER_API_KEY
+    if (!apiKey) {
+      throw new CrudHttpError(400, { error: 'No OpenRouter API key was supplied and none is configured on the server (OPENROUTER_API_KEY).' })
+    }
+
+    const { brief, consultant, excludedTools } = buildLabsInput(
+      {
+        company: current.company,
+        industry: current.industry,
+        peopleCount: current.peopleCount,
+        currency: current.currency,
+        tools: current.tools,
+      },
+      {
+        analyst: current.report?.assumptions?.analyst,
+        hostingMonthly: current.report?.assumptions?.hosting,
+        implementationCost: current.report?.assumptions?.switchingCost,
+        readWhat: parsed.readWhat,
+        period: parsed.period,
+        exclusions: parsed.exclusions,
+      },
+    )
+
+    const rawLlmClient = new OpenAiCompatibleLlmClient({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey,
+      model: parsed.model,
+      maxTokens: parsed.maxTokens ?? 8000,
+    })
+    const trace: LabsTraceStep[] = []
+    if (parsed.runId) startTrackedRun(parsed.runId, 'ai')
+    const llmClient = createTracingLlmClient(rawLlmClient, (step) => {
+      trace[step.seq] = step
+      if (parsed.runId) recordTrackedStep(parsed.runId, step)
+    })
+
+    let built: Awaited<ReturnType<typeof buildReport>>
+    try {
+      built = await buildReport({ brief, consultant, llmClient })
+    } catch (err) {
+      if (parsed.runId) finishTrackedRun(parsed.runId, 'error')
+      throw new CrudHttpError(502, { error: err instanceof Error ? err.message : 'Mercatify Labs AI analysis failed' })
+    }
+    if (parsed.runId) finishTrackedRun(parsed.runId, 'done')
+    const html = renderReportHtmlSafe(built.model)
+
+    const de = ctx.container.resolve('dataEngine') as DataEngine
+    const updated = await de.updateOrmEntity({
+      entity: MercatifyRequest,
+      where: {
+        id: parsed.id,
+        tenantId,
+        ...(orgFilter ? { organizationId: orgFilter } : {}),
+        deletedAt: null,
+      } as FilterQuery<MercatifyRequest>,
+      apply: (rec) => {
+        rec.labsResult = { mode: 'ai', ranAt: new Date().toISOString(), model: parsed.model, excludedTools, result: built, html, trace }
+      },
+    })
+    if (!updated) throw new CrudHttpError(404, { error: 'Request not found' })
+    return updated
+  },
+  buildLog: async ({ result, input }) => {
+    const { translate } = await resolveTranslations()
+    const parsed = input as z.infer<typeof labsAnalyzeWithAiSchema>
+    return {
+      actionLabel: translate('mercatify.audit.requests.labsAnalyzeWithAi', 'Run Mercatify Labs AI analysis'),
+      resourceKind: RESOURCE_KIND,
+      resourceId: String(result.id),
+      tenantId: result.tenantId,
+      organizationId: result.organizationId,
+      // Model name only — never the key.
+      context: { model: parsed.model },
+    }
+  },
+}
+
+/**
+ * Builds (or rebuilds) a static "empty shell" mockup of Open Mercato
+ * configured for this client — company name where the brand mark sits,
+ * sidebar listing only the modules their accepted stack actually turns on.
+ * Gated to `accepted`: previewing a workspace for a stack nobody has signed
+ * off on yet would misrepresent where the deal stands. Never sent until a
+ * consultant explicitly does so via `sendWorkspacePreview`.
+ */
+const buildWorkspacePreviewCommand: CommandHandler<z.infer<typeof buildWorkspacePreviewSchema>, MercatifyRequest> = {
+  id: 'mercatify.requests.buildWorkspacePreview',
+  async prepare(input, ctx) {
+    const parsed = buildWorkspacePreviewSchema.parse(input)
+    const em = ctx.container.resolve('em') as EntityManager
+    const current = await loadForManage(em, ctx, parsed.id)
+    if (current.status !== 'accepted') {
+      throw new CrudHttpError(409, { error: 'A workspace preview is only available once the client has accepted.' })
+    }
+    return null
+  },
+  async execute(input, ctx) {
+    const parsed = buildWorkspacePreviewSchema.parse(input)
+    const tenantId = requireTenant(ctx)
+    const orgFilter = resolveManageOrgFilter(ctx)
+    const em = ctx.container.resolve('em') as EntityManager
+    const current = await loadForManage(em, ctx, parsed.id)
+
+    const modules = requestModules(current.tools, current.overrides)
+      .filter((row) => row.status === 'native' || row.status === 'configure')
+      .map((row) => row.module)
+    const html = buildWorkspacePreviewHtml(current.company, modules)
+
+    const de = ctx.container.resolve('dataEngine') as DataEngine
+    const updated = await de.updateOrmEntity({
+      entity: MercatifyRequest,
+      where: {
+        id: parsed.id,
+        tenantId,
+        ...(orgFilter ? { organizationId: orgFilter } : {}),
+        deletedAt: null,
+      } as FilterQuery<MercatifyRequest>,
+      apply: (rec) => {
+        rec.workspacePreview = { builtAt: new Date().toISOString(), sentAt: null, html, moduleIds: modules.map((m) => m.id) }
+      },
+    })
+    if (!updated) throw new CrudHttpError(404, { error: 'Request not found' })
+    return updated
+  },
+  buildLog: async ({ result }) => {
+    const { translate } = await resolveTranslations()
+    return {
+      actionLabel: translate('mercatify.audit.requests.buildWorkspacePreview', 'Build workspace preview'),
+      resourceKind: RESOURCE_KIND,
+      resourceId: String(result.id),
+      tenantId: result.tenantId,
+      organizationId: result.organizationId,
+    }
+  },
+}
+
+/** Stamps the already-built preview as sent — the client's report page starts showing it. */
+const sendWorkspacePreviewCommand: CommandHandler<z.infer<typeof sendWorkspacePreviewSchema>, MercatifyRequest> = {
+  id: 'mercatify.requests.sendWorkspacePreview',
+  async prepare(input, ctx) {
+    const parsed = sendWorkspacePreviewSchema.parse(input)
+    const em = ctx.container.resolve('em') as EntityManager
+    const current = await loadForManage(em, ctx, parsed.id)
+    if (!current.workspacePreview) {
+      throw new CrudHttpError(409, { error: 'Build the workspace preview before sending it.' })
+    }
+    return null
+  },
+  async execute(input, ctx) {
+    const parsed = sendWorkspacePreviewSchema.parse(input)
+    const tenantId = requireTenant(ctx)
+    const orgFilter = resolveManageOrgFilter(ctx)
+    const de = ctx.container.resolve('dataEngine') as DataEngine
+    const updated = await de.updateOrmEntity({
+      entity: MercatifyRequest,
+      where: {
+        id: parsed.id,
+        tenantId,
+        ...(orgFilter ? { organizationId: orgFilter } : {}),
+        deletedAt: null,
+      } as FilterQuery<MercatifyRequest>,
+      apply: (rec) => {
+        if (rec.workspacePreview) rec.workspacePreview = { ...rec.workspacePreview, sentAt: new Date().toISOString() }
+      },
+    })
+    if (!updated) throw new CrudHttpError(404, { error: 'Request not found' })
+    return updated
+  },
+  buildLog: async ({ result }) => {
+    const { translate } = await resolveTranslations()
+    return {
+      actionLabel: translate('mercatify.audit.requests.sendWorkspacePreview', 'Send workspace preview to client'),
+      resourceKind: RESOURCE_KIND,
+      resourceId: String(result.id),
+      tenantId: result.tenantId,
+      organizationId: result.organizationId,
+    }
+  },
+}
+
 registerCommand(createRequestCommand)
 registerCommand(updateRequestCommand)
 registerCommand(setCapOverrideCommand)
 registerCommand(saveReportCommand)
 registerCommand(sendReportCommand)
 registerCommand(respondCommand)
+registerCommand(labsAnalyzeCommand)
+registerCommand(labsAnalyzeWithAiCommand)
+registerCommand(buildWorkspacePreviewCommand)
+registerCommand(sendWorkspacePreviewCommand)

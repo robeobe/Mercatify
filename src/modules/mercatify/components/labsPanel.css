@@ -1,0 +1,7 @@
+/* One rule that can't be expressed on the Tailwind scale without an
+   arbitrary value (ds:check forbids both `h-[…]` and inline `style`) — see
+   RequestCoverage's own precedent for the cash-chart bar width. */
+.mercatify-labs-frame {
+  height: 80vh;
+  min-height: 480px;
+}

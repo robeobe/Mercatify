@@ -1,0 +1,70 @@
+{
+  "source": "open-mercato/open-mercato@feat/agent-orchestrator-security-readiness .ai/skills/om-mockup-prototype/references/screen-patterns.md",
+  "requiredInventoryStates": ["first-run", "empty", "no-access", "no-results"],
+  "archetypes": {
+    "data-table": {
+      "label": "DataTable list",
+      "usedFor": "Browsing many records of one entity.",
+      "requiredStates": ["empty", "no-results", "loading", "no-access", "bulk-selection"],
+      "anatomyNotes": [
+        "Title and primary action live in the table-card header, not in PageHeader.",
+        "Card is rounded-lg border bg-card; header is px-4 py-3 border-b.",
+        "thead uses bg-muted/40; th is px-4 py-2 text-left font-medium text-muted-foreground.",
+        "Selection column is w-8, action column is w-0 text-right, checkboxes use --accent-indigo.",
+        "Pagination copy reads 'Showing 1 to 25 of 312 results' with tabular-nums.",
+        "Bulk actions stay inline in the toolbar - the floating dark bar belongs to Kanban."
+      ]
+    },
+    "crud-form": {
+      "label": "CrudForm",
+      "usedFor": "Creating or editing one record.",
+      "requiredStates": ["create", "edit", "validation-error", "saving", "no-access"],
+      "anatomyNotes": [
+        "Grid is grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4 with two space-y-3 columns.",
+        "A group card is rounded-lg border bg-card px-4 py-3 space-y-3; its title is text-sm font-medium.",
+        "In edit mode FormHeader puts Back and the title left, actions right.",
+        "Footer order is fixed: additional actions, then Delete, then Cancel, then Save.",
+        "Save is a submit button with a Save icon; while saving use Loader2 animate-spin and 'Saving…'.",
+        "Delete uses destructive-outline, never full destructive."
+      ]
+    },
+    "kanban": {
+      "label": "Kanban pipeline",
+      "usedFor": "Moving records through named stages.",
+      "requiredStates": ["empty-column", "drag-in-progress", "conflict", "no-access"],
+      "anatomyNotes": [
+        "Column header is rounded-lg bg-muted/40 px-4 py-3.5 with a h-1.5 accent bar above it.",
+        "Column name is text-sm font-bold uppercase with a count badge; stage total sits right.",
+        "A card is rounded-lg border bg-card px-4 py-3.5 shadow-xs; title is text-base font-semibold line-clamp-2.",
+        "Chips are rounded-md px-2.5 py-1 text-xs font-semibold using status-* tokens.",
+        "Quick actions may reveal on hover but must stay reachable by touch and keyboard focus.",
+        "The bulk-action bar is fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background."
+      ]
+    },
+    "detail-drawer": {
+      "label": "Drawer or dialog",
+      "usedFor": "Inspecting or confirming without leaving the list.",
+      "requiredStates": ["open", "dismiss", "confirm", "error"],
+      "anatomyNotes": [
+        "A drawer and a dialog are each a distinct review state in the inventory, not a variant of the list.",
+        "Must not clip at a narrow viewport - the skill verifies this in both themes.",
+        "Keyboard traversal and visible focus are required, not optional polish."
+      ]
+    }
+  },
+  "tokenRules": [
+    "Use semantic tokens only; express status with status-{error|success|warning|info|neutral|pink}-{bg|text|border|icon}.",
+    "Use chart-* tokens for charts.",
+    "Never add dark: overrides - the semantic tokens already switch themes.",
+    "Never hardcode a Tailwind shade or an arbitrary value.",
+    "tokens.css is generated from apps/mercato/src/app/globals.css and is never hand-edited."
+  ],
+  "controlScale": {
+    "defaultButton": "h-9 px-4 py-2 (px-3 with an icon)",
+    "smallButton": "h-8 px-3",
+    "iconButton": "size-9",
+    "input": "h-9 px-3",
+    "topBar": "61px",
+    "radiusBase": "0.625rem"
+  }
+}

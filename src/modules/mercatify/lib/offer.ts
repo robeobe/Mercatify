@@ -70,8 +70,12 @@ export type Offer = {
   annualSaving: number
   monthlyRetire: number
   /** Capabilities nothing in the platform covers yet — a list to plan around,
-   * not a costed line item (no hourly estimate is kept). */
+   * not a costed line item (no per-capability hourly estimate is kept). */
   buildRows: RequestCapRow[]
+  /** A single ballpark figure for the whole move, entered directly. 0 means
+   * not costed — the break-even view is skipped rather than shown as instant. */
+  oneOff: number
+  breakEven: number | null
   duplicates: RequestCapRow[]
   covered: number
   lowConfidence: RequestCapRow[]
@@ -109,6 +113,9 @@ export function buildOffer(input: OfferInput): Offer {
   const modules = requestModules(input.tools, input.overrides).filter((m) => m.module.id.indexOf('__') !== 0)
   const covered = counts.native + counts.configure
 
+  const oneOff = Number(a.switchingCost) || 0
+  const breakEven = monthlySaving > 0 && oneOff > 0 ? Math.ceil(oneOff / monthlySaving) : null
+
   return {
     company: input.company,
     industry: input.industry ?? null,
@@ -129,6 +136,7 @@ export function buildOffer(input: OfferInput): Offer {
     annualSaving: monthlySaving * 12,
     monthlyRetire,
     buildRows: caps.filter((c) => c.status === 'build'),
+    oneOff, breakEven,
     duplicates: caps.filter((c) => c.duplicate),
     covered,
     lowConfidence: caps.filter((c) => c.conf === 'low'),
@@ -140,24 +148,41 @@ export const CASH_HORIZON = 24
 export type CashPoint = { m: number; v: number }
 export type CashCurve = {
   points: CashPoint[]
-  /** Implementation months — old licences keep running, nothing is saved yet. */
+  /** Implementation months — the one-off cost is paid down pro-rata across these. */
   ramp: number
-  /** First month the monthly saving actually lands. */
-  savingsStartMonth: number
+  trough: number
+  troughMonth: number
+  breakEven: number | null
+  /** 'none' = nothing was spent, so nothing to pay back. */
+  payback: number | 'none' | null
   end: number
 }
 
-/** Cumulative saving, month by month, against doing nothing. There is no
- * up-front cost in this model (no hourly build estimate), so the curve never
- * goes negative — it simply holds at zero through the implementation ramp,
- * then rises by the monthly saving every month after. */
+/** Cumulative net cash position, month by month, against doing nothing. The
+ * one-off switching cost (a single entered figure, not a per-capability
+ * hourly build-up) is spent down pro-rata across the implementation ramp;
+ * the monthly saving accrues from the month after. */
 export function buildCashCurve(offer: Offer): CashCurve {
   const ramp = Math.max(1, Number(offer.months) || 3)
+  const perMonth = offer.oneOff / ramp
   const points: CashPoint[] = [{ m: 0, v: 0 }]
   let v = 0
   for (let m = 1; m <= CASH_HORIZON; m++) {
-    if (m > ramp) v += offer.monthlySaving
+    if (m <= ramp) v -= perMonth
+    else v += offer.monthlySaving
     points.push({ m, v })
   }
-  return { points, ramp, savingsStartMonth: ramp + 1, end: points[points.length - 1].v }
+  const lows = points.map((p) => p.v)
+  const trough = Math.min(...lows)
+  let breakEven: number | null = null
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].v >= 0 && points[i - 1].v < 0) { breakEven = points[i].m; break }
+  }
+  const payback: number | 'none' | null = offer.oneOff > 0 ? (breakEven ?? null) : 'none'
+  return {
+    points, ramp, trough,
+    troughMonth: points[lows.indexOf(trough)].m,
+    breakEven, payback,
+    end: points[points.length - 1].v,
+  }
 }

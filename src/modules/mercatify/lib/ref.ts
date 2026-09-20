@@ -30,6 +30,11 @@ export function adminRequestActions(request: { id: string; status: RequestStatus
         { key: 'buildReport', href: reportHref, primary: true },
         { key: 'mapping', href: mapHref, primary: false },
       ]
+    case 'accepted':
+      return [
+        { key: 'report', href: reportHref, primary: true },
+        { key: 'preview', href: reportHref, primary: false },
+      ]
     default:
       return [{ key: 'report', href: reportHref, primary: true }]
   }

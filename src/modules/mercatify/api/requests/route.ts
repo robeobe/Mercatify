@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { makeCrudRoute, type CrudCtx } from '@open-mercato/shared/lib/crud/factory'
-import { MercatifyRequest, type MercatifyCapOverride, type MercatifyClientResponse, type MercatifyReport } from '../../data/entities'
+import { MercatifyRequest, type MercatifyCapOverride, type MercatifyClientResponse, type MercatifyLabsResult, type MercatifyReport, type MercatifyWorkspacePreview } from '../../data/entities'
 import { requestCreateSchema, requestUpdateSchema } from '../../commands/requests'
 import {
   createMercatifyCrudOpenApi,
@@ -30,6 +30,8 @@ const mapped_at = 'mapped_at'
 const report = 'report'
 const sent_at = 'sent_at'
 const client_response = 'client_response'
+const labs_result = 'labs_result'
+const workspace_preview = 'workspace_preview'
 const tenant_id = 'tenant_id'
 const organization_id = 'organization_id'
 const submitted_by_user_id = 'submitted_by_user_id'
@@ -39,7 +41,7 @@ const updated_at = 'updated_at'
 const listFields = [
   id, company, industry, people_count, currency, status,
   owner_user_id, owner_name, pains, must_keep, tools,
-  overrides, mapped_at, report, sent_at, client_response,
+  overrides, mapped_at, report, sent_at, client_response, labs_result, workspace_preview,
   tenant_id, organization_id, submitted_by_user_id, created_at, updated_at,
 ]
 
@@ -82,6 +84,7 @@ const reportSchema = z.object({
   generatedAt: z.string().optional(),
   assumptions: z.object({
     analyst: z.string().optional(),
+    switchingCost: z.number().optional(),
     hosting: z.number().optional(),
     months: z.number().optional(),
     notes: z.string().optional(),
@@ -92,6 +95,45 @@ const clientResponseSchema = z.object({
   kind: z.enum(['accepted', 'consult']),
   at: z.string(),
   message: z.string().optional(),
+})
+
+const labsTraceStepSchema = z.object({
+  seq: z.number(),
+  agentId: z.string(),
+  agentLabel: z.string(),
+  agentRole: z.string(),
+  status: z.enum(['running', 'done', 'error']),
+  startedAt: z.string(),
+  finishedAt: z.string().optional(),
+  durationMs: z.number().optional(),
+  inputPreview: z.string(),
+  outputPreview: z.string().optional(),
+  error: z.string().optional(),
+  toolCalls: z.array(z.object({
+    tool: z.string(),
+    argsPreview: z.string(),
+    resultPreview: z.string().optional(),
+    error: z.string().optional(),
+  })),
+})
+
+// `result` is opaque on purpose — see MercatifyLabsResult's own comment in
+// data/entities.ts. `trace` is typed since the console renders it directly.
+const labsResultSchema = z.object({
+  mode: z.enum(['deterministic', 'ai']),
+  ranAt: z.string(),
+  model: z.string().optional(),
+  excludedTools: z.array(z.string()),
+  result: z.unknown(),
+  html: z.string(),
+  trace: z.array(labsTraceStepSchema),
+})
+
+const workspacePreviewSchema = z.object({
+  builtAt: z.string(),
+  sentAt: z.string().nullable(),
+  html: z.string(),
+  moduleIds: z.array(z.string()),
 })
 
 const requestListItemSchema = z.object({
@@ -111,6 +153,8 @@ const requestListItemSchema = z.object({
   report: reportSchema.nullable().optional(),
   sent_at: z.string().nullable().optional(),
   client_response: clientResponseSchema.nullable().optional(),
+  labs_result: labsResultSchema.nullable().optional(),
+  workspace_preview: workspacePreviewSchema.nullable().optional(),
   tenant_id: z.string().nullable().optional(),
   organization_id: z.string().nullable().optional(),
   created_at: z.string().nullable().optional(),
@@ -134,6 +178,8 @@ type RequestFields = {
   report: MercatifyReport | null
   sent_at: Date | string | null
   client_response: MercatifyClientResponse | null
+  labs_result: MercatifyLabsResult | null
+  workspace_preview: MercatifyWorkspacePreview | null
   tenant_id: string | null
   organization_id: string | null
   created_at: Date
@@ -196,6 +242,8 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       report: item.report ?? null,
       sent_at: toIsoTimestamp(item.sent_at),
       client_response: item.client_response ?? null,
+      labs_result: item.labs_result ?? null,
+      workspace_preview: item.workspace_preview ?? null,
       tenant_id: item.tenant_id ?? null,
       organization_id: item.organization_id ?? null,
       created_at: toIsoTimestamp(item.created_at),

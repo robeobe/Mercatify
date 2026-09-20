@@ -1,0 +1,716 @@
+{
+  "HubSpot": {
+    "capabilities": {
+      "crm.contacts": {
+        "target": "customers + sales",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "crm.pipeline": {
+        "target": "customers + sales",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "crm.email": {
+        "target": "customers + sales",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "marketing.email": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "marketing.automation": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "marketing.forms": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "support.tickets": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "support.sla": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "support.kb": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "quotes.cpq": {
+        "target": "sales — quotes",
+        "decision": "build",
+        "confidence": "medium"
+      },
+      "payments": {
+        "target": "payment_gateways",
+        "decision": "native",
+        "confidence": "medium"
+      },
+      "cms.website": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      },
+      "workflow.automation": {
+        "target": "business_rules + data_sync",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "integration.ipaas": {
+        "target": "business_rules + data_sync",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "sales.sequences": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      }
+    }
+  },
+  "Salesforce": {
+    "capabilities": {
+      "crm.contacts": {
+        "target": "customers + sales",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "crm.pipeline": {
+        "target": "customers + sales",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "sales.forecast": {
+        "target": "customers + sales",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "support.tickets": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "support.sla": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "quotes.cpq": {
+        "target": "sales — quotes",
+        "decision": "build",
+        "confidence": "medium"
+      },
+      "pricing.pricelists": {
+        "target": "catalog — prices",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "marketing.email": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "marketing.automation": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "customer.portal": {
+        "target": "portal + customer_accounts",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "field.scheduling": {
+        "target": "no module yet — build",
+        "decision": "build",
+        "confidence": "low"
+      },
+      "field.jobsheets": {
+        "target": "no module yet — build",
+        "decision": "build",
+        "confidence": "low"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "medium"
+      }
+    }
+  },
+  "Pipedrive": {
+    "capabilities": {
+      "crm.pipeline": {
+        "target": "sales",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "crm.contacts": {
+        "target": "customers",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "crm.email": {
+        "target": "messages",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "catalog.products": {
+        "target": "catalog",
+        "decision": "native",
+        "confidence": "medium"
+      },
+      "quotes.cpq": {
+        "target": "sales — quotes",
+        "decision": "build",
+        "confidence": "medium"
+      },
+      "workflow.automation": {
+        "target": "business_rules",
+        "decision": "configure",
+        "confidence": "high"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "projects.tasks": {
+        "target": "entities — custom entities & fields",
+        "decision": "build",
+        "confidence": "low"
+      }
+    }
+  },
+  "Zendesk": {
+    "capabilities": {
+      "support.tickets": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "support.sla": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "support.kb": {
+        "target": "content + portal",
+        "decision": "configure",
+        "confidence": "low"
+      },
+      "support.chat": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "support.voice": {
+        "target": "phone_calls",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "crm.contacts": {
+        "target": "customers + sales",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "crm.pipeline": {
+        "target": "customers + sales",
+        "decision": "native",
+        "confidence": "high"
+      }
+    }
+  },
+  "Intercom": {
+    "capabilities": {
+      "support.tickets": {
+        "target": "messages + inbox_ops",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "support.chat": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "support.kb": {
+        "target": "content + portal",
+        "decision": "configure",
+        "confidence": "low"
+      },
+      "marketing.email": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "marketing.automation": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "onboarding.tours": {
+        "target": "not our business — keep it",
+        "decision": "native",
+        "confidence": "low",
+        "reportVerdict": "drop"
+      },
+      "workflow.automation": {
+        "target": "business_rules",
+        "decision": "configure",
+        "confidence": "medium"
+      }
+    }
+  },
+  "Shopify": {
+    "capabilities": {
+      "ecommerce.storefront": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "catalog.products": {
+        "target": "catalog",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "inventory.stock": {
+        "target": "wms",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "inventory.multiwarehouse": {
+        "target": "wms",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "orders.mgmt": {
+        "target": "sales — orders + shipping_carriers",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "fulfillment.shipping": {
+        "target": "sales — orders + shipping_carriers",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "ecommerce.cart": {
+        "target": "checkout + payment_gateways",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "payments": {
+        "target": "checkout + payment_gateways",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "b2b.accounts": {
+        "target": "customers + catalog — prices",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "pricing.pricelists": {
+        "target": "customers + catalog — prices",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "workflow.automation": {
+        "target": "business_rules",
+        "decision": "configure",
+        "confidence": "high"
+      }
+    }
+  },
+  "monday.com": {
+    "capabilities": {
+      "projects.tasks": {
+        "target": "entities — custom entities & fields",
+        "decision": "build",
+        "confidence": "low"
+      },
+      "crm.contacts": {
+        "target": "customers + sales",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "crm.pipeline": {
+        "target": "customers + sales",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "forms.intake": {
+        "target": "entities — custom entities & fields",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "files.docs": {
+        "target": "documents",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "workflow.automation": {
+        "target": "business_rules + integrations",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "integration.ipaas": {
+        "target": "business_rules + integrations",
+        "decision": "configure",
+        "confidence": "medium"
+      }
+    }
+  },
+  "Airtable": {
+    "capabilities": {
+      "data.custom": {
+        "target": "entities — custom entities & fields",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "internal.apps": {
+        "target": "entities — custom entities & fields",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "forms.intake": {
+        "target": "entities — custom entities & fields",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "workflow.automation": {
+        "target": "business_rules",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "integration.ipaas": {
+        "target": "data_sync",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "collab.sharedviews": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "low"
+      }
+    }
+  },
+  "PandaDoc": {
+    "capabilities": {
+      "quotes.cpq": {
+        "target": "sales — quotes",
+        "decision": "build",
+        "confidence": "medium"
+      },
+      "docs.templates": {
+        "target": "documents",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "esignature": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "high"
+      },
+      "workflow.approvals": {
+        "target": "workflows",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "docs.analytics": {
+        "target": "not our business — keep it",
+        "decision": "native",
+        "confidence": "low",
+        "reportVerdict": "drop"
+      },
+      "payments": {
+        "target": "payment_gateways + checkout",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "integration.ipaas": {
+        "target": "integrations",
+        "decision": "configure",
+        "confidence": "high"
+      }
+    }
+  },
+  "Sortly / inFlow": {
+    "capabilities": {
+      "catalog.products": {
+        "target": "catalog",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "data.custom": {
+        "target": "catalog",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "inventory.stock": {
+        "target": "wms",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "inventory.multiwarehouse": {
+        "target": "wms",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "inventory.barcode": {
+        "target": "wms",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "inventory.alerts": {
+        "target": "business_rules + notifications",
+        "decision": "configure",
+        "confidence": "high"
+      },
+      "purchasing.po": {
+        "target": "no module yet — build",
+        "decision": "build",
+        "confidence": "low"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "medium"
+      }
+    }
+  },
+  "Jobber / ServiceTitan": {
+    "capabilities": {
+      "field.scheduling": {
+        "target": "planner — availabilities",
+        "decision": "configure",
+        "confidence": "low"
+      },
+      "field.jobsheets": {
+        "target": "entities — custom entities & fields",
+        "decision": "build",
+        "confidence": "low"
+      },
+      "quotes.cpq": {
+        "target": "sales — quotes",
+        "decision": "build",
+        "confidence": "medium"
+      },
+      "invoicing": {
+        "target": "sales — invoices + payment_gateways",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "payments": {
+        "target": "sales — invoices + payment_gateways",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "customer.portal": {
+        "target": "portal + customer_accounts",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "time.tracking": {
+        "target": "no module yet — build",
+        "decision": "build",
+        "confidence": "low"
+      }
+    }
+  },
+  "Mailchimp / Klaviyo": {
+    "capabilities": {
+      "marketing.email": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "high"
+      },
+      "marketing.automation": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "marketing.segments": {
+        "target": "customers",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "marketing.forms": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      },
+      "marketing.sms": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "high"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "low"
+      }
+    }
+  },
+  "Stripe Billing": {
+    "capabilities": {
+      "payments": {
+        "target": "payment_gateways",
+        "decision": "integrate",
+        "confidence": "high"
+      },
+      "billing.subscriptions": {
+        "target": "no module yet — build",
+        "decision": "build",
+        "confidence": "low"
+      },
+      "invoicing": {
+        "target": "sales — invoices",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "tax.calc": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "high"
+      },
+      "customer.portal": {
+        "target": "portal + customer_accounts",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "reporting.dashboards": {
+        "target": "dashboards",
+        "decision": "configure",
+        "confidence": "low"
+      }
+    }
+  },
+  "Xero / QuickBooks": {
+    "capabilities": {
+      "accounting.ledger": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      },
+      "invoicing": {
+        "target": "sales — invoices",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "accounting.expenses": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      },
+      "accounting.bank": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      },
+      "hr.payroll": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      },
+      "accounting.reports": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      }
+    }
+  },
+  "Typeform": {
+    "capabilities": {
+      "forms.intake": {
+        "target": "entities — custom entities & fields",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "surveys.nps": {
+        "target": "entities — custom entities & fields",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "forms.conversational": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "medium"
+      }
+    }
+  },
+  "Zapier": {
+    "capabilities": {
+      "workflow.automation": {
+        "target": "business_rules",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "integration.ipaas": {
+        "target": "integrations",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "integration.longtail": {
+        "target": "stays external, wired in",
+        "decision": "integrate",
+        "confidence": "medium"
+      }
+    }
+  },
+  "Calendly": {
+    "capabilities": {
+      "field.scheduling": {
+        "target": "planner — availabilities",
+        "decision": "configure",
+        "confidence": "medium"
+      },
+      "scheduling.bookingpage": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "medium"
+      }
+    }
+  },
+  "Slack": {
+    "capabilities": {
+      "notifications": {
+        "target": "notifications",
+        "decision": "native",
+        "confidence": "high"
+      },
+      "collab.teamchat": {
+        "target": "not our business — keep it",
+        "decision": "keep",
+        "confidence": "high"
+      }
+    }
+  }
+}

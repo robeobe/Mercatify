@@ -17,6 +17,7 @@ import { buildOffer } from '../lib/offer'
 import { refFor } from '../lib/ref'
 import type { MercatifyCapOverride, MercatifyClientResponse, MercatifyReport } from '../data/entities'
 import OfferView from './OfferView'
+import WorkspacePreviewPanel from './WorkspacePreviewPanel'
 
 type RequestDetail = {
   id: string
@@ -53,6 +54,7 @@ export default function ReportComposer({ id }: { id: string }) {
   const [headline, setHeadline] = React.useState('')
   const [notes, setNotes] = React.useState('')
   const [analyst, setAnalyst] = React.useState('')
+  const [switchingCost, setSwitchingCost] = React.useState('')
   const [hosting, setHosting] = React.useState('')
   const [months, setMonths] = React.useState('')
   const [openQuestions, setOpenQuestions] = React.useState('')
@@ -66,6 +68,7 @@ export default function ReportComposer({ id }: { id: string }) {
     setHeadline(r?.headline || '')
     setNotes(r?.notes || '')
     setAnalyst(r?.assumptions?.analyst || '')
+    setSwitchingCost(r?.assumptions?.switchingCost !== undefined ? String(r.assumptions.switchingCost) : '')
     setHosting(r?.assumptions?.hosting !== undefined ? String(r.assumptions.hosting) : '')
     setMonths(r?.assumptions?.months !== undefined ? String(r.assumptions.months) : '')
     setOpenQuestions(r?.assumptions?.notes || '')
@@ -88,13 +91,14 @@ export default function ReportComposer({ id }: { id: string }) {
         generatedAt: request.report?.generatedAt,
         assumptions: {
           analyst,
+          switchingCost: switchingCost ? Number(switchingCost) : undefined,
           hosting: hosting ? Number(hosting) : undefined,
           months: months ? Number(months) : undefined,
           notes: openQuestions,
         },
       },
     })
-  }, [request, headline, notes, analyst, hosting, months, openQuestions])
+  }, [request, headline, notes, analyst, switchingCost, hosting, months, openQuestions])
 
   async function submit(kind: 'draft' | 'send') {
     if (!request) return
@@ -106,6 +110,7 @@ export default function ReportComposer({ id }: { id: string }) {
         notes: notes.trim() || undefined,
         assumptions: {
           analyst: analyst.trim() || undefined,
+          switchingCost: switchingCost ? Number(switchingCost) : undefined,
           hosting: hosting ? Number(hosting) : undefined,
           months: months ? Number(months) : undefined,
           notes: openQuestions.trim() || undefined,
@@ -187,7 +192,10 @@ export default function ReportComposer({ id }: { id: string }) {
         <FormField label={t('mercatify.report.field.notes', 'What you want to say in your own words')} description={t('mercatify.report.field.notes.hint', 'Appears at the end of the report, under your name.')}>
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
         </FormField>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <FormField label={t('mercatify.report.field.switchingCost', 'One-off switching cost')} description={t('mercatify.report.field.switchingCost.hint', 'A single ballpark figure for the whole move. Leave blank to skip the break-even view.')}>
+            <Input type="number" min={0} value={switchingCost} onChange={(e) => setSwitchingCost(e.target.value)} placeholder="4500" />
+          </FormField>
           <FormField label={t('mercatify.report.field.hosting', 'Hosting & ops, monthly')} description={t('mercatify.report.field.hosting.hint', 'Counted against the saving, so it is not overstated.')}>
             <Input type="number" min={0} value={hosting} onChange={(e) => setHosting(e.target.value)} placeholder="240" />
           </FormField>
@@ -220,6 +228,8 @@ export default function ReportComposer({ id }: { id: string }) {
           </div>
         </div>
       </section>
+
+      {request.status === 'accepted' ? <WorkspacePreviewPanel id={id} /> : null}
 
       <div className="sticky bottom-0 flex items-center gap-3 rounded-lg border bg-card/95 backdrop-blur p-3">
         <div className="flex-1 text-sm text-muted-foreground">
