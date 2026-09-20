@@ -161,7 +161,7 @@ function ToolPicker({
         aria-label={t('mercatify.cases.form.search.placeholder')}
         disabled={readOnly}
       />
-      <div className="grid gap-3 grid-cols-1 lg:grid-cols-2">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
         {SAAS_CATALOG.filter((catalog) => {
           if (!needle) return true
           const hay = [
@@ -193,9 +193,12 @@ function ToolPicker({
                 >
                   ✓
                 </span>
+                {/* Name and kind stack rather than sit inline: at three columns
+                    a card is too narrow for both, and letting only the long ones
+                    wrap made the grid look ragged. */}
                 <span className="min-w-0 flex-1">
-                  <span className="text-sm font-semibold">{catalog.name}</span>
-                  <span className="text-xs text-muted-foreground">{` — ${catalog.kind}`}</span>
+                  <span className="block text-sm font-semibold leading-tight">{catalog.name}</span>
+                  <span className="block text-xs text-muted-foreground">{catalog.kind}</span>
                 </span>
                 <span className="flex-none whitespace-nowrap text-xs text-muted-foreground">
                   {selected
@@ -436,7 +439,6 @@ export function CaseForm({
   const readOnly = mode === 'view'
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'companyName', label: t('mercatify.cases.form.fields.companyName.label'), type: 'text', layout: 'half', disabled: readOnly },
-    { id: 'industry', label: t('mercatify.cases.form.fields.industry.label'), type: 'text', layout: 'half', disabled: readOnly },
     { id: 'peopleCount', label: t('mercatify.cases.form.fields.peopleCount.label'), type: 'number', layout: 'half', disabled: readOnly },
     {
       id: 'currency',
@@ -446,8 +448,6 @@ export function CaseForm({
       disabled: readOnly,
       options: CURRENCIES.map((value) => ({ value, label: value })),
     },
-    { id: 'pains', label: t('mercatify.cases.form.fields.pains.label'), type: 'textarea', layout: 'half', disabled: readOnly },
-    { id: 'mustKeep', label: t('mercatify.cases.form.fields.mustKeep.label'), type: 'textarea', layout: 'half', disabled: readOnly },
   ], [readOnly, t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
@@ -455,7 +455,7 @@ export function CaseForm({
       id: 'company',
       title: t('mercatify.cases.form.groups.company'),
       column: 1,
-      fields: ['companyName', 'industry', 'peopleCount', 'currency', 'pains', 'mustKeep'],
+      fields: ['companyName', 'peopleCount', 'currency'],
     },
     {
       id: 'tools',

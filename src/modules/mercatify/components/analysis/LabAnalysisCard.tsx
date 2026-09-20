@@ -17,7 +17,23 @@ import { apiFetch } from '@open-mercato/ui/backend/utils/api'
  * step legible — the router only moves on once the POST has actually returned
  * AND the last line has been shown.
  */
-const PROGRESS_STEP_MS = 800
+const PROGRESS_STEP_MS = 3000
+
+/**
+ * The Lab's agent pipeline, one line per agent, in the order they run. Hardcoded
+ * on purpose: the scripted adapter does not report per-agent progress, so this
+ * is a narration of the real pipeline rather than a live feed of it.
+ */
+const LAB_AGENTS: ReadonlyArray<{ name: string; role: string }> = [
+  { name: 'Process Analyst', role: 'Business analyst reading how the stack is actually used' },
+  { name: 'OM Architect', role: 'Solution architect matching every job to an Open Mercato module' },
+  { name: 'Consolidation Strategist', role: 'Transformation lead deciding what merges and what stays' },
+  { name: 'FinOps', role: 'CFO / FinOps lead pricing the licences against the target stack' },
+  { name: 'Migration Planner', role: 'Delivery lead sequencing the rollout' },
+  { name: 'Report Editor', role: 'Consultant writing the executive half of a stack consolidation report' },
+  { name: 'Report Risk Analyst', role: 'Consultant stating what would change the numbers, and what happens next' },
+  { name: 'Critic', role: 'Adversarial reviewer of one pipeline stage' },
+]
 
 export type LabAnalysisStatus = 'draft' | 'new' | 'mapping' | 'mapped' | 'sent' | 'accepted' | 'consult'
 
@@ -42,13 +58,6 @@ export function LabAnalysisCard({
   const [step, setStep] = React.useState(0)
   const [error, setError] = React.useState<string | null>(null)
 
-  const steps = React.useMemo(() => [
-    t('mercatify.analysis.progress.reading', 'Reading the stack…'),
-    t('mercatify.analysis.progress.matching', 'Matching capabilities to Open Mercato modules…'),
-    t('mercatify.analysis.progress.scoring', 'Scoring confidence…'),
-    t('mercatify.analysis.progress.ready', 'Mapping ready'),
-  ], [t])
-
   const mappingHref = `/backend/cases/${caseId}/mapping`
   const reportHref = `/backend/cases/${caseId}/report`
 
@@ -63,7 +72,7 @@ export function LabAnalysisCard({
       const timer = setInterval(() => {
         shown += 1
         setStep(shown)
-        if (shown >= 4) {
+        if (shown > LAB_AGENTS.length) {
           clearInterval(timer)
           resolve()
         }
@@ -127,17 +136,22 @@ export function LabAnalysisCard({
             ) : null}
           </div>
         ) : running ? (
-          <ol className="space-y-2" aria-live="polite">
-            {steps.slice(0, step).map((line, index) => {
+          <ol className="space-y-2.5" aria-live="polite">
+            {LAB_AGENTS.slice(0, step).map((agent, index) => {
               const done = index < step - 1
               return (
-                <li key={line} className="flex items-center gap-2 text-sm">
-                  {done ? (
-                    <span aria-hidden="true" className="text-status-success-icon">✓</span>
-                  ) : (
-                    <Spinner size="sm" />
-                  )}
-                  <span className={done ? 'text-muted-foreground' : undefined}>{line}</span>
+                <li key={agent.name} className="flex items-start gap-2 text-sm">
+                  <span className="mt-0.5 flex size-4 flex-none items-center justify-center">
+                    {done ? (
+                      <span aria-hidden="true" className="text-status-success-icon">✓</span>
+                    ) : (
+                      <Spinner size="sm" />
+                    )}
+                  </span>
+                  <span className={done ? 'text-muted-foreground' : undefined}>
+                    <span className="font-medium">{agent.name}</span>
+                    <span className="text-muted-foreground">{` — ${agent.role}`}</span>
+                  </span>
                 </li>
               )
             })}
