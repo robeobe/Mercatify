@@ -47,6 +47,16 @@ export interface CatalogCapabilityEntry {
   target: string
   decision: Decision
   confidence: Confidence
+  /**
+   * Werdykt dla CZYTELNIKA raportu, gdy różni się od `decision`. Jedyny taki
+   * przypadek to `drop` ("nobody would miss it"): dla pieniędzy zachowuje się
+   * jak `native` - narzędzie gaśnie - ale nie wolno wpisać do raportu, że
+   * platforma to potrafi. `Decision` zostaje pięciowartościowe, bo szósta
+   * wartość ruszyłaby każdy wyczerpujący `switch`, regułę MAP-1 krytyka i
+   * enumy w `agents/*.json`; czyta to stąd `ReportVerdict` z
+   * `src/report/model.ts`. Dotyczy 2 wpisów na 128.
+   */
+  reportVerdict?: 'drop'
 }
 
 export interface CatalogEntry {

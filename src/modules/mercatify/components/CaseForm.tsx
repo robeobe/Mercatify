@@ -18,6 +18,7 @@ import { duplicateCapabilityCounts, SAAS_CATALOG } from '../data/saas-catalog'
 
 const ENTITY_ID = 'mercatify:interview_case'
 const LIST_HREF = '/backend/cases'
+const REQUESTS_HREF = '/backend/requests'
 const FORM_ID = 'mercatify-intake-form'
 const CURRENCIES = ['EUR', 'USD', 'PLN', 'GBP'] as const
 
@@ -410,11 +411,25 @@ export function CaseForm({
   caseId,
   initial,
   isLoading,
+  listHref = LIST_HREF,
+  formTitle,
+  showLockAlert = true,
+  showCorrectedListAction = true,
+  embedded = false,
 }: {
   mode: FormMode
   caseId?: string
   initial?: CaseFormValues
   isLoading?: boolean
+  listHref?: string
+  formTitle?: string
+  showLockAlert?: boolean
+  /** Off on the admin case detail: "Send a corrected list" is the client's
+   *  move, and it would take an admin to the client intake. */
+  showCorrectedListAction?: boolean
+  /** Drop the form's own back/cancel/save header — used where the page
+   *  already carries a pagehead and the intake is read-only context. */
+  embedded?: boolean
 }) {
   const t = useT()
   const router = useRouter()
@@ -468,9 +483,11 @@ export function CaseForm({
   ], [readOnly, t])
 
   const extraActions = readOnly ? (
-    <Button asChild>
-      <Link href="/backend/cases/create">{t('mercatify.cases.form.actions.correctedList')}</Link>
-    </Button>
+    showCorrectedListAction ? (
+      <Button asChild>
+        <Link href="/backend/cases/create">{t('mercatify.cases.form.actions.correctedList')}</Link>
+      </Button>
+    ) : null
   ) : (
     <Button type="submit" form={FORM_ID} name="intent" value="send">
       {t('mercatify.cases.form.actions.send')}
@@ -479,20 +496,21 @@ export function CaseForm({
 
   return (
     <CrudForm<CaseFormValues>
-      title={mode === 'create' ? t('mercatify.cases.create.title') : t('mercatify.cases.detail.title')}
-      backHref={LIST_HREF}
+      title={formTitle ?? (mode === 'create' ? t('mercatify.cases.create.title') : t('mercatify.cases.detail.title'))}
+      backHref={listHref}
       entityId={ENTITY_ID}
+      embedded={embedded}
       formId={FORM_ID}
       fields={fields}
       groups={groups}
       initialValues={initial ?? emptyValues()}
       submitLabel={t('mercatify.cases.form.actions.saveDraft')}
-      cancelHref={LIST_HREF}
+      cancelHref={listHref}
       extraActions={extraActions}
       hideFooterActions={readOnly}
       isLoading={isLoading}
       loadingMessage={t('mercatify.cases.form.loading')}
-      contentHeader={readOnly ? (
+      contentHeader={readOnly && showLockAlert ? (
         <Alert>
           <AlertTitle>{t('mercatify.cases.form.sentConfirmation')}</AlertTitle>
           <AlertDescription>{t('mercatify.cases.form.sentConfirmationBody')}</AlertDescription>
@@ -507,12 +525,17 @@ export function CaseForm({
         if (mode === 'create') {
           const created = await createCrud<{ id: string }>('mercatify/cases', payload)
           const id = created.result?.id
-          if (id) router.push(`/backend/cases/${id}`)
-          else router.push(LIST_HREF)
+          if (!id) {
+            router.push(send ? REQUESTS_HREF : LIST_HREF)
+            return
+          }
+          // A sent intake belongs to the client's own request thread; a saved
+          // draft stays on the staff-side record it was created from.
+          router.push(send ? `${REQUESTS_HREF}/${id}` : `/backend/cases/${id}`)
           return
         }
         await updateCrud('mercatify/cases', payload)
-        if (send && caseId) router.push(`/backend/cases/${caseId}`)
+        if (send && caseId) router.push(`${REQUESTS_HREF}/${caseId}`)
         else router.refresh()
       }}
     />
@@ -580,5 +603,7 @@ export function CaseEditLoader({ id }: { id: string }) {
 }
 
 export function CaseCreateForm() {
-  return <CaseForm mode="create" />
+  // Embedded: the intake page carries the mockup's own pagehead, so the form's
+  // duplicate back/cancel/save header row is dropped. The footer actions stay.
+  return <CaseForm mode="create" embedded />
 }

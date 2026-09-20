@@ -5,10 +5,15 @@ import { isCrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import { OPTIMISTIC_LOCK_HEADER_NAME } from '@open-mercato/shared/lib/crud/optimistic-lock-headers'
 import { registerModules } from '@open-mercato/shared/lib/modules/registry'
 import { getEnabledModuleIds } from '@open-mercato/shared/security/enabledModulesRegistry'
-import { InterviewCase, MappingRow } from '../../data/entities'
+import { InterviewCase, InterviewCaseTool, MappingRow } from '../../data/entities'
 import { registerMercatifyLabPort } from '../../lib/mercatify-lab-port'
 import { scriptedMercatifyLabAdapter } from '../../lib/scripted-mercatify-lab-adapter'
-import { generateMappingCommand, updateMappingRowCommand, confirmMappingCommand } from '../mapping'
+import {
+  generateMappingCommand,
+  updateMappingRowCommand,
+  confirmMappingCommand,
+  resetInstallableModuleIdsCache,
+} from '../mapping'
 
 // Deterministic: the guard's env contract defaults to ON, but the suite must not
 // silently pass because an ambient value turned it off.
@@ -21,23 +26,25 @@ const ORG_B = '44444444-4444-4444-8444-444444444444'
 
 /**
  * Only `dashboards` (plus `mercatify` itself) is registered as "enabled" —
- * mirrors this app's actual `src/modules.ts` closely enough to exercise both
- * branches of the flagged-module invariant: `dashboards` resolves cleanly,
- * `customers`/`sales` (named by the scripted fixture) do not.
+ * mirrors this app's actual `src/modules.ts`. `customers`/`sales`/`messages`
+ * are NOT enabled here but do ship in `@open-mercato/core`, which is exactly
+ * the case `resolveTarget` must no longer flag.
  */
 function registerFakeEnabledModules() {
   registerModules([
     { id: 'mercatify', info: { title: 'Mercatify' } } as any,
     { id: 'dashboards', info: { title: 'Admin Dashboards' } } as any,
   ])
+  resetInstallableModuleIdsCache()
 }
 
-type Row = InterviewCase | MappingRow
+type Row = InterviewCase | MappingRow | InterviewCaseTool
 
 /** In-memory stand-in for the scoped ORM/data-engine pair the commands resolve. */
 function makeWorld() {
   const cases: InterviewCase[] = []
   const rows: MappingRow[] = []
+  const tools: InterviewCaseTool[] = []
 
   const matches = (row: Record<string, unknown>, where: Record<string, unknown>): boolean =>
     Object.entries(where).every(([key, value]) => {
@@ -46,7 +53,9 @@ function makeWorld() {
     })
 
   function tableFor(entity: unknown): Row[] {
-    return entity === MappingRow ? (rows as unknown as Row[]) : (cases as unknown as Row[])
+    if (entity === MappingRow) return rows as unknown as Row[]
+    if (entity === InterviewCaseTool) return tools as unknown as Row[]
+    return cases as unknown as Row[]
   }
 
   const em = {
@@ -100,7 +109,7 @@ function makeWorld() {
     },
   }
 
-  return { cases, rows, marks, container }
+  return { cases, rows, tools, marks, container }
 }
 
 type World = ReturnType<typeof makeWorld>
@@ -140,17 +149,62 @@ async function expectCrudStatus(run: () => unknown, status: number): Promise<voi
   expect(threw).toBe(true)
 }
 
-async function seedCase(world: World, ctx: CommandRuntimeContext): Promise<InterviewCase> {
+async function seedCase(
+  world: World,
+  ctx: CommandRuntimeContext,
+  status: string = 'draft',
+): Promise<InterviewCase> {
   const de = world.container.resolve('dataEngine') as any
   return de.createOrmEntity({
     entity: InterviewCase,
     data: {
       title: 'Sample interview case',
-      status: 'draft',
+      status,
       tenantId: (ctx.auth as any).tenantId,
       organizationId: ctx.selectedOrganizationId,
     },
   })
+}
+
+async function seedTool(
+  world: World,
+  ctx: CommandRuntimeContext,
+  caseId: string,
+  data: { name: string; monthlyCost: string; catalogToolId?: string; selectedModuleIds?: string[] },
+): Promise<InterviewCaseTool> {
+  const de = world.container.resolve('dataEngine') as any
+  return de.createOrmEntity({
+    entity: InterviewCaseTool,
+    data: {
+      interviewCase: caseId,
+      name: data.name,
+      monthlyCost: data.monthlyCost,
+      catalogToolId: data.catalogToolId ?? null,
+      selectedModuleIds: data.selectedModuleIds ?? [],
+      tenantId: (ctx.auth as any).tenantId,
+      organizationId: ctx.selectedOrganizationId,
+    },
+  })
+}
+
+/**
+ * A case plus the stack the analysis is derived from. Every generate test needs
+ * one: with no intake tools there is nothing to map and the command correctly
+ * writes no rows.
+ */
+async function seedCaseWithStack(
+  world: World,
+  ctx: CommandRuntimeContext,
+  status: string = 'draft',
+): Promise<InterviewCase> {
+  const created = await seedCase(world, ctx, status)
+  // `messages` (core, not enabled) + `dashboards` (enabled) + one uncatalogued
+  // tool, so a single stack exercises every branch of `resolveTarget`.
+  await seedTool(world, ctx, created.id, {
+    name: 'Zendesk', monthlyCost: '480.00', catalogToolId: 'zendesk', selectedModuleIds: ['support', 'explore'],
+  })
+  await seedTool(world, ctx, created.id, { name: 'Voltix job tracker', monthlyCost: '0.00' })
+  return created
 }
 
 describe('mercatify mapping commands', () => {
@@ -162,9 +216,9 @@ describe('mercatify mapping commands', () => {
     registerFakeEnabledModules()
   })
 
-  it('generates one row per scripted mapping entry and is idempotent on a second call', async () => {
+  it('generates one row per mapped capability and is idempotent on a second call', async () => {
     const ctx = makeCtx(world)
-    const created = await seedCase(world, ctx)
+    const created = await seedCaseWithStack(world, ctx)
 
     const first = await generateMappingCommand.execute({ caseId: created.id }, ctx)
     expect(first.generated).toBe(true)
@@ -176,38 +230,96 @@ describe('mercatify mapping commands', () => {
     expect(second.rows.map((r) => r.id).sort()).toEqual(firstIds)
   })
 
-  it('flags every row naming a module outside the enabled registry, and every unmapped row — never silently drops either', async () => {
+  it("sources every generated row from the case's real InterviewCaseTool rows", async () => {
     const ctx = makeCtx(world)
     const created = await seedCase(world, ctx)
+    await seedTool(world, ctx, created.id, {
+      name: 'Salesforce', monthlyCost: '2000.00', catalogToolId: 'salesforce', selectedModuleIds: ['sales'],
+    })
+
+    const { rows } = await generateMappingCommand.execute({ caseId: created.id }, ctx)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.source).toBe('Salesforce')
+    expect(rows[0]!.capability).toBe('Sales Cloud')
+    expect(rows[0]!.targetModuleId).toBe('customers')
+    expect(rows[0]!.justification).toContain('Salesforce')
+  })
+
+  it('writes no rows for a case with no intake tools — there is nothing to map', async () => {
+    const ctx = makeCtx(world)
+    const created = await seedCase(world, ctx)
+    const { rows } = await generateMappingCommand.execute({ caseId: created.id }, ctx)
+    expect(rows).toEqual([])
+  })
+
+  it('treats an installable core module as resolved, and still flags a genuinely unmapped row', async () => {
+    const ctx = makeCtx(world)
+    const created = await seedCaseWithStack(world, ctx)
     const { rows } = await generateMappingCommand.execute({ caseId: created.id }, ctx)
 
     const enabled = new Set(getEnabledModuleIds())
     expect(enabled.has('dashboards')).toBe(true)
-    expect(enabled.has('customers')).toBe(false)
+    // `messages` is a core module this app does not enable — the case that
+    // used to paint the demo table with "isn't installed".
+    expect(enabled.has('messages')).toBe(false)
+
+    const messagesRow = rows.find((r) => r.targetModuleId === 'messages')
+    expect(messagesRow).toBeDefined()
+    expect(messagesRow!.flagged).toBe(false)
+    expect(messagesRow!.flagReason).toBeNull()
+    expect(messagesRow!.targetLabel).toBe('Messages')
+
+    const dashboardsRow = rows.find((r) => r.targetModuleId === 'dashboards')
+    expect(dashboardsRow).toBeDefined()
+    expect(dashboardsRow!.flagged).toBe(false)
+    // An enabled module keeps its registered title rather than the id.
+    expect(dashboardsRow!.targetLabel).toBe('Admin Dashboards')
 
     for (const row of rows) {
-      if (row.targetKind === 'om_module' && !row.flagged) {
-        // The automated form of issue #14's last acceptance criterion.
-        expect(row.targetModuleId).not.toBeNull()
-        expect(enabled.has(row.targetModuleId as string)).toBe(true)
-      }
-      if (row.targetKind === 'om_module' && row.targetModuleId && !enabled.has(row.targetModuleId)) {
-        expect(row.flagged).toBe(true)
-        expect(row.flagReason).toBe('module_not_enabled')
-      }
       if (row.targetKind === 'unmapped') {
         expect(row.flagged).toBe(true)
         expect(row.flagReason).toBe('unmapped')
+      } else {
+        expect(row.flagged).toBe(false)
       }
     }
-
-    // The scripted fixture is known to name both a resolvable module
-    // (`dashboards`) and unavailable ones (`customers`, `sales`) plus one
-    // truly unmapped capability — assert the mix actually showed up so this
-    // test cannot pass vacuously against an empty or degenerate mapping.
-    expect(rows.some((r) => r.targetKind === 'om_module' && !r.flagged)).toBe(true)
-    expect(rows.some((r) => r.targetKind === 'om_module' && r.flagged)).toBe(true)
+    // The uncatalogued tool is still surfaced, never dropped (FR-006).
     expect(rows.some((r) => r.targetKind === 'unmapped')).toBe(true)
+  })
+
+  it("moves a 'new' case to 'mapping' when the analysis lands, and leaves later statuses alone", async () => {
+    const ctx = makeCtx(world)
+    const fresh = await seedCaseWithStack(world, ctx, 'new')
+    await generateMappingCommand.execute({ caseId: fresh.id }, ctx)
+    expect(fresh.status).toBe('mapping')
+
+    // Re-running it on an already-analysed case is a no-op on both counts.
+    await generateMappingCommand.execute({ caseId: fresh.id }, ctx)
+    expect(fresh.status).toBe('mapping')
+
+    const reported = await seedCaseWithStack(world, ctx, 'sent')
+    await generateMappingCommand.execute({ caseId: reported.id }, ctx)
+    expect(reported.status).toBe('sent')
+  })
+
+  it("moves a 'new' or 'mapping' case to 'mapped' on confirm, and never pulls a reported case back", async () => {
+    const ctx = makeCtx(world)
+    const inMapping = await seedCaseWithStack(world, ctx, 'mapping')
+    await generateMappingCommand.execute({ caseId: inMapping.id }, ctx)
+    await confirmMappingCommand.execute({ caseId: inMapping.id }, ctx)
+    expect(inMapping.status).toBe('mapped')
+
+    const straightFromNew = await seedCaseWithStack(world, ctx, 'new')
+    await generateMappingCommand.execute({ caseId: straightFromNew.id }, ctx)
+    // generate already advanced it; force the `new` branch of confirm too.
+    straightFromNew.status = 'new'
+    await confirmMappingCommand.execute({ caseId: straightFromNew.id }, ctx)
+    expect(straightFromNew.status).toBe('mapped')
+
+    const accepted = await seedCaseWithStack(world, ctx, 'accepted')
+    await generateMappingCommand.execute({ caseId: accepted.id }, ctx)
+    await confirmMappingCommand.execute({ caseId: accepted.id }, ctx)
+    expect(accepted.status).toBe('accepted')
   })
 
   it('fails closed when tenant/organization context is missing, writing nothing', async () => {
@@ -231,7 +343,7 @@ describe('mercatify mapping commands', () => {
 
   it('lets an admin edit decision and justification pre-confirmation, and 409s on a stale version', async () => {
     const ctx = makeCtx(world)
-    const created = await seedCase(world, ctx)
+    const created = await seedCaseWithStack(world, ctx)
     const { rows } = await generateMappingCommand.execute({ caseId: created.id }, ctx)
     const row = rows[0]!
 
@@ -258,7 +370,7 @@ describe('mercatify mapping commands', () => {
 
   it('rejects a row edit once the mapping is confirmed', async () => {
     const ctx = makeCtx(world)
-    const created = await seedCase(world, ctx)
+    const created = await seedCaseWithStack(world, ctx)
     const { rows } = await generateMappingCommand.execute({ caseId: created.id }, ctx)
     const row = rows[0]!
 
@@ -272,7 +384,7 @@ describe('mercatify mapping commands', () => {
 
   it('400s confirming a case with zero rows, then succeeds once rows exist, and is idempotent', async () => {
     const ctx = makeCtx(world)
-    const created = await seedCase(world, ctx)
+    const created = await seedCaseWithStack(world, ctx)
 
     await expectCrudStatus(() => confirmMappingCommand.execute({ caseId: created.id }, ctx), 400)
 

@@ -17,6 +17,10 @@ export type InterviewCaseStatus =
  * `InterviewCaseTool` and are written only as part of a case save.
  */
 @Index({ name: 'mercatify_interview_cases_org_tenant_idx', properties: ['organizationId', 'tenantId'] })
+@Index({
+  name: 'mercatify_interview_cases_org_tenant_owner_idx',
+  properties: ['organizationId', 'tenantId', 'createdByUserId'],
+})
 @Entity({ tableName: 'mercatify_interview_cases' })
 export class InterviewCase {
   @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
@@ -64,6 +68,17 @@ export class InterviewCase {
   @Property({ name: 'organization_id', type: 'uuid' })
   organizationId!: string
 
+  /**
+   * Staff user who created the intake. Scalar id only — no cross-module ORM
+   * relation to auth. Null on historical rows seeded before S-08.
+   */
+  @Property({ name: 'created_by_user_id', type: 'uuid', nullable: true })
+  createdByUserId?: string | null
+
+  /** Set once when the case first leaves `draft`. */
+  @Property({ name: 'submitted_at', type: Date, nullable: true })
+  submittedAt?: Date | null
+
   @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
   createdAt: Date = new Date()
 
@@ -80,6 +95,49 @@ export class InterviewCase {
    */
   @Property({ name: 'mapping_confirmed_at', type: Date, nullable: true })
   mappingConfirmedAt?: Date | null
+
+  /**
+   * Customer-provided inputs to S-04's net-saving formula (never computed by
+   * the analysis — see `lib/savings.ts` and `mercatify-labs`' "iron rule #2").
+   * Admin-entered independently of the intake profile, editable regardless of
+   * `status`.
+   */
+  @Property({ name: 'om_operating_cost', type: 'numeric', precision: 12, scale: 2, nullable: true })
+  omOperatingCost?: string | null
+
+  @Property({ name: 'implementation_cost', type: 'numeric', precision: 12, scale: 2, nullable: true })
+  implementationCost?: string | null
+
+  /**
+   * The `.md` handoff document Mercatify Lab needs for implementation. Seeded
+   * once by `mercatify.handoff.generate` from the confirmed mapping; after
+   * that, independent of `MappingRow` forever (PRD Open Question 8, resolved
+   * 2026-09-19: table and document are independent artifacts — editing one
+   * never touches the other).
+   */
+  @Property({ name: 'handoff_document', type: 'text', nullable: true })
+  handoffDocument?: string | null
+
+  /**
+   * S-06: the outcome of handing the document to Mercatify Lab, written once
+   * the client accepts the report (`mercatify.cases.answer`). Valid values:
+   * 'delivered' | 'not_installed' | 'no_document' | 'failed'. Null means the
+   * handoff has not run — the case was never accepted.
+   */
+  @Property({ name: 'lab_handoff_status', type: 'text', nullable: true })
+  labHandoffStatus?: string | null
+
+  /**
+   * A snapshot of exactly what was handed over, not a pointer to
+   * `handoffDocument`: a later admin edit must not rewrite what Lab already
+   * received, and FR-013's "see what would have been handed over" has to keep
+   * showing that same text.
+   */
+  @Property({ name: 'lab_handoff_document', type: 'text', nullable: true })
+  labHandoffDocument?: string | null
+
+  @Property({ name: 'lab_handoff_at', type: Date, nullable: true })
+  labHandoffAt?: Date | null
 }
 
 /**
@@ -109,6 +167,10 @@ export class MappingRow {
 
   @Property({ type: 'text' })
   capability!: string
+
+  /** The SaaS product this capability was mapped from. Analysis-owned, drives S-04's saving formula. */
+  @Property({ type: 'text', default: '' })
+  source: string = ''
 
   /** Valid values: 'native' | 'configure' | 'build' | 'integrate' | 'keep'. Admin-editable. */
   @Property({ type: 'text' })
@@ -156,6 +218,90 @@ export class MappingRow {
   @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
   createdAt: Date = new Date()
 
+  @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+}
+
+/**
+ * S-09: the client-facing report for one case. Holds ONLY what a human typed
+ * while composing it — every figure the client reads (KPIs, saving lines,
+ * backlog totals, cash curve) is derived on read by `lib/report.ts`, so an
+ * edited cost input or a re-generated mapping can never leave a stale number
+ * in the document.
+ *
+ * Scalar `caseId`, no ORM relation — same rule as `MappingRow`.
+ */
+@Index({
+  name: 'mercatify_case_reports_org_tenant_case_idx',
+  properties: ['organizationId', 'tenantId', 'caseId'],
+})
+@Entity({ tableName: 'mercatify_case_reports' })
+export class CaseReport {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Property({ name: 'case_id', type: 'uuid' })
+  caseId!: string
+
+  /** Optional override for the computed opening line. Null = use the computed one. */
+  @Property({ type: 'text', nullable: true })
+  headline?: string | null
+
+  /** The consultant's closing note, printed under their name. */
+  @Property({ type: 'text', nullable: true })
+  notes?: string | null
+
+  /** Who reviewed the report; printed on it. */
+  @Property({ type: 'text', nullable: true })
+  analyst?: string | null
+
+  /** Free-text open questions, one per line, printed above the low-confidence rows. */
+  @Property({ name: 'open_questions', type: 'text', nullable: true })
+  openQuestions?: string | null
+
+  /**
+   * Turns backlog hours into money. Deliberately NOT one of S-04's three
+   * saving lines: `hours × rate` is a build-effort estimate and is never
+   * blended with the customer-provided implementation cost.
+   */
+  @Property({ name: 'hourly_rate', type: 'numeric', precision: 12, scale: 2, nullable: true })
+  hourlyRate?: string | null
+
+  /** How many months before the old licences start dropping off; shapes the cash curve. */
+  @Property({ name: 'implementation_months', type: 'integer', nullable: true })
+  implementationMonths?: number | null
+
+  /**
+   * Per-backlog-item hour estimates, keyed by `MappingRow.id`. A map rather
+   * than a child entity: mapping rows are immutable once confirmed, and these
+   * are report-time scratch values that are never queried or aggregated in
+   * SQL. A missing key prints "to estimate", never a zero.
+   */
+  @Property({ name: 'build_estimates', type: 'json' })
+  buildEstimates: Record<string, number> = {}
+
+  /**
+   * Set by `mercatify.report.send`, which is the only writer of the case's
+   * `sent` status. Re-sending overwrites this: the client keeps the version
+   * they were given until a new one is sent on purpose.
+   */
+  @Property({ name: 'sent_at', type: Date, nullable: true })
+  sentAt?: Date | null
+
+  /**
+   * Organization-owned business data: both scope columns are required,
+   * mirroring `InterviewCase` — a report is never system-scoped.
+   */
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  /** The optimistic-lock version, as on `InterviewCase`. */
   @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
   updatedAt: Date = new Date()
 }

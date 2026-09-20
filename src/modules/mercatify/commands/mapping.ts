@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import type { CommandHandler, CommandRuntimeContext } from '@open-mercato/shared/lib/commands'
 import { registerCommand } from '@open-mercato/shared/lib/commands'
 import { emitCrudSideEffects, buildChanges } from '@open-mercato/shared/lib/commands/helpers'
@@ -9,9 +11,10 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import { getEnabledModuleIds } from '@open-mercato/shared/security/enabledModulesRegistry'
 import { getModules } from '@open-mercato/shared/lib/modules/registry'
-import { InterviewCase, MappingRow } from '../data/entities'
+import { InterviewCase, InterviewCaseTool, MappingRow } from '../data/entities'
 import { mappingRowUpdateSchema } from '../data/validators'
 import { getMercatifyLabPort, type MercatifyMappingRow } from '../lib/mercatify-lab-port'
+import { monthlyCostToNumber } from '../lib/case-tools'
 import { emitMercatifyEvent } from '../events'
 
 const CASE_ENTITY_ID = 'mercatify:interview_case' as const
@@ -90,6 +93,67 @@ type FlaggedTarget = {
  * the same "visibly flagged, never dropped" treatment FR-006 requires for an
  * unmapped capability (resolves roadmap Open Question 15).
  */
+/**
+ * Core module ids used when `node_modules/@open-mercato/core/src/modules`
+ * cannot be read (a bundled runtime, a pruned install). HARDCODED mirror of
+ * that directory as of 2026-09-20 — see this task's report.
+ */
+const CORE_MODULE_IDS_FALLBACK = [
+  'api_docs', 'api_keys', 'attachments', 'audit_logs', 'auth', 'business_rules', 'catalog',
+  'communication_channels', 'configs', 'currencies', 'customer_accounts', 'customers', 'dashboards',
+  'data_sync', 'design_system', 'devices', 'dictionaries', 'directory', 'entities', 'eudr',
+  'feature_toggles', 'inbox_ops', 'integrations', 'messages', 'notifications', 'payment_gateways',
+  'perspectives', 'planner', 'portal', 'progress', 'push_notifications', 'query_index', 'resources',
+  'sales', 'shipping_carriers', 'staff', 'sync_excel', 'translations', 'warranty_claims', 'widgets',
+  'wms', 'workflows',
+] as const
+
+let installableModuleIdsCache: Set<string> | null = null
+
+/**
+ * Modules this deployment can legitimately point a mapping row at: the ones
+ * actually enabled, plus every module that ships in `@open-mercato/core`.
+ *
+ * The analysis names real platform modules (`customers`, `sales`, `catalog`)
+ * whether or not this particular app has switched them on — an installable
+ * module is not a mapping error, so flagging it as one only painted the demo
+ * red. `flagged` is now reserved for a target that genuinely does not exist.
+ */
+function getInstallableModuleIds(): Set<string> {
+  if (installableModuleIdsCache) return installableModuleIdsCache
+  const ids = new Set<string>(getEnabledModuleIds())
+  let coreIds: readonly string[] = CORE_MODULE_IDS_FALLBACK
+  try {
+    // Read the directory rather than resolving the package: `@open-mercato/core`
+    // exports no `package.json` subpath, so `require.resolve` would only make
+    // the bundler warn. Missing directory → the mirror below stands in.
+    const modulesDir = path.join(process.cwd(), 'node_modules', '@open-mercato', 'core', 'src', 'modules')
+    const entries = fs.readdirSync(modulesDir, { withFileTypes: true })
+    const found = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+    if (found.length > 0) coreIds = found
+  } catch {
+    // Directory missing — the hardcoded mirror above stands in.
+  }
+  for (const id of coreIds) ids.add(id)
+  installableModuleIdsCache = ids
+  return ids
+}
+
+/** Test seam: `registerModules` in a suite changes what "enabled" means. */
+export function resetInstallableModuleIdsCache(): void {
+  installableModuleIdsCache = null
+}
+
+/** "payment_gateways" -> "Payment Gateways" — a readable label for a module
+ *  that exists in core but is not enabled here, so has no registered title. */
+function titleCaseModuleId(moduleId: string): string {
+  return moduleId
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
 function resolveTarget(target: MercatifyMappingRow['target']): FlaggedTarget {
   if (target.kind === 'unmapped') {
     return { flagged: true, flagReason: 'unmapped', targetModuleId: null, targetToolName: null, targetLabel: null }
@@ -97,8 +161,7 @@ function resolveTarget(target: MercatifyMappingRow['target']): FlaggedTarget {
   if (target.kind === 'external_tool') {
     return { flagged: false, flagReason: null, targetModuleId: null, targetToolName: target.name, targetLabel: target.name }
   }
-  const enabledModuleIds = new Set(getEnabledModuleIds())
-  if (!enabledModuleIds.has(target.moduleId)) {
+  if (!getInstallableModuleIds().has(target.moduleId)) {
     return {
       flagged: true,
       flagReason: 'module_not_enabled',
@@ -107,8 +170,40 @@ function resolveTarget(target: MercatifyMappingRow['target']): FlaggedTarget {
       targetLabel: target.moduleId,
     }
   }
-  const title = getModules().find((mod) => mod.id === target.moduleId)?.info?.title ?? target.moduleId
+  // Enabled modules carry a registered title; a core module that is merely
+  // installable does not, so its id is title-cased instead.
+  const title = getModules().find((mod) => mod.id === target.moduleId)?.info?.title ?? titleCaseModuleId(target.moduleId)
   return { flagged: false, flagReason: null, targetModuleId: target.moduleId, targetToolName: null, targetLabel: title }
+}
+
+/**
+ * Move a case forward one step of the staff lifecycle, and only forward: the
+ * write happens when the case is still in one of `from`. A case the client has
+ * already been sent a report for (`sent`/`accepted`/`consult`) is never pulled
+ * back by an admin re-opening the analysis.
+ */
+async function advanceStatus(
+  de: DataEngine,
+  interviewCase: InterviewCase,
+  caseId: string,
+  scope: { tenantId: string; organizationId: string },
+  from: string[],
+  to: 'mapping' | 'mapped',
+): Promise<void> {
+  if (!from.includes(String(interviewCase.status))) return
+  await de.updateOrmEntity({
+    entity: InterviewCase,
+    where: {
+      id: caseId,
+      tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
+      deletedAt: null,
+    } as FilterQuery<InterviewCase>,
+    apply: (record: InterviewCase) => {
+      if (!from.includes(String(record.status))) return
+      record.status = to as InterviewCase['status']
+    },
+  })
 }
 
 const generateMappingCommand: CommandHandler<Record<string, unknown>, { generated: boolean; rows: MappingRow[] }> = {
@@ -120,9 +215,7 @@ const generateMappingCommand: CommandHandler<Record<string, unknown>, { generate
     const em = ctx.container.resolve('em') as EntityManager
     const de = ctx.container.resolve('dataEngine') as DataEngine
 
-    // Existence + scope check — the result is not needed beyond that, generate
-    // never reads or writes case fields.
-    await loadCaseInScope(em, caseId, scope)
+    const interviewCase = await loadCaseInScope(em, caseId, scope)
 
     // Idempotent: a case that already has rows is left untouched — generation
     // never duplicates or overwrites an existing mapping.
@@ -137,21 +230,39 @@ const generateMappingCommand: CommandHandler<Record<string, unknown>, { generate
         tenantId: scope.tenantId,
         organizationId: scope.organizationId,
       } as FilterQuery<MappingRow>, { orderBy: { position: 'asc' } as any })
+      // Idempotent on the rows, but still advances a case the admin has
+      // (re)sent to the Lab — a `new` case with rows is a state the demo can
+      // reach by generating before the status write landed.
+      await advanceStatus(de, interviewCase, caseId, scope, ['new'], 'mapping')
       return { generated: false, rows: existing }
     }
 
-    // No real intake/wizard data exists yet (S-01/S-02) — a minimal,
-    // self-contained placeholder request with one synthetic answer is enough
-    // to skip the scripted adapter's `needs_more_info` round and reach a
-    // `complete` mapping. See the plan's Key Discoveries for why this is an
-    // accepted, temporary coupling rather than a real interview payload.
+    // Real intake tools (S-01) are sent as `saasTools`, carrying the catalog
+    // tool and the modules the client actually ticked, so the analysis grounds
+    // every row's `source` in an actual product name.
+    const tools = await em.find(InterviewCaseTool, {
+      interviewCase: caseId,
+      tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
+    } as FilterQuery<InterviewCaseTool>)
+
+    // No interview wizard exists (S-02, superseded) — a minimal, self-contained
+    // placeholder answer is enough to skip the adapter's `needs_more_info`
+    // round and reach a `complete` mapping.
     const result = await getMercatifyLabPort().evaluate({
       contractVersion: 1,
       tenantId: scope.tenantId,
       organizationId: scope.organizationId,
       caseId,
       companyProfile: {},
-      saasTools: [],
+      saasTools: tools.map((tool) => ({
+        name: tool.name,
+        monthlyCost: monthlyCostToNumber(tool.monthlyCost) ?? 0,
+        notes: tool.customUse ?? undefined,
+        catalogToolId: tool.catalogToolId ?? undefined,
+        selectedModuleIds: Array.isArray(tool.selectedModuleIds) ? tool.selectedModuleIds.map(String) : undefined,
+        seats: tool.seats ?? undefined,
+      })),
       answers: [{ questionId: 'seed', freeText: 'seeded case' }],
     })
 
@@ -172,6 +283,7 @@ const generateMappingCommand: CommandHandler<Record<string, unknown>, { generate
           caseId,
           position: i,
           capability: row.capability,
+          source: row.source,
           decision: row.decision,
           justification: row.justification,
           confidence: row.confidence,
@@ -194,6 +306,9 @@ const generateMappingCommand: CommandHandler<Record<string, unknown>, { generate
         events: mappingRowCrudEvents,
       })
     }
+
+    // The analysis has landed: a `new` case is now visibly "in mapping".
+    await advanceStatus(de, interviewCase, caseId, scope, ['new'], 'mapping')
 
     return { generated: true, rows: created }
   },
@@ -339,6 +454,12 @@ const confirmMappingCommand: CommandHandler<Record<string, unknown>, InterviewCa
       } as FilterQuery<InterviewCase>,
       apply: (record: InterviewCase) => {
         record.mappingConfirmedAt = new Date()
+        // A confirmed mapping is what `mapped` means. Statuses past it
+        // (`sent`, `accepted`, `consult`) are left alone — the client has
+        // already seen a report and their view must not regress.
+        if (record.status === 'new' || record.status === 'mapping') {
+          record.status = 'mapped'
+        }
       },
     })
     if (!entity) throw notFound('Interview case not found')
@@ -359,7 +480,7 @@ const confirmMappingCommand: CommandHandler<Record<string, unknown>, InterviewCa
       resourceId: String(result.id),
       tenantId: result.tenantId ? String(result.tenantId) : null,
       organizationId: result.organizationId ? String(result.organizationId) : null,
-      snapshotAfter: { mappingConfirmedAt: result.mappingConfirmedAt ?? null },
+      snapshotAfter: { mappingConfirmedAt: result.mappingConfirmedAt ?? null, status: result.status },
     }
   },
 }

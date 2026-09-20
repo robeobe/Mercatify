@@ -16,6 +16,15 @@ const events = [
   { id: 'mercatify.mapping_row.created', label: 'Capability Mapping Row Created', entity: 'mapping_row', category: 'crud' },
   { id: 'mercatify.mapping_row.updated', label: 'Capability Mapping Row Updated', entity: 'mapping_row', category: 'crud' },
   { id: 'mercatify.mapping.confirmed', label: 'Capability Mapping Confirmed', entity: 'case', category: 'lifecycle' },
+  { id: 'mercatify.handoff_document.generated', label: 'Handoff Document Generated', entity: 'case', category: 'lifecycle' },
+  { id: 'mercatify.handoff_document.updated', label: 'Handoff Document Updated', entity: 'case', category: 'lifecycle' },
+  { id: 'mercatify.report.updated', label: 'Client Report Updated', entity: 'case', category: 'lifecycle' },
+  // The moment the report becomes visible to the client — the only path that
+  // moves a case to `sent`.
+  { id: 'mercatify.report.sent', label: 'Client Report Sent', entity: 'case', category: 'lifecycle' },
+  // The client's answer to a sent report (`accepted` or `consult`). The seam
+  // S-06's Lab handoff subscribes to — read the case's status for which one.
+  { id: 'mercatify.case.answered', label: 'Client Answered The Report', entity: 'case', category: 'lifecycle' },
 ] as const
 
 export const eventsConfig = createModuleEvents({

@@ -13,13 +13,23 @@ const VOLTIX_REQUEST: ConsolidationRequest = {
   costs: { omOperatingCost: 8400, implementationCost: 12000 },
 }
 
-describe('Orchestrator — deterministic mode (no llmClient)', () => {
+// S3 (TEST-003), część silnikowa: przebieg BEZ ANI JEDNEGO agenta ma dawać
+// komplet liczb i mapowań, a nie błąd. Pominięcie sekcji czysto prozatorskich
+// broni `renderReport.test.ts` ("bez prozy w ogóle"); brakujące ogniwo -
+// `bin/report-cli.ts --no-llm` - powstaje w Fazie 3.
+describe('S3: Orchestrator — deterministic mode (no llmClient)', () => {
   it('computes mappings and scenario directly from provided capabilities, with no narrative', async () => {
     const orchestrator = new Orchestrator()
     const result = await orchestrator.run(VOLTIX_REQUEST)
 
     expect(result.mappings).toHaveLength(3)
-    expect(result.mappings.every((m) => m.decision === 'native')).toBe(true)
+    // HubSpot jest native, PandaDoc `quote_documents` -> alias `quotes.cpq` -> `build`.
+    // Open Mercato nie ma konfiguratora ofert, wiec generowanie oferty z konfiguracji
+    // produktu jest nowym kodem w KAZDYM narzedziu, ktore to robi - werdykt opisuje
+    // platforme docelowa, nie narzedzie zrodlowe.
+    expect(result.mappings.map((m) => m.decision)).toEqual(['native', 'native', 'build'])
+    // Narzedzie i tak gasnie: `build` to praca do wykonania, nie powod, zeby placic dalej.
+    expect(result.scenario.removedSaaS).toEqual(['HubSpot', 'PandaDoc'])
     expect(result.scenario.grossAnnualSaving).toBeCloseTo((1600 + 350) * 12, 5)
     expect(result.scenario.netAnnualSaving).toBeCloseTo((1600 + 350) * 12 - 8400, 5)
     expect(result.businessProcess).toBeUndefined()
@@ -102,7 +112,7 @@ describe('Orchestrator — with agents (fake LlmClient) — agents communicate t
 
     // The numbers are still the REAL deterministic ones, not the fake agent's:
     expect(result.mappings).toHaveLength(3)
-    expect(result.mappings.every((m) => m.decision === 'native')).toBe(true)
+    expect(result.mappings.map((m) => m.decision)).toEqual(['native', 'native', 'build'])
     expect(result.scenario.netAnnualSaving).toBeCloseTo((1600 + 350) * 12 - 8400, 5)
     expect(result.scenario.netAnnualSaving).not.toBe(999999999)
   })

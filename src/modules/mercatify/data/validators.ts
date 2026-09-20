@@ -56,6 +56,7 @@ export const interviewCaseListSchema = z.object({
   id: z.string().uuid().optional(),
   ids: z.string().optional(),
   status: interviewCaseStatusSchema.optional(),
+  mine: z.coerce.boolean().optional(),
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(100).default(50),
   sortField: z.enum(['id', 'title', 'status', 'created_at', 'updated_at']).optional().default('created_at'),
@@ -93,3 +94,81 @@ export type MappingRowUpdateInput = z.infer<typeof mappingRowUpdateSchema>
 export type MappingRowListInput = z.infer<typeof mappingRowListSchema>
 export type MappingGenerateInput = z.infer<typeof mappingGenerateSchema>
 export type MappingConfirmInput = z.infer<typeof mappingConfirmSchema>
+
+/**
+ * S-04: OM operating cost and implementation cost are customer-provided
+ * inputs (never computed by the analysis — see `lib/savings.ts`), entered by
+ * an admin independently of the intake profile, so this is deliberately not
+ * part of `interviewCaseUpdateSchema`.
+ */
+export const interviewCaseCostsSchema = z.object({
+  id: z.string().uuid(),
+  omOperatingCost: z.number().nonnegative().nullable().optional(),
+  implementationCost: z.number().nonnegative().nullable().optional(),
+})
+
+export type InterviewCaseCostsInput = z.infer<typeof interviewCaseCostsSchema>
+
+/**
+ * The handoff document is independent of the mapping table (PRD Open
+ * Question 8, resolved): `content` is a free-form replacement, never a
+ * derived/serialized view of `MappingRow`.
+ */
+export const handoffDocumentListSchema = z.object({
+  id: z.string().uuid().optional(),
+  ids: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(50),
+})
+
+export const handoffDocumentGenerateSchema = z.object({ caseId: z.string().uuid() })
+
+export const handoffDocumentUpdateSchema = z.object({
+  id: z.string().uuid(),
+  content: z.string().max(200_000),
+})
+
+export type HandoffDocumentListInput = z.infer<typeof handoffDocumentListSchema>
+export type HandoffDocumentGenerateInput = z.infer<typeof handoffDocumentGenerateSchema>
+export type HandoffDocumentUpdateInput = z.infer<typeof handoffDocumentUpdateSchema>
+
+/**
+ * S-09: the report's inputs are only what a human types while composing it.
+ * Every figure the client reads is derived on read (`lib/report.ts`), so no
+ * KPI, saving line or total is ever accepted from a client here.
+ *
+ * `hourlyRate` turns backlog hours into money and is deliberately separate
+ * from S-04's customer-provided `implementationCost` — the two are never
+ * blended.
+ */
+export const reportInputsSchema = z.object({
+  caseId: z.string().uuid(),
+  headline: z.string().max(300).nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
+  analyst: z.string().max(200).nullable().optional(),
+  openQuestions: z.string().max(5000).nullable().optional(),
+  hourlyRate: z.number().nonnegative().nullable().optional(),
+  implementationMonths: z.number().int().min(1).max(24).nullable().optional(),
+  // Keyed by `MappingRow.id`; a null or missing value means "to estimate",
+  // which is not the same as zero hours.
+  buildEstimates: z.record(z.string().uuid(), z.number().nonnegative().nullable()).optional(),
+})
+
+export const reportQuerySchema = z.object({ caseId: z.string().uuid() })
+export const reportSendSchema = z.object({ caseId: z.string().uuid() })
+
+export type ReportInputsInput = z.infer<typeof reportInputsSchema>
+export type ReportQueryInput = z.infer<typeof reportQuerySchema>
+export type ReportSendInput = z.infer<typeof reportSendSchema>
+
+/**
+ * S-10: the client's answer to a sent report. Only the answer itself is
+ * accepted from the client — no status string, so `mercatify.cases.answer`
+ * stays the only path that can produce `accepted`/`consult`.
+ */
+export const caseAnswerSchema = z.object({
+  caseId: z.string().uuid(),
+  answer: z.enum(['accepted', 'consult']),
+})
+
+export type CaseAnswerInput = z.infer<typeof caseAnswerSchema>

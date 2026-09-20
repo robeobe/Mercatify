@@ -1,8 +1,8 @@
 {
   "name": "list_catalog_capabilities",
   "kind": "pure",
-  "backedBy": "src/catalog.ts#getCatalogTool",
-  "description": "List the capability keys the catalog knows for one SaaS tool (e.g. HubSpot -> [\"contacts\",\"companies\",\"deals\",\"pipeline\",\"email_sequences\"]). Empty array when the tool is not in the catalog. Use this BEFORE classifying free-text usage notes into capabilities, so you tag with real catalog vocabulary instead of inventing names.",
+  "backedBy": "src/catalog.ts#listCatalogCapabilityKeys",
+  "description": "List the capability keys the catalog answers to for one SaaS tool (e.g. HubSpot -> [\"crm.contacts\",\"crm.pipeline\",\"quotes.cpq\",...] plus the legacy keys that still resolve, such as \"contacts\" or \"deals\"). Prefer the dotted canonical slugs. Empty array when the tool is not in the catalog. Use this BEFORE classifying free-text usage notes into capabilities, so you tag with real catalog vocabulary instead of inventing names.",
   "inputSchema": {
     "type": "object",
     "properties": {

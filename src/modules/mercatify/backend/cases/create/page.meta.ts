@@ -9,7 +9,9 @@ export const metadata = {
   icon: 'clipboard-list',
   navHidden: true,
   breadcrumb: [
-    { label: 'Interview cases', labelKey: 'mercatify.cases.page.title', href: '/backend/cases' },
+    // The intake is the client's screen, so it leads back to their own
+    // requests list rather than the staff queue.
+    { label: 'My requests', labelKey: 'mercatify.analysis.nav.myRequests', href: '/backend/requests' },
     { label: 'New intake', labelKey: 'mercatify.cases.create.title' },
   ],
 }

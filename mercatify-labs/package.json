@@ -8,8 +8,14 @@
   "scripts": {
     "test": "jest",
     "typecheck": "tsc --noEmit",
+    "renderer:generate": "node scripts/generate-browser-renderer.mjs",
+    "browser:generate": "npm run catalog:generate && npm run renderer:generate",
+    "browser:check": "node scripts/generate-browser-catalog.mjs --check && node scripts/generate-browser-renderer.mjs --check",
+    "catalog:generate": "node scripts/generate-browser-catalog.mjs",
+    "report": "ts-node bin/report-cli.ts",
     "example:voltix": "ts-node examples/run-voltix.ts",
-    "example:curate": "ts-node examples/curate-catalog.ts"
+    "example:curate": "ts-node examples/curate-catalog.ts",
+    "example:report-prose": "ts-node examples/run-report-prose.ts"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
