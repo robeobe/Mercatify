@@ -160,7 +160,7 @@ function ToolPicker({
         aria-label={t('mercatify.cases.form.search.placeholder')}
         disabled={readOnly}
       />
-      <div className="grid items-start gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 lg:grid-cols-2">
         {SAAS_CATALOG.filter((catalog) => {
           if (!needle) return true
           const hay = [
@@ -192,11 +192,11 @@ function ToolPicker({
                 >
                   ✓
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 flex-1">
                   <span className="text-sm font-semibold">{catalog.name}</span>
                   <span className="text-xs text-muted-foreground">{` — ${catalog.kind}`}</span>
                 </span>
-                <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
+                <span className="flex-none whitespace-nowrap text-xs text-muted-foreground">
                   {selected
                     ? t('mercatify.cases.form.tools.modulesCount', {
                         selected: selectedCount,
@@ -420,18 +420,19 @@ export function CaseForm({
   const router = useRouter()
   const readOnly = mode === 'view'
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'companyName', label: t('mercatify.cases.form.fields.companyName.label'), type: 'text', disabled: readOnly },
-    { id: 'industry', label: t('mercatify.cases.form.fields.industry.label'), type: 'text', disabled: readOnly },
-    { id: 'peopleCount', label: t('mercatify.cases.form.fields.peopleCount.label'), type: 'number', disabled: readOnly },
+    { id: 'companyName', label: t('mercatify.cases.form.fields.companyName.label'), type: 'text', layout: 'half', disabled: readOnly },
+    { id: 'industry', label: t('mercatify.cases.form.fields.industry.label'), type: 'text', layout: 'half', disabled: readOnly },
+    { id: 'peopleCount', label: t('mercatify.cases.form.fields.peopleCount.label'), type: 'number', layout: 'half', disabled: readOnly },
     {
       id: 'currency',
       label: t('mercatify.cases.form.fields.currency.label'),
       type: 'select',
+      layout: 'half',
       disabled: readOnly,
       options: CURRENCIES.map((value) => ({ value, label: value })),
     },
-    { id: 'pains', label: t('mercatify.cases.form.fields.pains.label'), type: 'textarea', disabled: readOnly },
-    { id: 'mustKeep', label: t('mercatify.cases.form.fields.mustKeep.label'), type: 'textarea', disabled: readOnly },
+    { id: 'pains', label: t('mercatify.cases.form.fields.pains.label'), type: 'textarea', layout: 'half', disabled: readOnly },
+    { id: 'mustKeep', label: t('mercatify.cases.form.fields.mustKeep.label'), type: 'textarea', layout: 'half', disabled: readOnly },
   ], [readOnly, t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
