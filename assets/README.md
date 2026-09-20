@@ -19,6 +19,7 @@ itself, where the customer portal and the staff backend are separate surfaces.
 | `requests.html` | Her requests as tiles, each carrying the one thing she came back for: where it got to, and whether the ball is with her or with us. |
 | `request.html` | One request: what she sent, and a four-step track from *you sent your stack* to *you decide*. The map card appears here once a consultant actually sends it. |
 | `offer.html` | The map itself. She reads it, then either accepts or asks for a call with Sales; her answer goes straight back to the console. |
+| `mockup.html` | The generated workspace: a stand-alone Open Mercato tenant for `REQ-1042`, opened in its own tab once a consultant has sent it from `console/report.html`. Sidebar groups and page titles are the ones the real modules declare in `page.meta.ts`; a page whose jobs map as *native* renders with Voltix data, one that maps as *configure* or *build* renders locked and says what the step is. Built for one case on purpose — provisioning a tenant per request is the product, not the demo. |
 
 Shell: a top bar with one link, *My requests*, and only once she has something
 to come back to — an empty list would be a dead end on a first visit. The client
@@ -66,7 +67,7 @@ is sent on purpose.
 ## The loop
 
 1. The client fills `client/intake.html` and sends → the request lands in the console queue as **new**.
-2. A consultant opens `console/modules.html` — which moves the request to **in mapping** — and corrects whatever the agent got wrong. Changes save as they are made and the bar says so. **Confirm mapping** closes it and unlocks the report.
+2. A consultant opens `console/modules.html` — which moves the request to **in mapping** — and corrects whatever the agent got wrong. The first pass, **Reopen mapping** and **Run the agents again** each put up the Mercatify Labs curtain for about five seconds (`showAgentsRunning` in `om-core.js`): the mapping itself is a lookup, and on stage a lookup reads as nothing having happened. Changes save as they are made and the bar says so. **Confirm mapping** closes it and unlocks the report.
 3. `console/report.html` writes the opening line and the closing note; everything else is derived from the mapping, so an edit in step 2 shows up here without a regenerate step. Reached before the mapping is confirmed, it sends you back instead. The preview calls the same renderer the client's page does, so what you see is the document itself.
 4. **Send** → status **report sent**, and only now can the client see anything.
 5. She sees it on her tile and on the request's track, reads it in `client/offer.html`, and either **accepts** or **asks for a call with Sales** → status **accepted** or **consult asked**, visible back in the queue.

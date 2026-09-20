@@ -135,6 +135,12 @@
       }),
       r.message ? node('span', { class: 'sub', text: 'You wrote: ' + r.message }) : document.createTextNode('')
     ]));
+    if (canGenerateMockup(req)) {
+      box.appendChild(node('div', { class: 'row', style: 'margin-top:12px' }, [
+        node('a', { class: 'btn btn--sm', href: 'mockup.html?ref=' + encodeURIComponent(req.ref),
+          target: '_blank', rel: 'noopener', text: 'Open your workspace ↗' })
+      ]));
+    }
     form.hidden = true;
     document.getElementById('answer-head').hidden = true;
   }

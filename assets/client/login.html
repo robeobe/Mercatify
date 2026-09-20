@@ -88,7 +88,7 @@
        takes a moment and the demo should not look like a hyperlink. */
     /* Returning clients land on their requests; a first-time visitor has
        nothing there, so the form is the right first screen for them. */
-    var home = readClientRefs().length ? 'requests.html' : 'intake.html';
+    var home = clientRequests().length ? 'requests.html' : 'intake.html';
     setTimeout(function () { window.location.href = home; }, 450);
   });
 })();

@@ -29,6 +29,7 @@
     </div>
     <div class="pagehead__actions">
       <a class="btn btn--ghost" href="requests.html">← Back to my requests</a>
+      <button class="btn btn--ghost" type="button" id="delete-request">Delete this request</button>
     </div>
   </div>
 
@@ -124,6 +125,12 @@
     ' · ' + money(requestMonthly(req), req.currency) + '/mo on licences';
   document.getElementById('r-pains').textContent = req.pains || 'Not stated.';
   document.getElementById('r-keep').textContent = req.mustKeep || 'Not stated.';
+
+  document.getElementById('delete-request').addEventListener('click', function () {
+    if (!confirm('Delete ' + req.ref + '? This removes it from your requests for good.')) return;
+    deleteRequest(req.ref);
+    window.location.href = 'requests.html';
+  });
 
   var list = document.getElementById('r-tools');
   (req.tools || []).forEach(function (t) {

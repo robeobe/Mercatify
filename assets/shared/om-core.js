@@ -20,7 +20,7 @@ var REQUESTS_KEY = 'mercatify.requests.v1';
    ref — it can never list the queue, which is what keeps the two apps apart. */
 var CLIENT_REF_KEY = 'mercatify.client.ref.v1';
 
-var DEMO_TENANT = { id: 'voltix', name: 'Voltix Energy' };
+var DEMO_TENANT = { id: 'voltix', name: 'Voltix Energy', industry: 'Solar installer, B2C + small B2B' };
 var CONSOLE_ORG = 'Mercatify — consulting';
 
 function readSession(app) {
@@ -48,8 +48,13 @@ function currentUser(app) {
 /* ─────────────── the client's own requests ───────────────
    A client can send more than one over time, so the portal keeps a list of refs
    and never reads the queue. Everything the client app shows is filtered
-   through this list — that is what keeps one tenant out of another's data. */
+   through this list plus anything already seeded under their own tenant name
+   — that is what keeps one tenant out of another's data, without also hiding
+   a case that came in before this browser ever touched the intake form. */
 var CLIENT_REFS_KEY = 'mercatify.client.refs.v1';
+function ownedByClient(req) {
+  return !!req && (readClientRefs().indexOf(req.ref) !== -1 || req.company === DEMO_TENANT.name);
+}
 
 function readClientRefs() {
   var refs = [];
@@ -72,17 +77,24 @@ function addClientRef(ref) {
   try { localStorage.removeItem(CLIENT_REF_KEY); } catch (e) {}
   return refs;
 }
-/* The client's requests, newest first, dropping any that no longer resolve. */
+function removeClientRef(ref) {
+  var refs = readClientRefs().filter(function (r) { return r !== ref; });
+  try { localStorage.setItem(CLIENT_REFS_KEY, JSON.stringify(refs)); } catch (e) {}
+  return refs;
+}
+/* The client's requests, newest first: everything they sent from this browser,
+   plus any request already on file for their tenant — a seeded case they never
+   personally submitted here is still theirs to see. */
 function clientRequests() {
-  return readClientRefs()
-    .map(function (ref) { return findRequest(ref); })
-    .filter(Boolean)
+  return loadRequests()
+    .filter(ownedByClient)
     .sort(function (a, b) { return String(b.ref).localeCompare(String(a.ref)); });
 }
 /* Strict: a ref this client does not own returns null, whatever the URL says. */
 function clientRequest(ref) {
   if (!ref) return null;
-  return readClientRefs().indexOf(ref) === -1 ? null : findRequest(ref);
+  var req = findRequest(ref);
+  return ownedByClient(req) ? req : null;
 }
 
 /* The steps the client sees, in order, with the current one marked. Derived from the
@@ -236,15 +248,21 @@ function moduleById(id) {
 var SEED_REQUESTS = [
   {
     ref: 'REQ-1042', company: 'Voltix Energy', industry: 'Solar installer, B2C + small B2B',
-    people: 34, currency: 'EUR', received: '2026-09-17', status: 'new', owner: null,
-    pains: 'Stock numbers live in three places. Quotes take a day. Nobody knows which installer holds which certificate.',
-    mustKeep: 'Accounting stays with the bookkeeper. The e-signature provider is in our contracts.',
+    people: 41, currency: 'EUR', received: '2026-09-17', status: 'new', owner: null,
+    pains: 'Stock numbers live in three places. Quotes take a day. Nobody knows which installer holds which certificate. The B2B shop and the warehouse disagree about what is in stock.',
+    mustKeep: 'Accounting stays with the bookkeeper. The e-signature provider is in our contracts. The public website stays on its current CMS.',
+    /* Eleven tools, so the mapping touches most of the platform — this is the
+       case the generated workspace is built from, and a thin stack would give
+       it two modules and an empty sidebar. */
     tools: [
-      { name: 'HubSpot', seats: 12, monthly: 1450, caps: ['crm.contacts', 'crm.pipeline', 'crm.email', 'quotes.cpq', 'marketing.email'] },
-      { name: 'Zendesk', seats: 8, monthly: 420, caps: ['support.tickets', 'support.sla', 'support.kb'] },
-      { name: 'Unleashed', seats: 6, monthly: 690, caps: ['inventory.stock', 'inventory.multiwarehouse', 'purchasing.po'] },
+      { name: 'HubSpot', seats: 12, monthly: 1450, caps: ['crm.contacts', 'crm.pipeline', 'crm.email', 'quotes.cpq', 'marketing.email', 'reporting.dashboards'] },
+      { name: 'Zendesk', seats: 8, monthly: 420, caps: ['support.tickets', 'support.sla', 'support.kb', 'support.chat'] },
+      { name: 'Unleashed', seats: 6, monthly: 690, caps: ['inventory.stock', 'inventory.multiwarehouse', 'purchasing.po', 'inventory.barcode', 'inventory.alerts'] },
+      { name: 'Shopify', seats: 5, monthly: 890, caps: ['catalog.products', 'pricing.pricelists', 'ecommerce.storefront', 'ecommerce.cart', 'orders.mgmt', 'fulfillment.shipping', 'payments', 'b2b.accounts'] },
       { name: 'PandaDoc', seats: 10, monthly: 350, caps: ['docs.templates', 'esignature', 'docs.analytics'] },
-      { name: 'Jobber', seats: 14, monthly: 560, caps: ['field.scheduling', 'field.jobsheets', 'invoicing'] },
+      { name: 'Jobber', seats: 14, monthly: 560, caps: ['field.scheduling', 'field.jobsheets', 'invoicing', 'customer.portal', 'time.tracking'] },
+      { name: 'monday.com', seats: 18, monthly: 520, caps: ['projects.tasks', 'files.docs', 'workflow.approvals'] },
+      { name: 'Mailchimp', seats: 3, monthly: 210, caps: ['marketing.email', 'marketing.segments', 'marketing.sms'] },
       { name: 'Xero', seats: 4, monthly: 180, caps: ['accounting.ledger', 'accounting.bank', 'invoicing'] },
       { name: 'Airtable', seats: 20, monthly: 400, caps: ['data.custom', 'internal.apps', 'forms.intake'] },
       { name: 'Stripe Billing', seats: 3, monthly: 330, caps: ['payments', 'billing.subscriptions'] }
@@ -298,6 +316,25 @@ function patchRequest(ref, patch) {
   return cur;
 }
 
+/* Deleting a seeded request cannot remove it from the SEED_REQUESTS constant,
+   so deletion is a tombstone list applied at read time — the same trick as
+   patches, and it works for a submitted request just as well as a seeded one. */
+var DELETED_KEY = 'mercatify.deleted.v1';
+function loadDeleted() {
+  try { var raw = localStorage.getItem(DELETED_KEY); return raw ? (JSON.parse(raw) || []) : []; }
+  catch (e) { return []; }
+}
+function isDeleted(ref) { return loadDeleted().indexOf(ref) !== -1; }
+/* Either side can call this — a client removing their own request and ops
+   clearing one from the queue are the same action on the same shared store. */
+function deleteRequest(ref) {
+  var d = loadDeleted();
+  if (d.indexOf(ref) === -1) d.push(ref);
+  try { localStorage.setItem(DELETED_KEY, JSON.stringify(d)); } catch (e) {}
+  removeClientRef(ref);
+  return d;
+}
+
 function loadRequests() {
   var stored = [];
   try {
@@ -305,7 +342,7 @@ function loadRequests() {
     if (raw) stored = JSON.parse(raw) || [];
   } catch (e) { stored = []; }
   var patches = loadPatches();
-  return stored.concat(SEED_REQUESTS).map(function (r) {
+  return stored.concat(SEED_REQUESTS).filter(function (r) { return !isDeleted(r.ref); }).map(function (r) {
     var p = patches[r.ref];
     if (!p) return r;
     var merged = {};
@@ -484,6 +521,79 @@ function statusBadge(req) {
 }
 function today() { return new Date().toISOString().slice(0, 10); }
 
+/* ─────────────── starting over ───────────────
+   Every mercatify.* key is demo state — submitted requests, patches,
+   deletions, both sessions. One sweep clears all of it, since there is no
+   server copy anywhere to fall out of sync with. */
+function resetDemoData() {
+  try {
+    Object.keys(localStorage).forEach(function (k) {
+      if (k.indexOf('mercatify.') === 0) localStorage.removeItem(k);
+    });
+  } catch (e) {}
+}
+
+/* ─────────────── the agents at work ───────────────
+   The mapping itself is a lookup and lands in a millisecond, which on stage
+   reads as "nothing happened". This is the five seconds in which something
+   visibly does: the Labs mark, and the steps the agents actually take, sized
+   from the request in front of them. `done` runs once the curtain is down. */
+var AGENTS_RUN_MS = 5200;
+function showAgentsRunning(req, done) {
+  var tools = (req.tools || []).length;
+  var jobs = requestCaps(req).length;
+  var steps = [
+    'Reading ' + tools + ' tools and what they are used for…',
+    'Matching ' + jobs + ' jobs against ' + OM_MODULES.length + ' installed modules…',
+    'Looking for jobs paid for in more than one tool…',
+    'Weighing what is native, what needs configuring, what must be built…',
+    'Writing verdicts with a confidence band on each…'
+  ];
+  var overlay = node('div', { class: 'agents', role: 'status', 'aria-live': 'polite' }, [
+    node('div', { class: 'agents__card' }, [
+      node('div', { class: 'agents__mark' }, [node('span', { class: 'om-mark om-mark--lg', 'aria-hidden': 'true', text: 'M' }), node('span', { class: 'agents__ring' })]),
+      node('div', { class: 'agents__brand', text: 'Mercatify Labs' }),
+      node('div', { class: 'agents__title', text: 'Mapping ' + req.company + '’s stack' }),
+      node('div', { class: 'agents__step', text: steps[0] }),
+      node('div', { class: 'agents__bar' }, [node('i')]),
+      node('div', { class: 'agents__foot', text: req.ref + ' · ' + tools + ' tools · ' + jobs + ' jobs' })
+    ])
+  ]);
+  document.body.appendChild(overlay);
+  var bar = overlay.querySelector('.agents__bar i');
+  var stepEl = overlay.querySelector('.agents__step');
+  var per = AGENTS_RUN_MS / steps.length;
+  requestAnimationFrame(function () { bar.style.transition = 'width ' + AGENTS_RUN_MS + 'ms linear'; bar.style.width = '100%'; });
+  steps.forEach(function (s, i) { if (i) setTimeout(function () { stepEl.textContent = s; }, per * i); });
+  setTimeout(function () {
+    overlay.classList.add('is-done');
+    setTimeout(function () { overlay.remove(); if (done) done(); }, 320);
+  }, AGENTS_RUN_MS);
+}
+
+/* ─────────────── the generated workspace ───────────────
+   A real "accept" would kick off provisioning a tenant per request — not
+   something a static demo can do for every submission. So exactly one case
+   is wired to show what that looks like once it lands: modules with a native
+   verdict render as switched on, everything else keeps the status badge from
+   the mapping so the client can see what still needs a step. */
+var MOCKUP_REF = 'REQ-1042';
+/* Eligible: this demo could show a generated workspace for this request at
+   all. Ready: a consultant actually pressed send — the client sees nothing
+   until then, same rule as the report itself. */
+function mockupEligible(req) {
+  return !!req && req.ref === MOCKUP_REF && req.status === 'accepted';
+}
+function canGenerateMockup(req) {
+  return mockupEligible(req) && !!req.workspaceSentAt;
+}
+function sendMockup(req) {
+  var at = today();
+  patchRequest(req.ref, { workspaceSentAt: at });
+  req.workspaceSentAt = at;
+  return req;
+}
+
 /* ─────────────── what you can do to a request ───────────────
    The two verbs, mapping and reporting, are not available at the same time and
    never were — showing both on every row invited sending a report on a mapping
@@ -549,7 +659,13 @@ function requestActions(req) {
         { label: 'Mapping', href: mapHref }
       ];
     default:
-      return [{ label: 'Report', href: reportHref, primary: true }];
+      var acts = [{ label: 'Report', href: reportHref, primary: true }];
+      /* The one thing left to do on an accepted request, offered where the
+         consultant is looking, not three screens deep. */
+      if (mockupEligible(req)) {
+        acts.push({ label: req.workspaceSentAt ? 'Workspace sent' : 'Send workspace', href: reportHref + '#workspace-card' });
+      }
+      return acts;
   }
 }
 
@@ -1149,6 +1265,7 @@ function mountConsoleShell(opts) {
       '<header class="topbar"><nav class="crumbs" aria-label="Breadcrumb">' + trail + '</nav>' +
         '<div class="topbar__right">' +
           '<span class="badge badge--outline">' + CONSOLE_ORG + '</span>' +
+          '<button class="btn btn--muted btn--sm" type="button" id="om-reset">Reset demo</button>' +
           '<button class="btn btn--muted btn--sm" type="button" id="om-theme">Theme</button>' +
         '</div>' +
       '</header>' +
@@ -1156,6 +1273,11 @@ function mountConsoleShell(opts) {
     '</div>';
 
   document.getElementById('om-signout').addEventListener('click', function () { clearSession('console'); });
+  document.getElementById('om-reset').addEventListener('click', function () {
+    if (!confirm('Reset all demo data? This clears every request, patch and session saved in this browser — both the console and the client portal.')) return;
+    resetDemoData();
+    window.location.href = 'login.html';
+  });
   initOmTheme('om-theme');
   return document.getElementById('content');
 }
@@ -1168,7 +1290,8 @@ function mountPortalShell(opts) {
   var user = currentUser('client');
   /* One link, and only once there is something to come back to. An empty
      "My requests" would be a dead end on a first visit. */
-  var nav = readClientRefs().length
+  var hasRequests = clientRequests().length > 0;
+  var nav = hasRequests
     ? '<a class="portal__link' + (opts.active === 'requests' ? ' is-on' : '') +
       '" href="requests.html">My requests</a>'
     : '';
@@ -1177,7 +1300,7 @@ function mountPortalShell(opts) {
   shell.innerHTML =
     '<header class="portal__bar">' +
       '<div class="portal__inner">' +
-        '<a class="portal__brand" href="' + (readClientRefs().length ? 'requests.html' : 'intake.html') + '">' +
+        '<a class="portal__brand" href="' + (hasRequests ? 'requests.html' : 'intake.html') + '">' +
           '<span class="om-mark" aria-hidden="true">M</span>' +
           '<span><span class="sidebar__name">Mercatify</span>' +
           '<span class="sidebar__tenant">' + DEMO_TENANT.name + '</span></span>' +
@@ -1185,6 +1308,7 @@ function mountPortalShell(opts) {
         nav +
         '<div class="portal__right">' +
           '<span class="small muted">Signed in as ' + user.name + '</span>' +
+          '<button class="btn btn--muted btn--sm" type="button" id="om-reset">Reset demo</button>' +
           '<button class="btn btn--muted btn--sm" type="button" id="om-theme">Theme</button>' +
           '<a class="btn btn--outline btn--sm" href="login.html" id="om-signout">Sign out</a>' +
         '</div>' +
@@ -1193,6 +1317,11 @@ function mountPortalShell(opts) {
     '<main class="portal__content" id="content"></main>';
 
   document.getElementById('om-signout').addEventListener('click', function () { clearSession('client'); });
+  document.getElementById('om-reset').addEventListener('click', function () {
+    if (!confirm('Reset all demo data? This clears every request, patch and session saved in this browser — both the client portal and the console.')) return;
+    resetDemoData();
+    window.location.href = 'login.html';
+  });
   initOmTheme('om-theme');
   return document.getElementById('content');
 }

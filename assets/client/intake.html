@@ -76,14 +76,6 @@
         <div class="card__head"><h2>Your company</h2></div>
         <div class="grid grid--2">
           <div>
-            <label for="f-company">Company</label>
-            <input type="text" id="f-company" data-meta="name" placeholder="Voltix Energy">
-          </div>
-          <div>
-            <label for="f-industry">What you do</label>
-            <input type="text" id="f-industry" data-meta="industry" placeholder="Solar installer, B2C + small B2B">
-          </div>
-          <div>
             <label for="f-people">People using software</label>
             <input type="number" id="f-people" data-meta="people" min="0" placeholder="34">
           </div>
@@ -184,10 +176,13 @@
   var content = mountPortalShell({});
   content.appendChild(document.getElementById('tpl-form').content.cloneNode(true));
   /* Only offer a way back once there is something to go back to. */
-  if (readClientRefs().length) document.getElementById('head-actions').hidden = false;
+  if (clientRequests().length) document.getElementById('head-actions').hidden = false;
 
   var state = {
-    meta: { name: '', industry: '', people: '', currency: 'EUR', pains: '', mustKeep: '' },
+    /* Company name and industry are not asked — the client is signed into
+       their own tenant, so both are already known rather than something to
+       type back at them. */
+    meta: { name: DEMO_TENANT.name, industry: DEMO_TENANT.industry, people: '', currency: 'EUR', pains: '', mustKeep: '' },
     sel: {},     /* toolId -> { mods:{modId:true}, seats:'', monthly:'' } */
     custom: []   /* { name, what, seats, monthly } */
   };
@@ -427,8 +422,6 @@
   var prev = loadCase();
   if (prev && prev.brief && prev.brief.tools && prev.brief.tools.length) {
     var b = prev.brief;
-    state.meta.name = b.company.name || '';
-    state.meta.industry = b.company.industry || '';
     state.meta.people = b.company.people || '';
     state.meta.currency = b.currency || 'EUR';
     state.meta.pains = b.pains || '';
@@ -442,8 +435,6 @@
         state.sel[t.id] = { mods: mods, seats: t.seats || '', monthly: t.monthly || '' };
       }
     });
-    document.getElementById('f-company').value = state.meta.name;
-    document.getElementById('f-industry').value = state.meta.industry;
     document.getElementById('f-people').value = state.meta.people;
     document.getElementById('f-currency').value = state.meta.currency;
     document.getElementById('f-pains').value = state.meta.pains;

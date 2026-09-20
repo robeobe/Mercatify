@@ -164,7 +164,16 @@
             style: i ? 'margin-left:6px' : '',
             href: a.href, text: a.label
           });
-        }))
+        }).concat([(function () {
+          var del = node('button', { type: 'button', class: 'btn btn--sm btn--muted', style: 'margin-left:6px', text: 'Delete' });
+          del.addEventListener('click', function () {
+            if (!confirm('Delete ' + r.ref + ' (' + r.company + ')? This removes it from the queue for good.')) return;
+            deleteRequest(r.ref);
+            all = all.filter(function (x) { return x.ref !== r.ref; });
+            render();
+          });
+          return del;
+        })()]))
       ]);
       rowsEl.appendChild(tr);
     });

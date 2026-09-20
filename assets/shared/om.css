@@ -524,3 +524,30 @@ td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: t
 }
 .tab[aria-current="page"] { color: var(--foreground); border-bottom-color: var(--foreground); }
 .tab:hover { color: var(--foreground); }
+
+/* ─────────────── the agents at work ───────────────
+   Full-screen curtain for the seconds the mapping is "running". Same mark as
+   the login, a ring turning around it, one line for the current step and a
+   bar that fills over the whole run — so the audience can see it has an end. */
+.agents {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--background) 92%, transparent); backdrop-filter: blur(6px);
+  animation: agents-in .25s ease-out;
+}
+.agents.is-done { opacity: 0; transition: opacity .3s ease-in; }
+.agents__card { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 24px; max-width: 520px; }
+.agents__mark { position: relative; display: grid; place-items: center; margin-bottom: 8px; }
+.agents__mark .om-mark--lg { width: 96px; height: 96px; border-radius: 20px; font-size: 2.75rem; }
+.agents__ring {
+  position: absolute; inset: -14px; border-radius: 999px; pointer-events: none;
+  border: 2px solid transparent; border-top-color: var(--brand-violet); border-right-color: var(--brand-lime);
+  animation: agents-spin 1.1s linear infinite;
+}
+.agents__brand { font-size: 0.75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); }
+.agents__title { font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; }
+.agents__step { min-height: 1.4em; font-size: 0.9375rem; color: var(--muted-foreground); }
+.agents__bar { width: 280px; height: 4px; border-radius: 999px; background: var(--muted); overflow: hidden; margin-top: 8px; }
+.agents__bar i { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--brand-lime), var(--brand-yellow), var(--brand-violet)); }
+.agents__foot { font-size: 0.75rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+@keyframes agents-spin { to { transform: rotate(360deg); } }
+@keyframes agents-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

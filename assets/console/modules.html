@@ -147,6 +147,7 @@
 
   <div class="actionbar" id="mapbar">
     <div class="actionbar__text" id="mapstate">—</div>
+    <button class="btn btn--outline" type="button" id="rerun">Run the agents again</button>
     <button class="btn" type="button" id="confirm">Confirm mapping</button>
   </div>
 </template>
@@ -186,8 +187,11 @@
   });
   /* Arriving here from the queue's Map action IS the act of starting, so a new
      request becomes "in mapping" on open. That is what gives the status a life
-     longer than a moment, and gives the consultant something to close. */
+     longer than a moment, and gives the consultant something to close. The
+     first pass is the one moment the agents are visibly at work. */
+  var firstPass = current.status === 'new';
   startMapping(current);
+  if (firstPass) showAgentsRunning(current, function () { setMapState('The agents’ first pass. Every row is yours to correct.'); });
 
   /* Locking is the point of the whole state machine: the report is built from a
      mapping somebody confirmed, and a confirmed mapping does not drift under it. */
@@ -256,11 +260,25 @@
   });
 
   document.getElementById('reopen').addEventListener('click', function () {
-    reopenMapping(current);
-    renderHeader(current);
-    renderCaps(current);
-    setLock();
-    setMapState('Reopened. Changes save as you make them.');
+    showAgentsRunning(current, function () {
+      reopenMapping(current);
+      renderHeader(current);
+      renderCaps(current);
+      setLock();
+      setMapState('Reopened. Your earlier corrections are kept. Changes save as you make them.');
+    });
+  });
+
+  /* Same pass, run again on demand — the map is deterministic, so what comes
+     back is the same verdicts with the consultant's corrections still on top. */
+  document.getElementById('rerun').addEventListener('click', function () {
+    showAgentsRunning(current, function () {
+      renderHeader(current);
+      renderCaps(current);
+      setLock();
+      var edits = requestCaps(current).filter(function (c) { return c.edited; }).length;
+      setMapState('Agents’ pass refreshed' + (edits ? ' · your ' + edits + (edits === 1 ? ' correction is' : ' corrections are') + ' kept.' : '.'));
+    });
   });
 
   function capChip(c) {

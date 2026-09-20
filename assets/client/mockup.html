@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Mercato — Voltix Energy</title>
+<link rel="icon" href="../../public/open-mercato.svg">
+<link rel="stylesheet" href="../shared/om.css">
+<style>
+  /* The real backend AppShell, traced: a 240px aside with `border-r py-4 px-3`,
+     uppercase group labels with a chevron, a `rounded-lg text-sm font-medium`
+     item with a 1×5 bar on its left when active, a sticky header whose
+     breadcrumb starts at a home icon, and a footer with the version. Widths,
+     paddings and type sizes below are those Tailwind classes, in CSS. */
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--background); color: var(--foreground); }
+  .om { display: flex; min-height: 100svh; }
+  .om__aside {
+    width: 240px; flex: none; border-right: 1px solid var(--border); background: var(--background);
+    padding: 16px 12px; position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column; gap: 12px;
+  }
+  .om__brand { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
+  .om__brand img { width: 40px; height: 40px; border-radius: 999px; object-fit: cover; }
+  .om__brand-name { font-weight: 600; font-size: 0.875rem; line-height: 1.2; }
+  .om__brand-org { display: block; font-size: 0.6875rem; line-height: 1rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-foreground); }
+  .om__navsearch { position: relative; }
+  .om__navsearch input { height: 36px; padding-left: 32px; font-size: 0.875rem; }
+  .om__navsearch svg { position: absolute; left: 10px; top: 10px; width: 16px; height: 16px; color: var(--muted-foreground); }
+  .om__nav { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-left: -12px; padding-left: 12px; }
+  .om__group { display: grid; gap: 4px; }
+  .om__grouplabel {
+    display: flex; justify-content: space-between; align-items: center; width: 100%;
+    padding: 4px 4px; background: none; border: 0; cursor: pointer; color: rgb(from var(--muted-foreground) r g b / .7);
+    font: inherit; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .om__grouplabel svg { width: 14px; height: 14px; transition: transform .15s; }
+  .om__group.is-closed .om__grouplabel svg { transform: rotate(-90deg); }
+  .om__group.is-closed .om__items { display: none; }
+  .om__items { display: grid; gap: 4px; }
+  .om__item {
+    position: relative; display: inline-flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 12px; border-radius: var(--radius); border: 0; background: none; cursor: pointer; text-align: left;
+    font: inherit; font-size: 0.875rem; font-weight: 500; color: var(--muted-foreground);
+  }
+  .om__item:hover { background: var(--muted); }
+  .om__item.is-active { background: var(--muted); color: var(--foreground); }
+  .om__item.is-active::before { content: ''; position: absolute; left: -12px; top: 8px; width: 4px; height: 20px; border-radius: 0 4px 4px 0; background: var(--foreground); }
+  .om__item svg { width: 16px; height: 16px; flex: none; }
+  .om__item .om__lock { margin-left: auto; width: 12px; height: 12px; opacity: .6; }
+  .om__item.is-locked { color: rgb(from var(--muted-foreground) r g b / .75); }
+
+  .om__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .om__header {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 24px; border-bottom: 1px solid var(--border);
+    background: rgb(from var(--background) r g b / .95); backdrop-filter: blur(8px);
+  }
+  .om__crumbs { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; color: var(--muted-foreground); margin-left: 12px; }
+  .om__crumbs svg { width: 16px; height: 16px; }
+  .om__crumbs .cur { color: var(--foreground); font-weight: 500; }
+  .om__hright { display: flex; align-items: center; gap: 6px; }
+  .om__ibtn { width: 32px; height: 32px; border-radius: var(--radius-md); border: 0; background: none; color: var(--muted-foreground); display: grid; place-items: center; cursor: pointer; position: relative; }
+  .om__ibtn:hover { background: var(--muted); color: var(--foreground); }
+  .om__ibtn svg { width: 16px; height: 16px; }
+  .om__ibtn .dot { position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border-radius: 999px; background: #ef4444; border: 2px solid var(--background); }
+  .om__user { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 4px; border-radius: 999px; }
+  .om__user:hover { background: var(--muted); }
+  .om__user .avatar { width: 28px; height: 28px; font-size: 0.6875rem; }
+  .om__content { flex: 1; width: 100%; max-width: 1536px; margin: 0 auto; padding: 24px; display: grid; gap: 24px; align-content: start; }
+  .om__footer { border-top: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: flex-end; gap: 16px; font-size: 0.75rem; color: var(--muted-foreground); }
+  .om__footer a { color: inherit; text-decoration: none; }
+  .om__footer a:hover { color: var(--foreground); }
+
+  /* Page + PageHeader */
+  .pg__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .pg__head h1 { margin: 0; font-size: 1.5rem; font-weight: 600; line-height: 1.2; }
+  .pg__head p { margin: 4px 0 0; font-size: 0.875rem; color: var(--muted-foreground); }
+  .pg__actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* DataTable */
+  .dt { display: grid; gap: 12px; }
+  .dt__bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dt__search { position: relative; width: 260px; }
+  .dt__search input { height: 36px; padding-left: 32px; font-size: 0.875rem; }
+  .dt__search svg { position: absolute; left: 10px; top: 10px; width: 16px; height: 16px; color: var(--muted-foreground); }
+  .dt__frame { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .dt table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .dt thead { background: rgb(from var(--muted) r g b / .4); }
+  .dt th { text-align: left; font-weight: 500; color: var(--muted-foreground); height: 40px; padding: 0 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .dt td { padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .dt tbody tr:last-child td { border-bottom: 0; }
+  .dt tbody tr:hover { background: rgb(from var(--muted) r g b / .5); }
+  .dt .num, .dt th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .dt .sub { display: block; font-size: 0.75rem; color: var(--muted-foreground); margin-top: 1px; }
+  .dt__foot { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--border); font-size: 0.875rem; color: var(--muted-foreground); }
+  .dt__pager { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .dt__pager button { height: 32px; min-width: 32px; padding: 0 8px; border: 1px solid var(--border); background: var(--background); border-radius: var(--radius-md); color: var(--foreground); font: inherit; font-size: 0.8125rem; cursor: pointer; }
+  .dt__pager button[disabled] { opacity: .4; cursor: default; }
+  .chk { width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 4px; display: inline-block; vertical-align: middle; }
+
+  /* Dashboard widgets */
+  .wg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 900px) { .wg { grid-template-columns: 1fr; } }
+  .wg__card { border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); padding: 16px; display: grid; gap: 12px; align-content: start; }
+  .wg__card--wide { grid-column: span 2; }
+  @media (max-width: 900px) { .wg__card--wide { grid-column: span 1; } }
+  .wg__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .wg__title { font-size: 0.875rem; font-weight: 600; }
+  .wg__big { font-size: 1.75rem; font-weight: 600; letter-spacing: -.01em; line-height: 1; }
+  .wg__sub { font-size: 0.75rem; color: var(--muted-foreground); }
+  .wg__bars { display: grid; gap: 8px; }
+  .wg__bar { display: grid; grid-template-columns: 130px 1fr 60px; gap: 10px; align-items: center; font-size: 0.8125rem; }
+  .wg__bar i { display: block; height: 8px; border-radius: 999px; background: var(--muted); overflow: hidden; }
+  .wg__bar i b { display: block; height: 100%; background: var(--foreground); border-radius: 999px; }
+  .wg__bar .num { text-align: right; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+  .wg__list { list-style: none; margin: 0; padding: 0; display: grid; }
+  .wg__list li { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.8125rem; }
+  .wg__list li:last-child { border-bottom: 0; }
+  .wg__list time { margin-left: auto; color: var(--muted-foreground); font-size: 0.75rem; white-space: nowrap; }
+
+  /* Kanban */
+  .kb { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+  .kb__col { background: rgb(from var(--muted) r g b / .5); border-radius: var(--radius-xl); padding: 10px; display: grid; gap: 8px; align-content: start; }
+  .kb__colhead { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted-foreground); padding: 2px 4px 6px; }
+  .kb__card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: grid; gap: 4px; }
+  .kb__card b { font-size: 0.8125rem; font-weight: 500; }
+  .kb__card span { font-size: 0.75rem; color: var(--muted-foreground); }
+  .kb__amt { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.8125rem; }
+
+  /* Inbox list */
+  .ib { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .ib__row { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+  .ib__row:last-child { border-bottom: 0; }
+  .ib__row:hover { background: rgb(from var(--muted) r g b / .5); }
+  .ib__row .avatar { width: 32px; height: 32px; font-size: 0.75rem; }
+  .ib__subj { font-weight: 500; }
+  .ib__prev { display: block; font-size: 0.8125rem; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ib__meta { display: grid; justify-items: end; gap: 4px; font-size: 0.75rem; color: var(--muted-foreground); }
+
+  /* Locked page */
+  .lk { border: 1px dashed var(--border); border-radius: var(--radius-xl); padding: 28px; display: grid; gap: 14px; justify-items: start; background: rgb(from var(--muted) r g b / .3); }
+  .lk__icon { width: 40px; height: 40px; border-radius: var(--radius); background: var(--muted); display: grid; place-items: center; }
+  .lk__icon svg { width: 18px; height: 18px; color: var(--muted-foreground); }
+  .lk h3 { margin: 0; font-size: 1rem; }
+  .lk p { margin: 0; font-size: 0.875rem; color: var(--muted-foreground); max-width: 620px; }
+  .lk ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .lk li { font-size: 0.8125rem; display: flex; gap: 8px; align-items: baseline; }
+  .lk li span { color: var(--muted-foreground); }
+
+  .om__footer-note { margin-right: auto; }
+
+  .unavailable { max-width: 560px; margin: 80px auto; padding: 24px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script src="../stack-tool/catalog.js"></script>
+<script src="../shared/om-core.js"></script>
+<script>
+(function () {
+  initOmTheme();
+  var app = document.getElementById('app');
+  var asked = qs('ref');
+  var req = asked ? clientRequest(asked) : null;
+
+  if (!canGenerateMockup(req)) {
+    app.appendChild(node('div', { class: 'unavailable' }, [
+      node('h1', { text: 'No workspace here yet' }),
+      node('p', { class: 'muted', text: mockupEligible(req)
+        ? 'Your consultant has accepted this request but has not sent the generated workspace yet.'
+        : 'A generated workspace only exists once a request has been accepted, and this demo builds one for a single case.' }),
+      node('p', {}, [node('a', { class: 'btn btn--outline', href: 'requests.html', text: 'Back to my requests' })])
+    ]));
+    return;
+  }
+
+  var user = currentUser('client');
+  var cur = req.currency || 'EUR';
+  var caps = requestCaps(req);
+  var capsByModule = {};
+  caps.forEach(function (c) { (capsByModule[c.module] = capsByModule[c.module] || []).push(c); });
+  var capBySlug = {};
+  caps.forEach(function (c) { capBySlug[c.cap] = c; });
+  function M(n) { return fmtMoney(n, cur); }
+
+  /* ── icons: lucide, traced by hand ── */
+  var I = {
+    home: '<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>',
+    layout: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+    users: ICONS.users, user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    building: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h1M14 6h1M9 10h1M14 10h1M9 14h1M14 14h1M10 22v-4h4v4"/>',
+    briefcase: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M2 13h20"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 12h6M9 16h6"/>',
+    receipt: ICONS.receipt, cart: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h2l2.7 12.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 1.9-1.6L22 7H5"/>',
+    globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>',
+    package: ICONS.box, folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z"/>',
+    warehouse: '<path d="M22 8.4V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.4a2 2 0 0 1 1.3-1.9l8-3.2a2 2 0 0 1 1.4 0l8 3.2A2 2 0 0 1 22 8.4z"/><path d="M6 22V12h12v10M6 17h12"/>',
+    truck: '<path d="M10 17h4V5H2v12h3M20 17h2v-3.3a4 4 0 0 0-1.2-2.9L19 9h-5"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+    inbox: ICONS.inbox, mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-9 5.7a2 2 0 0 1-2 0L2 7"/>',
+    workflow: '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M9 6h5a3 3 0 0 1 3 3v6"/>',
+    wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z"/>',
+    check: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+    shield: ICONS.shield + '<path d="M9 12l2 2 4-4"/>', layers: ICONS.layers, activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    archive: '<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
+    db: ICONS.db, refresh: '<path d="M21 12a9 9 0 0 1-9 9 9.8 9.8 0 0 1-6.7-2.7L3 16M3 21v-5h5M3 12a9 9 0 0 1 9-9 9.8 9.8 0 0 1 6.7 2.7L21 8M16 3h5v5"/>',
+    plug: '<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8z"/>', card: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>', bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/>', chevron: '<path d="M6 9l6 6 6-6"/>',
+    ticket: '<path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM13 5v2M13 17v2M13 11v2"/>',
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8"/>',
+    scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>',
+    lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    cog: ICONS.cog, grid: ICONS.grid, panel: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>', filter: '<path d="M22 3H2l8 9.5V19l4 2v-8.5z"/>', columns: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/>',
+    sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'
+  };
+  function svg(name, cls) {
+    var n = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('fill', 'none'); n.setAttribute('stroke', 'currentColor');
+    n.setAttribute('stroke-width', '1.8'); n.setAttribute('stroke-linecap', 'round'); n.setAttribute('stroke-linejoin', 'round');
+    n.setAttribute('aria-hidden', 'true'); if (cls) n.setAttribute('class', cls);
+    n.innerHTML = I[name] || I.grid; return n;
+  }
+
+  /* ── the sidebar of a real tenant ──
+     Groups and page titles are the ones the modules declare in their
+     page.meta.ts (pageGroup / pageTitle), so the nav reads like the product,
+     not like our capability list. `caps` says which mapped jobs a page stands
+     for; its status comes from the mapping, so a consultant's override moves
+     a page between live and locked without touching this file. */
+  var GROUP_ORDER = ['Overview', 'Customers', 'Sales', 'Checkout', 'Catalog', 'WMS', 'Shipping', 'AI Inbox Actions', 'Messages',
+    'Customer Portal', 'Workflows', 'Business Rules', 'Planner', 'Employees', 'Media', 'Data Designer', 'Content', 'Widgets',
+    'External systems', 'Integrations', 'Auth', 'Settings'];
+  var UI = {
+    dashboards:       { group: 'Overview', pages: [{ id: 'dashboard', title: 'Dashboard', icon: 'layout', caps: ['reporting.dashboards', 'sales.forecast'], view: 'dashboard' }] },
+    customers:        { group: 'Customers', pages: [
+      { id: 'people', title: 'People', icon: 'users', caps: ['crm.contacts'], view: 'people' },
+      { id: 'companies', title: 'Companies', icon: 'building', caps: ['crm.contacts'], view: 'companies' },
+      { id: 'deals', title: 'Deals', icon: 'briefcase', caps: ['crm.pipeline'], view: 'deals' },
+      { id: 'pipeline', title: 'Sales Pipeline', icon: 'layers', caps: ['crm.pipeline'], view: 'pipeline' },
+      { id: 'calendar', title: 'Calendar', icon: 'calendar', caps: [], view: 'calendar' },
+      { id: 'ctasks', title: 'Customer related tasks', icon: 'clipboard', caps: [], view: 'ctasks' } ] },
+    sales:            { group: 'Sales', pages: [
+      { id: 'orders', title: 'Orders', icon: 'receipt', caps: ['orders.mgmt', 'invoicing'], view: 'orders' },
+      { id: 'quotes', title: 'Quotes', icon: 'cart', caps: ['quotes.cpq'], view: 'quotes' },
+      { id: 'channels', title: 'Sales channels', icon: 'globe', caps: ['tax.calc'], view: 'channels' } ] },
+    checkout:         { group: 'Checkout', pages: [
+      { id: 'paylinks', title: 'Pay Links', icon: 'ticket', caps: ['ecommerce.cart'], view: 'paylinks' },
+      { id: 'cotpl', title: 'Templates', icon: 'file', caps: [], view: 'cotpl' } ] },
+    payment_gateways: { group: 'External systems', pages: [{ id: 'paytx', title: 'Payment Transactions', icon: 'card', caps: ['payments'], view: 'paytx' }] },
+    customer_accounts:{ group: 'Customer Portal', pages: [
+      { id: 'cusers', title: 'Customer Users', icon: 'users', caps: ['b2b.accounts'], view: 'cusers' },
+      { id: 'croles', title: 'Customer Roles', icon: 'shield', caps: ['b2b.accounts'], view: 'croles' } ] },
+    portal:           { group: 'Customer Portal', pages: [{ id: 'portal', title: 'Portal Settings', icon: 'cog', caps: ['customer.portal'], view: 'portal' }] },
+    catalog:          { group: 'Catalog', pages: [
+      { id: 'products', title: 'Products & services', icon: 'package', caps: ['catalog.products', 'pricing.pricelists'], view: 'products' },
+      { id: 'categories', title: 'Categories', icon: 'folder', caps: ['catalog.products'], view: 'categories' } ] },
+    wms:              { group: 'WMS', pages: [
+      { id: 'wmsdash', title: 'Operational dashboard', icon: 'warehouse', caps: ['inventory.stock'], view: 'wmsdash' },
+      { id: 'inventory', title: 'WMS Inventory', icon: 'package', caps: ['inventory.stock'], view: 'inventory' },
+      { id: 'warehouses', title: 'WMS Warehouses', icon: 'warehouse', caps: ['inventory.multiwarehouse'], view: 'warehouses' },
+      { id: 'movements', title: 'WMS Movements', icon: 'truck', caps: ['purchasing.po'], view: 'movements' },
+      { id: 'reservations', title: 'WMS Reservations', icon: 'clipboard', caps: ['inventory.stock'], view: 'reservations' } ] },
+    shipping_carriers:{ group: 'Shipping', pages: [{ id: 'carriers', title: 'Carriers', icon: 'truck', caps: ['fulfillment.shipping'], view: 'carriers' }] },
+    devices:          { group: 'Auth', pages: [{ id: 'devices', title: 'Devices', icon: 'scan', caps: ['inventory.barcode'], view: 'devices' }] },
+    inbox_ops:        { group: 'AI Inbox Actions', pages: [{ id: 'proposals', title: 'Proposals', icon: 'inbox', caps: ['support.tickets', 'support.sla'], view: 'proposals' }] },
+    messages:         { group: 'Messages', pages: [{ id: 'messages', title: 'Messages', icon: 'mail', caps: ['crm.email'], view: 'messages' }] },
+    communication_channels: { group: 'Integrations', pages: [{ id: 'channels2', title: 'Communication Channels', icon: 'mail', caps: ['support.chat'], view: 'channels2' }] },
+    planner:          { group: 'Planner', pages: [
+      { id: 'schedule', title: 'Availability schedules', icon: 'calendar', caps: ['field.scheduling'], view: 'schedule' },
+      { id: 'ptasks', title: 'Tasks', icon: 'clipboard', caps: ['projects.tasks'], view: 'ptasks' } ] },
+    staff:            { group: 'Employees', pages: [
+      { id: 'team', title: 'Team members', icon: 'user', caps: [], view: 'team' },
+      { id: 'timesheets', title: 'My Timesheets', icon: 'clock', caps: ['time.tracking'], view: 'timesheets' } ] },
+    workflows:        { group: 'Workflows', pages: [
+      { id: 'wfdefs', title: 'Workflow Definitions', icon: 'workflow', caps: ['workflow.approvals'], view: 'wfdefs' },
+      { id: 'wfinst', title: 'Workflow Instances', icon: 'wrench', caps: ['workflow.approvals'], view: 'wfinst' },
+      { id: 'utasks', title: 'User Tasks', icon: 'check', caps: ['workflow.approvals'], view: 'utasks' } ] },
+    business_rules:   { group: 'Business Rules', pages: [
+      { id: 'rules', title: 'Business Rules', icon: 'shield', caps: ['workflow.automation', 'marketing.automation'], view: 'rules' },
+      { id: 'rulesets', title: 'Rule Sets', icon: 'layers', caps: [], view: 'rulesets' },
+      { id: 'rulelogs', title: 'Logs', icon: 'activity', caps: [], view: 'rulelogs' } ] },
+    entities:         { group: 'Data Designer', pages: [
+      { id: 'uentities', title: 'User Entities', icon: 'db', caps: ['data.custom', 'forms.intake', 'marketing.forms'], view: 'uentities' },
+      { id: 'sentities', title: 'System Entities', icon: 'db', caps: [], view: 'sentities' } ] },
+    query_index:      { group: 'Data Designer', pages: [{ id: 'qindex', title: 'Query Indexes', icon: 'search', caps: ['marketing.segments'], view: 'qindex' }] },
+    widgets:          { group: 'Widgets', pages: [{ id: 'widgets', title: 'Widgets', icon: 'grid', caps: ['internal.apps'], view: 'widgets' }] },
+    attachments:      { group: 'Media', pages: [{ id: 'attachments', title: 'Attachments', icon: 'archive', caps: ['files.docs'], view: 'attachments' }] },
+    content:          { group: 'Content', pages: [
+      { id: 'templates', title: 'Templates', icon: 'file', caps: ['docs.templates'], view: 'templates' },
+      { id: 'kb', title: 'Knowledge base', icon: 'folder', caps: ['support.kb'], view: 'kb' } ] },
+    data_sync:        { group: 'External systems', pages: [{ id: 'datasync', title: 'Data Sync', icon: 'refresh', caps: ['integration.ipaas'], view: 'datasync' }] },
+    integrations:     { group: 'External systems', pages: [{ id: 'integrations', title: 'Integrations', icon: 'plug', caps: [], view: 'integrations' }] },
+    notifications:    { group: 'Settings', pages: [{ id: 'notif', title: 'Notification Delivery', icon: 'bell', caps: ['inventory.alerts', 'marketing.sms'], view: 'notif' }] },
+    currencies:       { group: 'Settings', pages: [{ id: 'currencies', title: 'Currencies', icon: 'card', caps: [], view: 'currencies' }] }
+  };
+  var WORST = ['build', 'integrate', 'keep', 'configure', 'native'];
+  function worst(list) {
+    for (var i = 0; i < WORST.length; i++) if (list.some(function (c) { return c.status === WORST[i]; })) return WORST[i];
+    return 'native';
+  }
+  /* A page stands for the jobs it lists; with none of those in the mapping it
+     comes along with the module, live if anything in the module is. */
+  function pageStatus(modId, page) {
+    var own = page.caps.map(function (s) { return capBySlug[s]; }).filter(function (c) { return c && c.module === modId; });
+    if (own.length) return { status: worst(own), caps: own };
+    var mod = capsByModule[modId] || [];
+    return { status: mod.some(function (c) { return c.status === 'native'; }) ? 'native' : worst(mod), caps: [] };
+  }
+
+  /* modules present in the mapping, plus the dashboard, which every tenant has */
+  var present = Object.keys(capsByModule).filter(function (id) { return id.indexOf('__') !== 0 && UI[id]; });
+  if (present.indexOf('dashboards') === -1) present.unshift('dashboards');
+  var groups = {};
+  present.forEach(function (id) {
+    UI[id].pages.forEach(function (p) {
+      var st = pageStatus(id, p);
+      var entry = { mod: id, page: p, status: st.status, caps: st.caps };
+      (groups[UI[id].group] = groups[UI[id].group] || []).push(entry);
+    });
+  });
+  var groupNames = Object.keys(groups).sort(function (a, b) { return GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b); });
+  var pagesById = {};
+  Object.keys(groups).forEach(function (g) { groups[g].forEach(function (e) { pagesById[e.page.id] = e; }); });
+
+  /* ── shell ── */
+  var shell = node('div', { class: 'om' });
+  var aside = node('aside', { class: 'om__aside' });
+  var brandImg = node('img', { src: '../../public/open-mercato.svg', alt: 'Open Mercato' });
+  aside.appendChild(node('div', { class: 'om__brand' }, [
+    brandImg,
+    node('span', {}, [node('span', { class: 'om__brand-name', text: 'Open Mercato' }), node('span', { class: 'om__brand-org', text: req.company })])
+  ]));
+  var navSearch = node('div', { class: 'om__navsearch' }, [svg('search')]);
+  var navInput = node('input', { type: 'search', placeholder: 'Search navigation…', 'aria-label': 'Search navigation' });
+  navSearch.appendChild(navInput);
+  aside.appendChild(navSearch);
+  var nav = node('nav', { class: 'om__nav', 'aria-label': 'Main' });
+  aside.appendChild(nav);
+  aside.appendChild(node('div', { class: 'sidebar__foot', style: 'padding:8px 4px 0' }, [
+    node('div', { class: 'userchip' }, [
+      node('span', { class: 'avatar', 'aria-hidden': 'true', text: initials(user.name) }),
+      node('span', { style: 'min-width:0' }, [node('span', { class: 'userchip__name', text: user.name }), node('span', { class: 'userchip__mail', text: user.email })])
+    ])
+  ]));
+
+  var main = node('div', { class: 'om__main' });
+  var crumbs = node('nav', { class: 'om__crumbs', 'aria-label': 'Breadcrumb' });
+  var header = node('header', { class: 'om__header' }, [
+    node('div', { class: 'row', style: 'gap:4px;align-items:center' }, [
+      node('button', { class: 'om__ibtn', type: 'button', title: 'Collapse sidebar' }, [svg('panel')]), crumbs
+    ]),
+    node('div', { class: 'om__hright' }, [
+      node('button', { class: 'om__ibtn', type: 'button', title: 'Search' }, [svg('search')]),
+      node('button', { class: 'om__ibtn', type: 'button', title: 'Notifications' }, [svg('bell'), node('span', { class: 'dot' })]),
+      node('button', { class: 'om__ibtn', type: 'button', title: 'Settings' }, [svg('cog')]),
+      node('button', { class: 'om__user', type: 'button' }, [node('span', { class: 'avatar', text: initials(user.name) })])
+    ])
+  ]);
+  var content = node('main', { class: 'om__content' });
+  main.appendChild(header); main.appendChild(content);
+  /* The one honest line on the screen lives where the real shell keeps its
+     version: in the footer, not floating over the product. */
+  main.appendChild(node('footer', { class: 'om__footer' }, [
+    node('span', { class: 'om__footer-note' }, [
+      node('span', { text: 'Generated preview from ' + req.ref + ' — nothing here is live data. ' }),
+      node('a', { href: 'request.html?ref=' + encodeURIComponent(req.ref), style: 'text-decoration:underline', text: 'Back to Mercatify' })
+    ]),
+    node('span', { text: 'Version 0.7.0' }),
+    node('a', { href: '#', text: 'Terms' }), node('a', { href: '#', text: 'Privacy' })
+  ]));
+  shell.appendChild(aside); shell.appendChild(main);
+  app.appendChild(shell);
+
+  /* ── nav ── */
+  function renderNav(filter) {
+    nav.innerHTML = '';
+    var q = (filter || '').toLowerCase();
+    groupNames.forEach(function (g) {
+      var entries = groups[g].filter(function (e) { return !q || e.page.title.toLowerCase().indexOf(q) !== -1; });
+      if (!entries.length) return;
+      var grp = node('div', { class: 'om__group' });
+      var label = node('button', { class: 'om__grouplabel', type: 'button', 'aria-expanded': 'true' }, [node('span', { text: g }), svg('chevron')]);
+      label.addEventListener('click', function () { grp.classList.toggle('is-closed'); label.setAttribute('aria-expanded', grp.classList.contains('is-closed') ? 'false' : 'true'); });
+      grp.appendChild(label);
+      var items = node('div', { class: 'om__items' });
+      entries.forEach(function (e) {
+        var live = e.status === 'native';
+        var b = node('button', { type: 'button', class: 'om__item' + (live ? '' : ' is-locked'), 'data-page': e.page.id,
+          title: live ? e.page.title : e.page.title + ' — ' + STATUS_META[e.status].hint }, [svg(e.page.icon), node('span', { text: e.page.title })]);
+        if (!live) b.appendChild(svg('lock', 'om__lock'));
+        b.addEventListener('click', function () { show(e.page.id); });
+        items.appendChild(b);
+      });
+      grp.appendChild(items);
+      nav.appendChild(grp);
+    });
+    markActive();
+  }
+  var activeId = null;
+  function markActive() {
+    Array.prototype.forEach.call(nav.querySelectorAll('.om__item'), function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-page') === activeId);
+    });
+  }
+  navInput.addEventListener('input', function () { renderNav(navInput.value); });
+
+  /* ── page building blocks: PageHeader, DataTable, widgets, kanban, inbox ── */
+  function btn(label, primary, icon) {
+    var b = node('button', { type: 'button', class: 'btn btn--sm' + (primary ? '' : ' btn--outline') });
+    if (icon) b.appendChild(svg(icon, 'navitem__icon'));
+    b.appendChild(document.createTextNode(label));
+    return b;
+  }
+  function pageHead(entry, description, actions) {
+    var t = node('div', {}, [node('h1', { text: entry.page.title })]);
+    if (description) t.appendChild(node('p', { text: description }));
+    return node('div', { class: 'pg__head' }, [t, node('div', { class: 'pg__actions' }, actions || [])]);
+  }
+  function takesOver(entry) {
+    if (!entry.caps.length) return '';
+    var tools = {}; entry.caps.forEach(function (c) { c.tools.forEach(function (t) { tools[t] = true; }); });
+    return 'Takes over ' + entry.caps.map(function (c) { return c.label.toLowerCase(); }).join(', ') + ' from ' + Object.keys(tools).join(', ') + '.';
+  }
+  function table(cols, rows, total) {
+    var thead = node('thead', {}, [node('tr', {}, [node('th', { style: 'width:36px' }, [node('span', { class: 'chk' })])].concat(cols.map(function (c) {
+      return node('th', { class: c.num ? 'num' : '', text: c.label });
+    })))]);
+    var tbody = node('tbody');
+    rows.forEach(function (r) {
+      tbody.appendChild(node('tr', {}, [node('td', {}, [node('span', { class: 'chk' })])].concat(r.map(function (cell, i) {
+        var td = node('td', { class: cols[i].num ? 'num' : '' });
+        if (cell && cell.nodeType) td.appendChild(cell);
+        else if (cell && typeof cell === 'object') { td.appendChild(node('div', { text: cell.v })); if (cell.sub) td.appendChild(node('span', { class: 'sub', text: cell.sub })); }
+        else td.textContent = cell;
+        return td;
+      }))));
+    });
+    total = total || rows.length;
+    var search = node('div', { class: 'dt__search' }, [svg('search')]);
+    search.appendChild(node('input', { type: 'search', placeholder: 'Search…', 'aria-label': 'Search' }));
+    var bar = node('div', { class: 'dt__bar' }, [search, btn('Filters', false, 'filter'), btn('Columns', false, 'columns')]);
+    var foot = node('div', { class: 'dt__foot' }, [
+      node('span', { text: 'Showing 1 to ' + rows.length + ' of ' + total + ' results' }),
+      node('div', { class: 'dt__pager' }, [
+        node('button', { type: 'button', disabled: '', text: '‹' }),
+        node('button', { type: 'button', disabled: total <= rows.length ? '' : null, text: '›' })
+      ])
+    ]);
+    return node('div', { class: 'dt' }, [bar, node('div', { class: 'dt__frame' }, [node('table', {}, [thead, tbody]), foot])]);
+  }
+  function badge(kind, text) { return node('span', { class: 'badge badge--' + kind, text: text }); }
+  function widget(title, children, wide) {
+    var w = node('div', { class: 'wg__card' + (wide ? ' wg__card--wide' : '') }, [
+      node('div', { class: 'wg__head' }, [node('span', { class: 'wg__title', text: title }), node('button', { class: 'om__ibtn', type: 'button', title: 'Widget settings' }, [svg('sliders')])])
+    ]);
+    children.forEach(function (c) { w.appendChild(c); });
+    return w;
+  }
+  function kpi(big, sub) { return node('div', {}, [node('div', { class: 'wg__big', text: big }), node('div', { class: 'wg__sub', text: sub })]); }
+  /* rows: [label, weight, printed value] — the bar is the weight, the label on
+     the right is whatever the widget wants to print for it */
+  function bars(rows) {
+    var max = Math.max.apply(null, rows.map(function (r) { return r[1]; }));
+    return node('div', { class: 'wg__bars' }, rows.map(function (r) {
+      return node('div', { class: 'wg__bar' }, [node('span', { text: r[0] }), node('i', {}, [node('b', { style: 'width:' + (r[1] / max * 100) + '%' })]), node('span', { class: 'num', text: r[2] })]);
+    }));
+  }
+  function activity(items) {
+    return node('ul', { class: 'wg__list' }, items.map(function (it) {
+      return node('li', {}, [node('span', { class: 'avatar', style: 'width:24px;height:24px;font-size:.625rem', text: it[0] }), node('span', { text: it[1] }), node('time', { text: it[2] })]);
+    }));
+  }
+  function kanban(cols) {
+    return node('div', { class: 'kb' }, cols.map(function (c) {
+      var sum = c.cards.reduce(function (s, k) { return s + k[2]; }, 0);
+      return node('div', { class: 'kb__col' }, [node('div', { class: 'kb__colhead' }, [node('span', { text: c.name }), node('span', { text: c.cards.length + ' · ' + M(sum) })])]
+        .concat(c.cards.map(function (k) { return node('div', { class: 'kb__card' }, [node('b', { text: k[0] }), node('span', { text: k[1] }), node('span', { class: 'kb__amt', text: M(k[2]) })]); })));
+    }));
+  }
+  function inbox(items) {
+    return node('div', { class: 'ib' }, items.map(function (it) {
+      return node('div', { class: 'ib__row' }, [
+        node('span', { class: 'avatar', text: initials(it.from) }),
+        node('div', { style: 'min-width:0' }, [node('div', { class: 'ib__subj', text: it.subject }), node('span', { class: 'ib__prev', text: it.from + ' — ' + it.preview })]),
+        node('div', { class: 'ib__meta' }, [node('span', { text: it.when }), it.tag ? badge(it.tag[0], it.tag[1]) : document.createTextNode('')])
+      ]);
+    }));
+  }
+  function locked(entry) {
+    var meta = STATUS_META[entry.status];
+    var hours = entry.caps.reduce(function (s, c) { return s + (c.hours || 0); }, 0);
+    var why = entry.status === 'build'
+      ? 'This is not in the platform yet. It is on the estimate' + (hours ? ' at ' + hours + ' h' : ', hours still to be confirmed') + ', and it lands here when it ships.'
+      : 'The module is installed, but this screen needs setting up for ' + req.company + ' before it shows real data — field mapping, rules or a connection to the tool it replaces.';
+    /* One badge per job, not the page's worst one: a screen is usually held
+       back by one row, and the client should see which. */
+    var list = node('ul', {}, entry.caps.map(function (c) {
+      var cm = STATUS_META[c.status];
+      return node('li', {}, [badge(cm.badge.replace('badge--', ''), cm.label), node('b', { text: c.label }), node('span', { text: 'today in ' + c.tools.join(', ') })]);
+    }));
+    return node('div', { class: 'lk' }, [
+      node('div', { class: 'lk__icon' }, [svg('lock')]),
+      node('h3', { text: entry.status === 'build' ? 'Not built yet' : 'Needs setting up' }),
+      node('p', { text: why }), list,
+      node('div', { class: 'row' }, [
+        node('a', { class: 'btn btn--outline btn--sm', href: 'request.html?ref=' + encodeURIComponent(req.ref), text: 'Ask your consultant' }),
+        btn(entry.status === 'build' ? 'See the estimate' : 'Configure', false)
+      ])
+    ]);
+  }
+
+  /* ── the screens themselves. Voltix data, nothing generic. ── */
+  var PEOPLE = [
+    ['Marta Nowak', 'marta.nowak@gmail.com', 'Homeowner · Wrocław', 'Lead'],
+    ['Tomasz Zieliński', 't.zielinski@zielbud.pl', 'ZielBud Development', 'Customer'],
+    ['Agnieszka Kowalczyk', 'a.kowalczyk@sm-oporow.pl', 'SM Oporów (housing co-op)', 'Customer'],
+    ['Piotr Wiśniewski', 'piotr.w@onet.pl', 'Homeowner · Oława', 'Lead'],
+    ['Karolina Lis', 'k.lis@greenfarm.pl', 'GreenFarm Sp. z o.o.', 'Customer'],
+    ['Marek Dąbrowski', 'marek@dabrowski-instal.pl', 'Dąbrowski Instal (installer partner)', 'Partner'],
+    ['Ewa Szymańska', 'ewa.szymanska@wp.pl', 'Homeowner · Trzebnica', 'Customer'],
+    ['Łukasz Mazur', 'l.mazur@logipark.eu', 'LogiPark Wrocław', 'Lead']
+  ];
+  var COMPANIES = [
+    ['ZielBud Development', 'Developer', '14 sites', M(184000)], ['SM Oporów', 'Housing co-op', '3 sites', M(96500)],
+    ['GreenFarm Sp. z o.o.', 'Agriculture', '2 sites', M(41200)], ['LogiPark Wrocław', 'Logistics', '1 site', M(212000)],
+    ['Dąbrowski Instal', 'Installer partner', '—', '—'], ['Piekarnia Złoty Kłos', 'Retail', '4 sites', M(28900)]
+  ];
+  var STAGES = [
+    { name: 'New lead', cards: [['Roof PV 8.4 kWp — Nowak', 'Wrocław · site visit Thu', 11900], ['Carport PV 12 kWp — LogiPark', 'Wrocław · RFP received', 38400]] },
+    { name: 'Site visit', cards: [['Roof PV 6.2 kWp — Wiśniewski', 'Oława · measured', 9200], ['Ground PV 49.9 kWp — GreenFarm', 'Second field', 41200]] },
+    { name: 'Quote sent', cards: [['PV + BYD 10 kWh — Szymańska', 'Trzebnica · quote v2', 17800], ['Rooftop 3× 30 kWp — ZielBud', 'Etap II', 88000]] },
+    { name: 'Negotiation', cards: [['SM Oporów blok 4', 'Common-area PV', 34500]] },
+    { name: 'Won', cards: [['Piekarnia Złoty Kłos', '2 ovens on PV', 28900], ['Roof PV 9.9 kWp — Kowal', 'Installing Sept 24', 13100]] }
+  ];
+  var PRODUCTS = [
+    [{ v: 'JA Solar JAM54D40 440 Wp', sub: 'PV-JA-440 · panel' }, 'Panels', '640 pcs', M(92)],
+    [{ v: 'Huawei SUN2000-8KTL-M1', sub: 'INV-HW-8K · inverter' }, 'Inverters', '22 pcs', M(1240)],
+    [{ v: 'Huawei SUN2000-10KTL-M1', sub: 'INV-HW-10K · inverter' }, 'Inverters', '9 pcs', M(1490)],
+    [{ v: 'BYD Battery-Box Premium HVS 10.2', sub: 'BAT-BYD-102 · storage' }, 'Storage', '6 pcs', M(4680)],
+    [{ v: 'K2 SingleRail 36 · 4.4 m', sub: 'MNT-K2-44 · mounting' }, 'Mounting', '1 180 pcs', M(31)],
+    [{ v: 'Wallbox Pulsar Plus 11 kW', sub: 'EV-WB-11 · charger' }, 'EV charging', '14 pcs', M(690)],
+    [{ v: 'Installation — residential rooftop', sub: 'SRV-INST-RES · service' }, 'Services', '—', M(1900)],
+    [{ v: 'Annual inspection & cleaning', sub: 'SRV-INSP · service' }, 'Services', '—', M(240)]
+  ];
+  var ORDERS = [
+    [{ v: 'SO-2026-0912', sub: 'ZielBud Development' }, '2026-09-18', badge('info', 'confirmed'), '3× 30 kWp rooftop kit', M(88000)],
+    [{ v: 'SO-2026-0911', sub: 'Marta Nowak' }, '2026-09-18', badge('warning', 'awaiting stock'), 'PV 8.4 kWp + inverter', M(11900)],
+    [{ v: 'SO-2026-0909', sub: 'Dąbrowski Instal' }, '2026-09-17', badge('success', 'shipped'), '120× JA Solar 440 Wp', M(11040)],
+    [{ v: 'SO-2026-0907', sub: 'Piekarnia Złoty Kłos' }, '2026-09-16', badge('success', 'delivered'), 'PV 20 kWp + Wallbox', M(28900)],
+    [{ v: 'SO-2026-0905', sub: 'Ewa Szymańska' }, '2026-09-15', badge('info', 'confirmed'), 'PV + BYD 10 kWh', M(17800)],
+    [{ v: 'SO-2026-0901', sub: 'GreenFarm Sp. z o.o.' }, '2026-09-12', badge('outline', 'invoiced'), 'Ground PV 49.9 kWp', M(41200)]
+  ];
+  var QUOTES = [
+    [{ v: 'Q-2026-0341', sub: 'LogiPark Wrocław' }, 'Carport PV 12 kWp', badge('info', 'sent'), '2026-09-19', M(38400)],
+    [{ v: 'Q-2026-0340', sub: 'Ewa Szymańska' }, 'PV + BYD 10 kWh (v2)', badge('success', 'accepted'), '2026-09-15', M(17800)],
+    [{ v: 'Q-2026-0339', sub: 'SM Oporów' }, 'Blok 4 common-area PV', badge('warning', 'negotiation'), '2026-09-14', M(34500)],
+    [{ v: 'Q-2026-0338', sub: 'Piotr Wiśniewski' }, 'Roof PV 6.2 kWp', badge('outline', 'draft'), '2026-09-14', M(9200)],
+    [{ v: 'Q-2026-0335', sub: 'GreenFarm Sp. z o.o.' }, 'Second field 49.9 kWp', badge('info', 'sent'), '2026-09-10', M(41200)]
+  ];
+  var INVENTORY = [
+    ['JA Solar 440 Wp', 'Wrocław — Hala A', '412', '60', badge('success', 'ok')],
+    ['JA Solar 440 Wp', 'Poznań — Magazyn 2', '228', '60', badge('success', 'ok')],
+    ['Huawei SUN2000-8KTL', 'Wrocław — Hala A', '22', '8', badge('success', 'ok')],
+    ['Huawei SUN2000-10KTL', 'Wrocław — Hala A', '9', '6', badge('warning', 'low')],
+    ['BYD HVS 10.2', 'Wrocław — Hala B', '6', '4', badge('warning', 'low')],
+    ['K2 SingleRail 4.4 m', 'Poznań — Magazyn 2', '1 180', '300', badge('success', 'ok')],
+    ['Wallbox Pulsar Plus 11 kW', 'Wrocław — Hala A', '14', '5', badge('success', 'ok')],
+    ['Solar cable 6 mm² (100 m)', 'Wrocław — Hala B', '3', '10', badge('warning', 'reorder')]
+  ];
+  var TICKETS = [
+    { from: 'Marta Nowak', subject: 'Inverter shows error 2062 since yesterday', preview: 'The display says Grid overvoltage, panels are fine…', when: '12 min ago', tag: ['warning', 'SLA 4h'] },
+    { from: 'Tomasz Zieliński', subject: 'Etap II — when do the crews arrive?', preview: 'We need the installation dates for blocks 5–7 by Friday.', when: '1 h ago', tag: ['info', 'proposal: reply + schedule'] },
+    { from: 'Karolina Lis', subject: 'Invoice for the second field', preview: 'Can you split it into two payments as agreed?', when: '3 h ago', tag: ['info', 'proposal: create invoice'] },
+    { from: 'Ewa Szymańska', subject: 'App shows 0 kWh production', preview: 'Everything was working until the storm on Tuesday.', when: 'yesterday', tag: ['warning', 'SLA 8h'] },
+    { from: 'Dąbrowski Instal', subject: 'Missing K2 clamps in delivery', preview: 'Pallet 2 of 3 had 40 fewer end clamps than the packing list.', when: 'yesterday', tag: ['outline', 'assigned: warehouse'] }
+  ];
+  var TASKS = [
+    ['Site visit — Nowak, ul. Grabiszyńska 12', 'Marek D.', '2026-09-22', badge('info', 'scheduled')],
+    ['Send revised quote to SM Oporów', 'Ola K.', '2026-09-20', badge('warning', 'due')],
+    ['Commissioning — Piekarnia Złoty Kłos', 'Crew B', '2026-09-21', badge('info', 'scheduled')],
+    ['Collect signed contract — GreenFarm', 'Ola K.', '2026-09-23', badge('outline', 'open')],
+    ['Warranty registration — 6× Huawei 8KTL', 'Warehouse', '2026-09-19', badge('success', 'done')]
+  ];
+
+  var VIEWS = {
+    dashboard: function (e) {
+      return [pageHead(e, 'Good morning, ' + user.name + '. This is ' + req.company + ' on Open Mercato.', [btn('Add widget', false, 'plus')]),
+        node('div', { class: 'wg' }, [
+          widget('Open deals', [kpi(M(232900), '9 deals in the pipeline · 2 closing this week'), bars([['New lead', 50300, M(50300)], ['Site visit', 50400, M(50400)], ['Quote sent', 105800, M(105800)], ['Negotiation', 34500, M(34500)]])]),
+          widget('Orders this week', [kpi('6', M(198840) + ' · 1 awaiting stock'), bars([['Confirmed', 99900, M(99900)], ['Shipped', 11040, M(11040)], ['Delivered', 28900, M(28900)], ['Invoiced', 41200, M(41200)], ['Awaiting stock', 11900, M(11900)]])]),
+          widget('Stock below reorder point', [kpi('3', 'Huawei 10KTL · BYD HVS 10.2 · solar cable 6 mm²'), node('p', { class: 'wg__sub', text: 'Purchase orders suggested for Wrocław — Hala A. Poznań covers panels for the next 3 weeks.' })]),
+          widget('Support inbox', [kpi('5', '2 within SLA window · 3 proposals waiting for a click'), activity([['MN', 'Inverter error 2062 — proposal drafted', '12 min'], ['TZ', 'Etap II dates — reply + schedule proposed', '1 h'], ['KL', 'Split invoice — create invoice proposed', '3 h']])]),
+          widget('Recent activity', [activity([['OK', 'Quote Q-2026-0341 sent to LogiPark Wrocław', '09:41'], ['MD', 'Site visit booked — Nowak, Thursday 10:00', '09:12'], ['WH', 'SO-2026-0909 shipped to Dąbrowski Instal (3 pallets)', 'yesterday'], ['OK', 'Q-2026-0340 accepted by Ewa Szymańska', 'yesterday'], ['SYS', 'Low-stock rule fired: Huawei SUN2000-10KTL (9 < 6+3)', 'yesterday']])], true)
+        ])];
+    },
+    people: function (e) { return [pageHead(e, takesOver(e), [btn('Create Person', true, 'plus')]), table([{ label: 'Name' }, { label: 'Email' }, { label: 'Company' }, { label: 'Type' }], PEOPLE.map(function (p) { return [{ v: p[0] }, p[1], p[2], badge(p[3] === 'Customer' ? 'success' : p[3] === 'Partner' ? 'outline' : 'info', p[3])]; }), 1284)]; },
+    companies: function (e) { return [pageHead(e, takesOver(e), [btn('Create Company', true, 'plus')]), table([{ label: 'Company' }, { label: 'Segment' }, { label: 'Sites' }, { label: 'Lifetime value', num: true }], COMPANIES, 212)]; },
+    deals: function (e) {
+      var rows = []; STAGES.forEach(function (s) { s.cards.forEach(function (c) { rows.push([{ v: c[0], sub: c[1] }, badge(s.name === 'Won' ? 'success' : 'info', s.name), 'Ola K.', M(c[2])]); }); });
+      return [pageHead(e, takesOver(e), [btn('Create deal', true, 'plus')]), table([{ label: 'Deal' }, { label: 'Stage' }, { label: 'Owner' }, { label: 'Value', num: true }], rows, 63)];
+    },
+    pipeline: function (e) { return [pageHead(e, takesOver(e), [btn('Create deal', true, 'plus')]), kanban(STAGES)]; },
+    calendar: function (e) { return [pageHead(e, 'Site visits, commissioning and inspections, per crew.', [btn('New event', true, 'plus')]), table([{ label: 'When' }, { label: 'What' }, { label: 'Who' }, { label: 'Where' }], [
+      ['Mon 22 Sep · 10:00', 'Site visit — Nowak', 'Marek D.', 'Wrocław, Grabiszyńska 12'], ['Mon 22 Sep · 13:30', 'Site visit — LogiPark carport', 'Marek D.', 'Wrocław, Bierutowska'],
+      ['Tue 23 Sep · 08:00', 'Installation day 1/2 — Kowal 9.9 kWp', 'Crew A', 'Kąty Wrocławskie'], ['Wed 24 Sep · 08:00', 'Installation day 2/2 — Kowal', 'Crew A', 'Kąty Wrocławskie'],
+      ['Thu 25 Sep · 09:00', 'Commissioning — Piekarnia Złoty Kłos', 'Crew B', 'Oleśnica'], ['Fri 26 Sep · 11:00', 'Annual inspection — SM Oporów blok 2', 'Crew B', 'Wrocław, Oporów']], 41)]; },
+    ctasks: function (e) { return [pageHead(e, 'Everything with a customer’s name on it and a due date.', [btn('New task', true, 'plus')]), table([{ label: 'Task' }, { label: 'Assignee' }, { label: 'Due' }, { label: 'Status' }], TASKS, 27)]; },
+    orders: function (e) { return [pageHead(e, takesOver(e), [btn('Create sales document', true, 'plus')]), table([{ label: 'Order' }, { label: 'Date' }, { label: 'Status' }, { label: 'Lines' }, { label: 'Total', num: true }], ORDERS, 318)]; },
+    quotes: function (e) { return [pageHead(e, takesOver(e), [btn('Create quote', true, 'plus')]), table([{ label: 'Quote' }, { label: 'Subject' }, { label: 'Status' }, { label: 'Sent' }, { label: 'Total', num: true }], QUOTES, 341)]; },
+    channels: function (e) { return [pageHead(e, 'Where orders come from and which price list and tax rules apply.', [btn('Create channel', true, 'plus')]), table([{ label: 'Channel' }, { label: 'Type' }, { label: 'Price list' }, { label: 'Tax' }], [
+      ['Direct sales (quotes)', 'Internal', 'Retail EUR', '23% VAT'], ['B2B installer shop', 'Storefront', 'Installer net', 'Reverse charge'], ['Partner — Dąbrowski Instal', 'B2B account', 'Partner 12%', '23% VAT']], 3)]; },
+    paylinks: function (e) { return [pageHead(e, takesOver(e), [btn('Create pay link', true, 'plus')]), table([{ label: 'Link' }, { label: 'Customer' }, { label: 'Status' }, { label: 'Amount', num: true }], [
+      [{ v: 'PL-8821', sub: 'Deposit · Q-2026-0340' }, 'Ewa Szymańska', badge('success', 'paid'), M(5340)], [{ v: 'PL-8819', sub: 'Balance · SO-2026-0907' }, 'Piekarnia Złoty Kłos', badge('info', 'open'), M(14450)], [{ v: 'PL-8814', sub: 'Deposit · SO-2026-0911' }, 'Marta Nowak', badge('success', 'paid'), M(3570)]], 96)]; },
+    cotpl: function (e) { return [pageHead(e, 'Checkout pages for deposits, balances and service plans.', [btn('Create template', true, 'plus')]), table([{ label: 'Template' }, { label: 'Used for' }, { label: 'Links' }], [['Deposit 30%', 'Residential PV', '61'], ['Balance on commissioning', 'Residential PV', '58'], ['Annual inspection plan', 'Service', '19']], 3)]; },
+    paytx: function (e) { return [pageHead(e, takesOver(e), []), table([{ label: 'Transaction' }, { label: 'Provider' }, { label: 'Status' }, { label: 'Amount', num: true }], [
+      [{ v: 'pi_3QZ…8f2', sub: 'PL-8821 · Szymańska' }, 'Stripe', badge('success', 'captured'), M(5340)], [{ v: 'pi_3QY…c01', sub: 'PL-8814 · Nowak' }, 'Stripe', badge('success', 'captured'), M(3570)], [{ v: 'pi_3QX…a77', sub: 'SO-2026-0901 · GreenFarm' }, 'Bank transfer', badge('info', 'pending'), M(20600)]], 412)]; },
+    cusers: function (e) { return [pageHead(e, takesOver(e), [btn('Invite user', true, 'plus')]), table([{ label: 'User' }, { label: 'Company account' }, { label: 'Role' }, { label: 'Last sign-in' }], [
+      ['marek@dabrowski-instal.pl', 'Dąbrowski Instal', 'Buyer', 'today'], ['zakupy@zielbud.pl', 'ZielBud Development', 'Buyer', '2 days ago'], ['t.zielinski@zielbud.pl', 'ZielBud Development', 'Approver', '2 days ago'], ['biuro@greenfarm.pl', 'GreenFarm Sp. z o.o.', 'Viewer', 'last week']], 38)]; },
+    croles: function (e) { return [pageHead(e, 'What a company account’s users may see and order.', [btn('Create role', true, 'plus')]), table([{ label: 'Role' }, { label: 'Can' }, { label: 'Users' }], [['Buyer', 'Order from the installer price list, see own invoices', '21'], ['Approver', 'Approve orders above ' + M(5000), '6'], ['Viewer', 'See documents and warranty status', '11']], 3)]; },
+    portal: function (e) { return [pageHead(e, takesOver(e), [btn('Save', true)]), table([{ label: 'Setting' }, { label: 'Value' }], [['Portal domain', 'moje.voltix.example'], ['Sign-in', 'Magic link + password'], ['Customers see', 'Quotes · orders · invoices · production data · warranty'], ['Installer partners see', 'B2B catalog · stock per warehouse · order history']], 4)]; },
+    products: function (e) { return [pageHead(e, takesOver(e), [btn('Create product', true, 'plus')]), table([{ label: 'Product' }, { label: 'Category' }, { label: 'On hand' }, { label: 'Price', num: true }], PRODUCTS, 486)]; },
+    categories: function (e) { return [pageHead(e, 'The tree the B2B shop and the quote builder both use.', [btn('Create Category', true, 'plus')]), table([{ label: 'Category' }, { label: 'Products' }], [['Panels', '18'], ['Inverters', '11'], ['Storage', '7'], ['Mounting', '64'], ['EV charging', '9'], ['Cabling & protection', '122'], ['Services', '6']], 7)]; },
+    wmsdash: function (e) { return [pageHead(e, 'Two warehouses, one number per SKU.', []), node('div', { class: 'wg' }, [
+      widget('Stock value', [kpi(M(196420), 'Wrocław ' + M(151180) + ' · Poznań ' + M(45240))]),
+      widget('Below reorder point', [kpi('3', 'suggested POs: 2'), bars([['Huawei 10KTL', 9, '9 / 6'], ['BYD HVS 10.2', 6, '6 / 4'], ['Solar cable 6 mm²', 3, '3 / 10']])]),
+      widget('Movements today', [activity([['IN', 'Receipt — 240× JA Solar 440 Wp (PO-2291)', '08:10'], ['OUT', 'Pick for SO-2026-0912 — 3 pallets', '10:25'], ['MV', 'Transfer Poznań → Wrocław: 60× K2 rail', '11:40']])], true)])]; },
+    inventory: function (e) { return [pageHead(e, takesOver(e), [btn('Adjust stock', false), btn('Receive', true, 'plus')]), table([{ label: 'SKU' }, { label: 'Location' }, { label: 'On hand', num: true }, { label: 'Reorder at', num: true }, { label: 'Status' }], INVENTORY, 486)]; },
+    warehouses: function (e) { return [pageHead(e, takesOver(e), [btn('Add warehouse', true, 'plus')]), table([{ label: 'Warehouse' }, { label: 'Zones' }, { label: 'SKUs' }, { label: 'Stock value', num: true }], [['Wrocław — Hala A', 'Panels · Inverters · EV', '212', M(128900)], ['Wrocław — Hala B', 'Storage · Cabling', '164', M(22280)], ['Poznań — Magazyn 2', 'Panels · Mounting', '110', M(45240)]], 3)]; },
+    movements: function (e) { return [pageHead(e, takesOver(e), [btn('New purchase order', true, 'plus')]), table([{ label: 'Document' }, { label: 'Type' }, { label: 'Counterparty' }, { label: 'Status' }, { label: 'Lines' }], [
+      [{ v: 'PO-2291' }, 'Purchase order', 'JA Solar EU', badge('success', 'received'), '240× panel'], [{ v: 'PO-2294' }, 'Purchase order', 'Huawei Digital Power', badge('info', 'confirmed'), '6× 10KTL'], [{ v: 'TR-0412' }, 'Transfer', 'Poznań → Wrocław', badge('success', 'done'), '60× K2 rail'], [{ v: 'PO-2295' }, 'Purchase order', 'BYD Europe', badge('outline', 'draft'), '4× HVS 10.2']], 158)]; },
+    reservations: function (e) { return [pageHead(e, 'Stock held for confirmed orders before it is picked.', []), table([{ label: 'Order' }, { label: 'SKU' }, { label: 'Reserved', num: true }, { label: 'Location' }], [['SO-2026-0912', 'JA Solar 440 Wp', '204', 'Wrocław — Hala A'], ['SO-2026-0912', 'Huawei 10KTL', '3', 'Wrocław — Hala A'], ['SO-2026-0905', 'BYD HVS 10.2', '1', 'Wrocław — Hala B'], ['SO-2026-0911', 'Huawei 8KTL', '1', 'Wrocław — Hala A']], 19)]; },
+    carriers: function (e) { return [pageHead(e, takesOver(e), [btn('Add carrier', true, 'plus')]), table([{ label: 'Carrier' }, { label: 'Services' }, { label: 'Shipments (30 d)' }, { label: 'Health' }], [['DPD Polska', 'Parcel · pallet', '48', badge('success', 'ok')], ['Raben', 'Pallet · groupage', '19', badge('success', 'ok')], ['Own vans', 'Installation crews', '31', badge('outline', 'manual')]], 3)]; },
+    devices: function (e) { return [pageHead(e, takesOver(e), [btn('Register device', true, 'plus')]), table([{ label: 'Device' }, { label: 'Type' }, { label: 'Warehouse' }, { label: 'Last seen' }], [['Zebra TC22 — WRO-01', 'Scanner', 'Wrocław — Hala A', 'today'], ['Zebra TC22 — WRO-02', 'Scanner', 'Wrocław — Hala B', 'today'], ['Zebra TC22 — POZ-01', 'Scanner', 'Poznań — Magazyn 2', 'yesterday']], 3)]; },
+    proposals: function (e) { return [pageHead(e, takesOver(e) + ' The assistant reads the inbox and proposes the next action; nothing happens until someone clicks.', [btn('Inbox settings', false, 'cog')]), inbox(TICKETS)]; },
+    messages: function (e) { return [pageHead(e, takesOver(e), [btn('Compose message', true, 'plus')]), inbox([
+      { from: 'Ola Kowalska', subject: 'Re: Quote Q-2026-0341 — carport PV', preview: 'Attached the revised layout with 28 panels instead of 30…', when: '09:41', tag: ['outline', 'sent'] },
+      { from: 'Tomasz Zieliński', subject: 'Etap II — schedule', preview: 'Thanks, Friday works. Please send the crew list for the gate pass.', when: '08:55' },
+      { from: 'Huawei Digital Power', subject: 'Order confirmation PO-2294', preview: 'Your order for 6× SUN2000-10KTL-M1 ships on 24 Sep.', when: 'yesterday' },
+      { from: 'Karolina Lis', subject: 'Second field — contract', preview: 'Signed copy attached. When can the survey happen?', when: 'yesterday', tag: ['success', 'deal won'] }])]; },
+    channels2: function (e) { return [pageHead(e, takesOver(e), [btn('Add channel', true, 'plus')]), table([{ label: 'Channel' }, { label: 'Kind' }, { label: 'Routes to' }, { label: 'Status' }], [['support@voltix.example', 'IMAP + SMTP', 'AI Inbox Actions', badge('success', 'connected')], ['Website chat', 'Web widget', 'AI Inbox Actions', badge('info', 'setting up')], ['+48 71 … 12', 'SMS', 'Notifications', badge('outline', 'not connected')]], 3)]; },
+    schedule: function (e) { return [pageHead(e, takesOver(e), [btn('Create schedule', true, 'plus')]), table([{ label: 'Schedule' }, { label: 'Applies to' }, { label: 'Rules' }], [['Installation crews', 'Crew A · Crew B', 'Mon–Fri 07:00–17:00 · no Sat in winter'], ['Site surveys', 'Marek D.', 'Mon–Sat 09:00–18:00'], ['Service & inspections', 'Crew B', 'Tue–Thu 08:00–16:00']], 3)]; },
+    ptasks: function (e) { return [pageHead(e, takesOver(e), [btn('New task', true, 'plus')]), table([{ label: 'Task' }, { label: 'Assignee' }, { label: 'Due' }, { label: 'Status' }], TASKS, 27)]; },
+    team: function (e) { return [pageHead(e, 'Everyone who signs in, and the crews they belong to.', [btn('Add team member', true, 'plus')]), table([{ label: 'Member' }, { label: 'Team' }, { label: 'Role' }, { label: 'Certificates' }], [
+      ['Ola Kowalska', 'Office', 'Sales & ops', '—'], ['Marek Dąbrowski', 'Surveys', 'Surveyor', 'SEP E · UDT PV'], ['Crew A — Jakub, Bartek, Adrian', 'Installation', 'Installers', 'SEP E · height work'], ['Crew B — Paweł, Kamil', 'Installation & service', 'Installers', 'SEP E/D · Huawei certified'], ['Warehouse — Robert', 'Warehouse', 'Storekeeper', 'Forklift']], 12)]; },
+    timesheets: function (e) { return [pageHead(e, takesOver(e), [btn('Log time', true, 'plus')]), table([{ label: 'Day' }, { label: 'Project' }, { label: 'Who' }, { label: 'Hours', num: true }], [['2026-09-18', 'Kowal 9.9 kWp', 'Crew A', '18.0'], ['2026-09-18', 'Piekarnia Złoty Kłos', 'Crew B', '12.5'], ['2026-09-17', 'Surveys', 'Marek D.', '7.0']], 214)]; },
+    wfdefs: function (e) { return [pageHead(e, takesOver(e), [btn('Create Workflow Definition', true, 'plus')]), table([{ label: 'Definition' }, { label: 'Trigger' }, { label: 'Steps' }, { label: 'Active' }], [['Quote approval above ' + M(30000), 'quote.sent', 'Manager approval → send', badge('success', 'active')], ['Installation hand-over', 'order.delivered', 'Checklist → photos → customer sign-off → invoice', badge('success', 'active')], ['Warranty registration', 'order.shipped', 'Register serials with Huawei/BYD', badge('info', 'draft')]], 3)]; },
+    wfinst: function (e) { return [pageHead(e, 'Running and finished workflows.', []), table([{ label: 'Instance' }, { label: 'Definition' }, { label: 'Started' }, { label: 'State' }], [[{ v: 'WF-1188', sub: 'Q-2026-0339 · SM Oporów' }, 'Quote approval', '2026-09-14', badge('warning', 'waiting: approval')], [{ v: 'WF-1186', sub: 'SO-2026-0907' }, 'Installation hand-over', '2026-09-16', badge('info', 'step 3/4')], [{ v: 'WF-1179', sub: 'SO-2026-0901' }, 'Installation hand-over', '2026-09-12', badge('success', 'completed')]], 94)]; },
+    utasks: function (e) { return [pageHead(e, 'Steps that need a human.', []), table([{ label: 'Task' }, { label: 'For' }, { label: 'Since' }, { label: 'Action' }], [['Approve quote Q-2026-0339 (' + M(34500) + ')', 'Ola K.', '5 days', btn('Approve', true)], ['Confirm customer sign-off — Piekarnia', 'Crew B', '1 day', btn('Confirm', true)]], 2)]; },
+    rules: function (e) { return [pageHead(e, takesOver(e), [btn('Create Business Rule', true, 'plus')]), table([{ label: 'Rule' }, { label: 'When' }, { label: 'Then' }, { label: 'Active' }], [['Low-stock alert', 'stock < reorder point', 'notify warehouse · suggest PO', badge('success', 'active')], ['Rotting deal', 'deal idle 14 days', 'task for owner', badge('success', 'active')], ['Deposit paid', 'pay link captured', 'move order to confirmed', badge('success', 'active')], ['Post-install follow-up', 'order delivered + 30 days', 'send survey', badge('info', 'draft')]], 4)]; },
+    rulesets: function (e) { return [pageHead(e, 'Rules that belong together.', [btn('Create Rule Set', true, 'plus')]), table([{ label: 'Set' }, { label: 'Rules' }], [['Warehouse', '3'], ['Sales hygiene', '4'], ['Customer journey', '2']], 3)]; },
+    rulelogs: function (e) { return [pageHead(e, 'Every time a rule fired.', []), table([{ label: 'When' }, { label: 'Rule' }, { label: 'Record' }, { label: 'Outcome' }], [['09:02', 'Low-stock alert', 'Huawei SUN2000-10KTL', 'notified · PO-2294 suggested'], ['yesterday', 'Deposit paid', 'PL-8821', 'SO-2026-0905 → confirmed'], ['yesterday', 'Rotting deal', 'SM Oporów blok 4', 'task created']], 1420)]; },
+    uentities: function (e) { return [pageHead(e, takesOver(e), [btn('Create Entity', true, 'plus')]), table([{ label: 'Entity' }, { label: 'Fields' }, { label: 'Records' }, { label: 'Was in' }], [['Installer certificate', 'person · type · valid until · scan', '38', 'Airtable'], ['Site survey', 'roof type · azimuth · shading · photos', '412', 'Airtable'], ['Installed system', 'serials · kWp · commissioning date · warranty', '1 108', 'Airtable + Jobber'], ['Web enquiry form', 'name · address · roof · bill', '—', 'Airtable forms']], 4)]; },
+    sentities: function (e) { return [pageHead(e, 'Built-in records and the custom fields on them.', []), table([{ label: 'Entity' }, { label: 'Custom fields' }], [['customers.person', 'roof type · grid operator'], ['sales.order', 'installation date · crew'], ['catalog.product', 'kWp · warranty years']], 3)]; },
+    qindex: function (e) { return [pageHead(e, takesOver(e), [btn('Create index', true, 'plus')]), table([{ label: 'Index' }, { label: 'Over' }, { label: 'Used by' }], [['Customers with PV, no storage', 'installed systems', 'Storage upsell campaign'], ['Inspection due in 60 days', 'installed systems', 'Service reminders'], ['B2B accounts idle 90 days', 'orders', 'Partner outreach']], 3)]; },
+    widgets: function (e) { return [pageHead(e, takesOver(e), []), table([{ label: 'Widget' }, { label: 'Where' }], [['Crew planner board', 'Calendar'], ['Certificate expiry', 'Team members']], 2)]; },
+    attachments: function (e) { return [pageHead(e, takesOver(e), [btn('Upload', true, 'plus')]), table([{ label: 'File' }, { label: 'On' }, { label: 'Size' }, { label: 'Added' }], [[{ v: 'Layout_LogiPark_v3.pdf' }, 'Q-2026-0341', '2.1 MB', 'today'], [{ v: 'Protokół odbioru — Piekarnia.pdf' }, 'SO-2026-0907', '640 KB', 'yesterday'], [{ v: 'Umowa GreenFarm — podpisana.pdf' }, 'GreenFarm Sp. z o.o.', '1.4 MB', 'yesterday'], [{ v: 'IMG_2231.jpg' }, 'Site survey · Nowak', '3.8 MB', '2 days ago']], 3812)]; },
+    templates: function (e) { return [pageHead(e, takesOver(e), [btn('New template', true, 'plus')]), table([{ label: 'Template' }, { label: 'Used for' }], [['Quote — residential PV', 'Quotes'], ['Quote — B2B rooftop', 'Quotes'], ['Hand-over protocol', 'Orders']], 3)]; },
+    kb: function (e) { return [pageHead(e, takesOver(e), [btn('New article', true, 'plus')]), table([{ label: 'Article' }, { label: 'Views (30 d)' }], [['Inverter error codes — what to do first', '412'], ['Reading your production app', '388'], ['Winter: snow on panels', '96']], 41)]; },
+    datasync: function (e) { return [pageHead(e, takesOver(e), [btn('New sync', true, 'plus')]), table([{ label: 'Sync' }, { label: 'Direction' }, { label: 'Last run' }, { label: 'Status' }], [['Xero — invoices', 'out', '06:00', badge('success', 'ok')], ['Mailchimp — audience', 'out', '06:15', badge('success', 'ok')], ['Huawei FusionSolar — production', 'in', '08:00', badge('info', 'setting up')]], 3)]; },
+    integrations: function (e) { return [pageHead(e, 'What stays outside, and how it is wired in.', [btn('Add integration', true, 'plus')]), table([{ label: 'Provider' }, { label: 'Used for' }, { label: 'Health' }], [['Stripe', 'Payments', badge('success', 'connected')], ['Xero', 'Accounting (stays)', badge('success', 'connected')], ['PandaDoc', 'E-signature (stays, in contract)', badge('success', 'connected')], ['Mailchimp', 'Email campaigns (stays)', badge('success', 'connected')], ['Shopify storefront', 'Public shop front (stays)', badge('info', 'setting up')]], 5)]; },
+    notif: function (e) { return [pageHead(e, takesOver(e), [btn('Save', true)]), table([{ label: 'Channel' }, { label: 'Provider' }, { label: 'Status' }], [['Email', 'SMTP · voltix.example', badge('success', 'ok')], ['SMS', 'not chosen', badge('outline', 'off')], ['Push', 'not chosen', badge('outline', 'off')]], 3)]; },
+    currencies: function (e) { return [pageHead(e, '', []), table([{ label: 'Currency' }, { label: 'Rate' }], [['EUR', '1.0000'], ['PLN', '4.28']], 2)]; }
+  };
+
+  function show(id) {
+    var e = pagesById[id]; if (!e) return;
+    activeId = id; markActive();
+    if (location.hash !== '#/' + id) history.replaceState(null, '', location.pathname + location.search + '#/' + id);
+    crumbs.innerHTML = '';
+    var homeBtn = node('a', { href: '#', title: 'Dashboard', style: 'color:inherit;display:inline-flex' }, [svg('home')]);
+    homeBtn.addEventListener('click', function (ev) { ev.preventDefault(); show('dashboard'); });
+    crumbs.appendChild(homeBtn);
+    if (id !== 'dashboard') {
+      crumbs.appendChild(node('span', { text: '›' }));
+      crumbs.appendChild(node('span', { text: UI[e.mod].group }));
+      crumbs.appendChild(node('span', { text: '›' }));
+      crumbs.appendChild(node('span', { class: 'cur', text: e.page.title }));
+    } else crumbs.appendChild(node('span', { class: 'cur', text: 'Dashboard' }));
+    document.title = e.page.title + ' — Open Mercato';
+    content.innerHTML = '';
+    var live = e.status === 'native';
+    if (live) {
+      (VIEWS[e.page.view] || VIEWS.currencies)(e).forEach(function (n) { content.appendChild(n); });
+    } else {
+      var meta = STATUS_META[e.status];
+      var head = pageHead(e, takesOver(e), []);
+      head.querySelector('h1').appendChild(node('span', { class: 'badge ' + meta.badge, style: 'margin-left:10px;vertical-align:middle', text: meta.label }));
+      content.appendChild(head);
+      content.appendChild(locked(e));
+    }
+    window.scrollTo({ top: 0 });
+  }
+
+  /* #/people etc. — so a screen can be linked to, and back/forward work */
+  function fromHash() {
+    var id = (location.hash || '').replace(/^#\//, '');
+    return pagesById[id] ? id : 'dashboard';
+  }
+  window.addEventListener('hashchange', function () { if (fromHash() !== activeId) show(fromHash()); });
+  renderNav('');
+  show(fromHash());
+})();
+</script>
+</body>
+</html>

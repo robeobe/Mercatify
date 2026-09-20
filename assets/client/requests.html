@@ -84,8 +84,24 @@
                 ? 'You accepted it on ' + req.clientResponse.at + '.'
                 : 'You asked for a call on ' + req.clientResponse.at + '.')
             : 'With a consultant. We usually come back within two working days.') }),
-      node('div', { class: 'tile__foot' }, [cta])
+      node('div', { class: 'tile__foot' }, canGenerateMockup(req)
+        ? [cta, node('a', {
+            class: 'btn btn--outline btn--sm', href: 'mockup.html?ref=' + encodeURIComponent(req.ref),
+            target: '_blank', rel: 'noopener',
+            text: 'Open your workspace ↗', onclick: function (e) { e.stopPropagation(); }
+          })]
+        : [cta])
     ]);
+
+    var del = node('button', { type: 'button', class: 'btn btn--ghost btn--sm', text: 'Delete' });
+    del.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!confirm('Delete ' + req.ref + '? This removes it from your requests for good.')) return;
+      deleteRequest(req.ref);
+      tile.remove();
+      if (!clientRequests().length) window.location.reload();
+    });
+    tile.querySelector('.tile__foot').appendChild(del);
 
     /* Clicking anywhere on the tile follows it, but the real link inside stays
        the keyboard path and must not fire twice. */
