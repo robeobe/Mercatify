@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Sparkles } from 'lucide-react'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@open-mercato/ui/primitives/card'
 import { Spinner } from '@open-mercato/ui/primitives/spinner'
@@ -93,7 +94,10 @@ export function LabAnalysisCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('mercatify.analysis.card.title', 'Mercatify Lab analysis')}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Sparkles aria-hidden="true" className="size-4 text-brand-violet" />
+          {t('mercatify.analysis.card.title', 'Mercatify Lab analysis')}
+        </CardTitle>
         {analysed ? (
           <CardDescription>
             {t('mercatify.analysis.card.analysedOn', 'Analysed on {date}')

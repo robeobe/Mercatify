@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Tag } from '@open-mercato/ui/primitives/tag'
 import { formatCurrency } from '@open-mercato/ui/utils/format'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { LabBadge } from '../LabBadge'
 import {
   STAFF_STATUS_LABELS,
   STAFF_STATUS_TAGS,
@@ -81,6 +82,7 @@ export function CaseContextCard({ mercatifyCase }: { mercatifyCase: ConsoleCaseD
         </h2>
         <CaseRefBadge caseId={mercatifyCase.id} />
         <StaffStatusBadge status={mercatifyCase.status} />
+        <LabBadge />
         {meta.length > 0 ? (
           <p className="ml-auto text-sm text-muted-foreground">{meta.join(' · ')}</p>
         ) : null}
