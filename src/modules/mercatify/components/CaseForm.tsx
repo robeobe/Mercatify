@@ -12,7 +12,6 @@ import { Button } from '@open-mercato/ui/primitives/button'
 import { Checkbox } from '@open-mercato/ui/primitives/checkbox'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { SearchInput } from '@open-mercato/ui/primitives/search-input'
-import { Textarea } from '@open-mercato/ui/primitives/textarea'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 import { duplicateCapabilityCounts, SAAS_CATALOG } from '../data/saas-catalog'
@@ -161,7 +160,7 @@ function ToolPicker({
         aria-label={t('mercatify.cases.form.search.placeholder')}
         disabled={readOnly}
       />
-      <div className="space-y-2">
+      <div className="grid items-start gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {SAAS_CATALOG.filter((catalog) => {
           if (!needle) return true
           const hay = [
@@ -174,61 +173,76 @@ function ToolPicker({
           const selected = tools.find((tool) => tool.catalogToolId === catalog.id)
           const selectedCount = selected?.selectedModuleIds.length ?? 0
           return (
-            <div key={catalog.id} className="rounded-lg border border-border bg-card p-3">
-              <Button
+            <div
+              key={catalog.id}
+              className={`overflow-hidden rounded-xl border bg-card ${selected ? 'border-foreground' : 'border-border'}`}
+            >
+              <button
                 type="button"
-                variant={selected ? 'secondary' : 'outline'}
-                className="h-auto w-full justify-between whitespace-normal py-2 text-left"
+                className="flex w-full items-start gap-2.5 px-3.5 py-3 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
                 aria-expanded={Boolean(selected)}
                 disabled={readOnly}
                 onClick={() => upsertCatalogTool(catalog.id, selected ? null : { selectedModuleIds: [] })}
               >
-                <span>
-                  <span className="font-medium">{catalog.name}</span>
-                  <span className="text-muted-foreground">{` — ${catalog.kind}`}</span>
+                <span
+                  aria-hidden="true"
+                  className={`mt-0.5 grid size-4 flex-none place-items-center rounded border text-xs leading-none ${
+                    selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-transparent'
+                  }`}
+                >
+                  ✓
                 </span>
-                <span className="text-muted-foreground">
-                  {t('mercatify.cases.form.tools.modulesCount', {
-                    selected: selectedCount,
-                    total: catalog.modules.length,
-                  })}
+                <span className="min-w-0">
+                  <span className="text-sm font-semibold">{catalog.name}</span>
+                  <span className="text-xs text-muted-foreground">{` — ${catalog.kind}`}</span>
                 </span>
-              </Button>
+                <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
+                  {selected
+                    ? t('mercatify.cases.form.tools.modulesCount', {
+                        selected: selectedCount,
+                        total: catalog.modules.length,
+                      })
+                    : `${catalog.modules.length} modules`}
+                </span>
+              </button>
               {selected ? (
-                <div className="mt-3 space-y-3">
-                  <ul className="space-y-2">
+                <div className="border-t border-border px-3.5 pb-3.5">
+                  <ul className="mt-2.5">
                     {catalog.modules.map((mod) => {
                       const checked = selected.selectedModuleIds.includes(mod.id)
                       const isDup = checked && mod.caps.some((cap) => (dupCounts[cap] ?? 0) > 1)
                       return (
-                        <li key={mod.id} className="flex items-start gap-2">
-                          <Checkbox
-                            checked={checked}
-                            disabled={readOnly}
-                            aria-label={mod.name}
-                            onCheckedChange={(state) => {
-                              const on = state === true
-                              const selectedModuleIds = on
-                                ? [...selected.selectedModuleIds, mod.id]
-                                : selected.selectedModuleIds.filter((modId) => modId !== mod.id)
-                              upsertCatalogTool(catalog.id, { selectedModuleIds })
-                            }}
-                          />
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
+                        <li key={mod.id}>
+                          <label className="flex cursor-pointer items-start gap-2.5 rounded-md px-2 py-1.5 hover:bg-muted">
+                            <Checkbox
+                              className="mt-0.5"
+                              checked={checked}
+                              disabled={readOnly}
+                              aria-label={mod.name}
+                              onCheckedChange={(state) => {
+                                const on = state === true
+                                const selectedModuleIds = on
+                                  ? [...selected.selectedModuleIds, mod.id]
+                                  : selected.selectedModuleIds.filter((modId) => modId !== mod.id)
+                                upsertCatalogTool(catalog.id, { selectedModuleIds })
+                              }}
+                            />
+                            <span className="min-w-0">
                               <span className="text-sm font-medium">{mod.name}</span>
                               {isDup ? (
-                                <Badge variant="warning">{t('mercatify.cases.form.badge.alsoElsewhere')}</Badge>
+                                <Badge variant="warning" className="ml-1.5 align-middle">
+                                  {t('mercatify.cases.form.badge.alsoElsewhere')}
+                                </Badge>
                               ) : null}
-                            </div>
-                            <p className="text-sm text-muted-foreground">{mod.desc}</p>
-                          </div>
+                              <span className="block text-xs text-muted-foreground">{mod.desc}</span>
+                            </span>
+                          </label>
                         </li>
                       )
                     })}
                   </ul>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-sm">
+                  <div className="mt-3 grid grid-cols-2 gap-2.5">
+                    <label className="space-y-1 text-xs">
                       <span>{t('mercatify.cases.form.tools.seats')}</span>
                       <Input
                         type="number"
@@ -238,7 +252,7 @@ function ToolPicker({
                         onChange={(event) => upsertCatalogTool(catalog.id, { seats: toNumberOrNull(event.target.value) })}
                       />
                     </label>
-                    <label className="space-y-1 text-sm">
+                    <label className="space-y-1 text-xs">
                       <span>{t('mercatify.cases.form.tools.monthly', { currency: String(values.currency || 'EUR') })}</span>
                       <Input
                         type="number"
@@ -284,73 +298,65 @@ function CustomTools({
       {custom.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('mercatify.cases.form.custom.empty')}</p>
       ) : null}
-      {custom.map((tool, index) => (
-        <div key={tool.id ?? `custom-${index}`} className="space-y-2 rounded-lg border border-border p-3">
-          <label className="space-y-1 text-sm">
-            <span>{t('mercatify.cases.form.custom.name')}</span>
-            <Input
-              value={tool.name}
-              disabled={readOnly}
-              onChange={(event) => {
-                const next = custom.map((row, rowIndex) => (rowIndex === index ? { ...row, name: event.target.value } : row))
-                replaceCustom(next)
-              }}
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span>{t('mercatify.cases.form.custom.use')}</span>
-            <Textarea
-              value={tool.customUse ?? ''}
-              disabled={readOnly}
-              onChange={(event) => {
-                const next = custom.map((row, rowIndex) => (rowIndex === index ? { ...row, customUse: event.target.value } : row))
-                replaceCustom(next)
-              }}
-            />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1 text-sm">
+      {custom.map((tool, index) => {
+        const patch = (changes: Partial<IntakeToolValue>) => {
+          replaceCustom(custom.map((row, rowIndex) => (rowIndex === index ? { ...row, ...changes } : row)))
+        }
+        return (
+          <div key={tool.id ?? `custom-${index}`} className="grid gap-2.5 sm:grid-cols-2">
+            <label className="space-y-1 text-xs">
+              <span>{t('mercatify.cases.form.custom.name')}</span>
+              <Input
+                value={tool.name}
+                disabled={readOnly}
+                placeholder="Google Sheets — installer rota"
+                onChange={(event) => patch({ name: event.target.value })}
+              />
+            </label>
+            <label className="space-y-1 text-xs">
+              <span>{t('mercatify.cases.form.custom.use')}</span>
+              <Input
+                value={tool.customUse ?? ''}
+                disabled={readOnly}
+                placeholder="Weekly crew planning"
+                onChange={(event) => patch({ customUse: event.target.value })}
+              />
+            </label>
+            <label className="space-y-1 text-xs">
               <span>{t('mercatify.cases.form.tools.seats')}</span>
               <Input
                 type="number"
                 min={0}
                 value={tool.seats ?? ''}
                 disabled={readOnly}
-                onChange={(event) => {
-                  const next = custom.map((row, rowIndex) => (
-                    rowIndex === index ? { ...row, seats: toNumberOrNull(event.target.value) } : row
-                  ))
-                  replaceCustom(next)
-                }}
+                onChange={(event) => patch({ seats: toNumberOrNull(event.target.value) })}
               />
             </label>
-            <label className="space-y-1 text-sm">
-              <span>{t('mercatify.cases.form.tools.monthly', { currency: String(values.currency || 'EUR') })}</span>
-              <Input
-                type="number"
-                min={0}
-                value={tool.monthlyCost ?? ''}
-                disabled={readOnly}
-                onChange={(event) => {
-                  const next = custom.map((row, rowIndex) => (
-                    rowIndex === index ? { ...row, monthlyCost: toNumberOrNull(event.target.value) } : row
-                  ))
-                  replaceCustom(next)
-                }}
-              />
-            </label>
+            <div className="flex items-end gap-2">
+              <label className="flex-1 space-y-1 text-xs">
+                <span>{t('mercatify.cases.form.tools.monthly', { currency: String(values.currency || 'EUR') })}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={tool.monthlyCost ?? ''}
+                  disabled={readOnly}
+                  onChange={(event) => patch({ monthlyCost: toNumberOrNull(event.target.value) })}
+                />
+              </label>
+              {readOnly ? null : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => replaceCustom(custom.filter((_, rowIndex) => rowIndex !== index))}
+                >
+                  {t('mercatify.cases.form.actions.removeCustomTool')}
+                </Button>
+              )}
+            </div>
           </div>
-          {readOnly ? null : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => replaceCustom(custom.filter((_, rowIndex) => rowIndex !== index))}
-            >
-              {t('mercatify.cases.form.actions.removeCustomTool')}
-            </Button>
-          )}
-        </div>
-      ))}
+        )
+      })}
       {readOnly ? null : (
         <Button
           type="button"
